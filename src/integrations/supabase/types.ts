@@ -163,6 +163,7 @@ export type Database = {
         Row: {
           ai_caption: string | null
           ai_tags: string[] | null
+          animated_path: string | null
           camera_make: string | null
           camera_model: string | null
           created_at: string
@@ -186,6 +187,7 @@ export type Database = {
         Insert: {
           ai_caption?: string | null
           ai_tags?: string[] | null
+          animated_path?: string | null
           camera_make?: string | null
           camera_model?: string | null
           created_at?: string
@@ -209,6 +211,7 @@ export type Database = {
         Update: {
           ai_caption?: string | null
           ai_tags?: string[] | null
+          animated_path?: string | null
           camera_make?: string | null
           camera_model?: string | null
           created_at?: string

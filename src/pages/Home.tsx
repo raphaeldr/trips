@@ -178,11 +178,26 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
+        {/* Background Image or Video */}
         {heroPhoto ? <>
-            <div className="absolute inset-0 bg-cover bg-center" style={{
-          backgroundImage: `url(${supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl})`
-        }} />
+            {heroPhoto.animated_path ? (
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+              >
+                <source 
+                  src={supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl}
+                  type="video/mp4"
+                />
+              </video>
+            ) : (
+              <div className="absolute inset-0 bg-cover bg-center" style={{
+                backgroundImage: `url(${supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl})`
+              }} />
+            )}
             <div className="absolute inset-0 bg-black/40" />
           </> : <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />}
 
