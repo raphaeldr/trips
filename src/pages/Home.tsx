@@ -66,6 +66,32 @@ const Home = () => {
     },
   });
 
+  // Fetch destination count
+  const { data: destinationCount } = useQuery({
+    queryKey: ["destinationCount"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("destinations")
+        .select("*", { count: "exact", head: true });
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Fetch total photo count
+  const { data: photoCount } = useQuery({
+    queryKey: ["photoCount"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("photos")
+        .select("*", { count: "exact", head: true });
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   // Analyze image brightness and adjust text color
   useEffect(() => {
     if (!heroPhoto) {
@@ -353,7 +379,7 @@ const Home = () => {
             <div>
               <h4 className="font-semibold mb-4">Follow Us</h4>
               <p className="text-footer-foreground/70">
-                Journey stats: {currentDay} days traveled, XX countries visited, XXXX photos captured
+                Journey stats: {currentDay} days traveled, {destinationCount} countries visited, {photoCount} photos captured
               </p>
             </div>
           </div>
