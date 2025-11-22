@@ -15,11 +15,17 @@ interface PhotoUploadProps {
 
 export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProps) => {
   const [uploading, setUploading] = useState(false);
+  const [uploadingAnimated, setUploadingAnimated] = useState(false);
   const { toast } = useToast();
 
   const fileSchema = z.object({
     size: z.number().max(10 * 1024 * 1024, { message: "File size must be less than 10MB" }),
     type: z.string().regex(/^image\/(jpeg|jpg|png|webp|heic)$/i, { message: "Only JPEG, PNG, WebP, and HEIC images are allowed" })
+  });
+
+  const animatedFileSchema = z.object({
+    size: z.number().max(50 * 1024 * 1024, { message: "Animated file size must be less than 50MB" }),
+    type: z.string().regex(/^(video\/(mp4|webm)|image\/(gif|webp))$/i, { message: "Only MP4, WebM video or GIF/WebP animations are allowed" })
   });
 
   const extractExifData = async (file: File) => {
@@ -151,6 +157,62 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleAnimatedUpload = async (e: React.ChangeEvent<HTMLInputElement>, photoId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      animatedFileSchema.parse({ size: file.size, type: file.type });
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: validationError.errors[0].message,
+        });
+        return;
+      }
+    }
+
+    setUploadingAnimated(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/animated/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('photos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from('photos')
+        .update({ animated_path: fileName })
+        .eq('id', photoId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Success!",
+        description: "Animated version uploaded successfully",
+      });
+
+      if (onUploadComplete) onUploadComplete();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "Failed to upload animated version",
+      });
+    } finally {
+      setUploadingAnimated(false);
     }
   };
 
