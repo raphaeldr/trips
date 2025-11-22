@@ -35,7 +35,7 @@ const Home = () => {
 
   const currentDay = calculateCurrentDay();
   const totalDays = tripSettings?.total_days || 180;
-  const familyName = tripSettings?.family_name || 'Anderson Family';
+  const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || 'Six Months. One World. Infinite Memories.';
 
   return (
@@ -198,7 +198,7 @@ const Home = () => {
           </div>
           
           <div className="border-t border-footer-foreground/20 mt-8 pt-8 text-center text-footer-foreground/60 text-sm">
-            © 2024 Anderson Family. All rights reserved.
+            © 2024 Pia, Mila, Liesbet and Raphaël. All rights reserved.
           </div>
         </div>
       </footer>
