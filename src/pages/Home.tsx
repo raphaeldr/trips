@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
+  const [textColor, setTextColor] = useState("text-white");
   // Fetch trip settings for dynamic day counter
   const { data: tripSettings } = useQuery({
     queryKey: ["tripSettings"],
@@ -47,6 +49,61 @@ const Home = () => {
       return data;
     },
   });
+
+  // Analyze image brightness and adjust text color
+  useEffect(() => {
+    if (!heroPhoto) {
+      setTextColor("text-white");
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        if (!ctx) return;
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Sample center area of image (more relevant for text overlay)
+        const sampleSize = 200;
+        const x = (canvas.width - sampleSize) / 2;
+        const y = (canvas.height - sampleSize) / 2;
+        
+        const imageData = ctx.getImageData(x, y, sampleSize, sampleSize);
+        const data = imageData.data;
+
+        let totalBrightness = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // Calculate perceived brightness using luminance formula
+          const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+          totalBrightness += brightness;
+        }
+
+        const avgBrightness = totalBrightness / (data.length / 4);
+        
+        // If average brightness > 128 (midpoint), image is light, use dark text
+        setTextColor(avgBrightness > 128 ? "text-gray-900" : "text-white");
+      } catch (error) {
+        console.error("Error analyzing image:", error);
+        setTextColor("text-white");
+      }
+    };
+
+    img.onerror = () => {
+      setTextColor("text-white");
+    };
+  }, [heroPhoto]);
 
   // Calculate current day
   const calculateCurrentDay = () => {
@@ -90,7 +147,7 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-overlay opacity-50" />
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-6 text-center">
+        <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
           <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in">
             <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
               Day {currentDay} of {totalDays}
@@ -98,7 +155,7 @@ const Home = () => {
           </div>
 
           <h1
-            className="font-display text-6xl md:text-8xl font-bold text-foreground mb-6 animate-fade-in"
+            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in"
             style={{ animationDelay: "0.1s" }}
           >
             {tagline.split(". ").map((part, i) => (
@@ -111,7 +168,7 @@ const Home = () => {
           </h1>
 
           <p
-            className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 animate-fade-in"
+            className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90"
             style={{ animationDelay: "0.2s" }}
           >
             Join {familyName} as we explore continents, chase sunsets, and learn about the world together.
