@@ -49,7 +49,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
       projection: "globe" as any,
-      zoom: 2,
+      zoom: 1.2,
       center: [6.1296, 49.8153],
       pitch: 45,
     });
