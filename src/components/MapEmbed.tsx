@@ -27,13 +27,13 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
   // Fetch destinations
   const { data: destinations } = useQuery({
-    queryKey: ['destinations-embed'],
+    queryKey: ["destinations-embed"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('destinations')
-        .select('id, name, country, latitude, longitude, is_current')
-        .order('arrival_date', { ascending: true });
-      
+        .from("destinations")
+        .select("id, name, country, latitude, longitude, is_current")
+        .order("arrival_date", { ascending: true });
+
       if (error) throw error;
       return data as Destination[];
     },
@@ -47,19 +47,23 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
+      // CHANGED: Switched to Satellite Streets for the "Travel" look
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
       projection: "globe" as any,
-      zoom: 1.2,
-      center: [6.1296, 49.8153],
-      pitch: 45,
+      zoom: 1.5, // Slightly adjusted zoom to show off the curve better
+      center: [6.1296, 49.8153], // Your coordinates
+      pitch: 45, // Keeps the 3D tilt
     });
     mapRef.current = map;
 
     map.on("style.load", () => {
+      // CHANGED: "Space" Atmosphere configuration
       map.setFog({
-        color: "rgb(255,255,255)",
-        "high-color": "rgb(200,200,225)",
-        "horizon-blend": 0.2,
+        color: "rgb(186, 210, 235)", // Lower atmosphere (horizon glow)
+        "high-color": "rgb(36, 92, 223)", // Upper atmosphere (deep blue)
+        "horizon-blend": 0.02, // Crisper horizon line
+        "space-color": "rgb(11, 11, 25)", // Dark background matching space
+        "star-intensity": 0.6, // Adds visible stars in the background
       });
       setMapLoaded(true);
     });
@@ -67,7 +71,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
     map.scrollZoom.disable();
 
-    // Auto-rotation
+    // Auto-rotation Logic (Kept exactly as you had it)
     const secondsPerRevolution = 240;
     const maxSpinZoom = 5;
     const slowSpinZoom = 3;
@@ -88,11 +92,23 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       }
     }
 
-    map.on("mousedown", () => { userInteracting = true; });
-    map.on("dragstart", () => { userInteracting = true; });
-    map.on("mouseup", () => { userInteracting = false; spinGlobe(); });
-    map.on("touchend", () => { userInteracting = false; spinGlobe(); });
-    map.on("moveend", () => { spinGlobe(); });
+    map.on("mousedown", () => {
+      userInteracting = true;
+    });
+    map.on("dragstart", () => {
+      userInteracting = true;
+    });
+    map.on("mouseup", () => {
+      userInteracting = false;
+      spinGlobe();
+    });
+    map.on("touchend", () => {
+      userInteracting = false;
+      spinGlobe();
+    });
+    map.on("moveend", () => {
+      spinGlobe();
+    });
 
     spinGlobe();
 
@@ -109,12 +125,12 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     const map = mapRef.current;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     // Wait for style to be ready before manipulating layers
     if (!map.isStyleLoaded()) {
-      map.once('styledata', () => {
+      map.once("styledata", () => {
         addDestinationsToMap(map, destinations);
       });
       return;
@@ -145,7 +161,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
           properties: {},
           geometry: {
             type: "LineString",
-            coordinates: destinations.map(d => [d.longitude, d.latitude]),
+            coordinates: destinations.map((d) => [d.longitude, d.latitude]),
           },
         },
       });
@@ -186,15 +202,9 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
       function animateDashArray(timestamp: number) {
         if (!map.getLayer("route-line")) return;
-        const newStep = parseInt(
-          ((timestamp / 50) % dashArraySequence.length).toString()
-        );
+        const newStep = parseInt(((timestamp / 50) % dashArraySequence.length).toString());
         if (newStep !== step) {
-          map.setPaintProperty(
-            "route-line",
-            "line-dasharray",
-            dashArraySequence[step]
-          );
+          map.setPaintProperty("route-line", "line-dasharray", dashArraySequence[step]);
           step = newStep;
         }
         requestAnimationFrame(animateDashArray);
@@ -204,22 +214,21 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
     // Add markers
     destinations.forEach((dest) => {
-      const el = document.createElement('div');
-      el.style.backgroundColor = dest.is_current ? '#ef4444' : '#0f766e';
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50% 50% 50% 0';
-      el.style.transform = 'rotate(-45deg)';
-      el.style.border = '2px solid white';
-      el.style.cursor = 'pointer';
-      el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+      const el = document.createElement("div");
+      el.style.backgroundColor = dest.is_current ? "#ef4444" : "#0f766e";
+      el.style.width = "20px";
+      el.style.height = "20px";
+      el.style.borderRadius = "50% 50% 50% 0";
+      el.style.transform = "rotate(-45deg)";
+      el.style.border = "2px solid white";
+      el.style.cursor = "pointer";
+      el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
-        .setHTML(`
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
           <div style="padding: 8px;">
             <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
             <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
-            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ''}
+            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
           </div>
         `);
 
@@ -233,7 +242,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
     // Fit bounds to show all destinations
     const bounds = new mapboxgl.LngLatBounds();
-    destinations.forEach(dest => {
+    destinations.forEach((dest) => {
       bounds.extend([dest.longitude, dest.latitude]);
     });
     map.fitBounds(bounds, { padding: 80, maxZoom: 4 });
