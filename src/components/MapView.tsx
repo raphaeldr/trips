@@ -43,7 +43,7 @@ export const MapView = ({ className = "" }: MapViewProps) => {
     fetchDestinations();
   }, []);
 
-  // Initialize map
+  // Initialize map once the container is mounted
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
@@ -112,7 +112,7 @@ export const MapView = ({ className = "" }: MapViewProps) => {
     return () => {
       map.current?.remove();
     };
-  }, []);
+  }, [loading]);
 
   // Add markers and routes when destinations load
   useEffect(() => {
