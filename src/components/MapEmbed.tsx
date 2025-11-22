@@ -47,12 +47,11 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      // CHANGED: Switched to Satellite Streets for the "Travel" look
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       projection: "globe" as any,
-      zoom: 1.5, // Slightly adjusted zoom to show off the curve better
-      center: [6.1296, 49.8153], // Your coordinates
-      pitch: 45, // Keeps the 3D tilt
+      zoom: 1.2,
+      center: [20, 20],
+      pitch: 0,
     });
     mapRef.current = map;
 
