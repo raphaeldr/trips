@@ -182,11 +182,7 @@ const Home = () => {
               </Button>
             </Link>
             <Link to="/map">
-              <Button
-                size="lg"
-                variant="outline"
-                className="gap-2 bg-background/80 backdrop-blur-sm border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
-              >
+              <Button size="lg" className="gap-2 shadow-elegant hover:shadow-xl transition-all">
                 View Map
               </Button>
             </Link>
