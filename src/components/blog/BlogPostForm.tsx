@@ -198,14 +198,14 @@ export const BlogPostForm = ({ onSuccess, initialData }: BlogPostFormProps) => {
       <div>
         <Label htmlFor="destination">Link to Destination (Optional)</Label>
         <Select 
-          onValueChange={(value) => setValue("destination_id", value)}
-          defaultValue={initialData?.destination_id}
+          onValueChange={(value) => setValue("destination_id", value === "none" ? "" : value)}
+          defaultValue={initialData?.destination_id || "none"}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a destination" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No destination</SelectItem>
+            <SelectItem value="none">No destination</SelectItem>
             {destinations?.map((dest) => (
               <SelectItem key={dest.id} value={dest.id}>
                 {dest.name}, {dest.country}
