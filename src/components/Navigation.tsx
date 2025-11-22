@@ -9,13 +9,16 @@ export const Navigation = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors">
-            <span className="font-display text-2xl">Wereldrijst</span>
+          <NavLink
+            to="/"
+            className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors"
+          >
+            <span className="font-display text-2xl">Our trip</span>
           </NavLink>
-          
+
           <div className="flex items-center gap-8">
-            <NavLink 
-              to="/" 
+            <NavLink
+              to="/"
               end
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary"
@@ -23,8 +26,8 @@ export const Navigation = () => {
               <Home className="w-4 h-4" />
               <span>Home</span>
             </NavLink>
-            
-            <NavLink 
+
+            <NavLink
               to="/map"
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary"
@@ -32,8 +35,8 @@ export const Navigation = () => {
               <Map className="w-4 h-4" />
               <span>Map</span>
             </NavLink>
-            
-            <NavLink 
+
+            <NavLink
               to="/gallery"
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary"
@@ -41,8 +44,8 @@ export const Navigation = () => {
               <Image className="w-4 h-4" />
               <span>Gallery</span>
             </NavLink>
-            
-            <NavLink 
+
+            <NavLink
               to="/blog"
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary"
@@ -50,9 +53,9 @@ export const Navigation = () => {
               <BookOpen className="w-4 h-4" />
               <span>Blog</span>
             </NavLink>
-            
+
             {isAdmin && (
-              <NavLink 
+              <NavLink
                 to="/admin"
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 activeClassName="text-primary"
