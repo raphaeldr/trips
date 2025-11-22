@@ -50,6 +50,23 @@ const Home = () => {
     },
   });
 
+  // Fetch featured blog posts
+  const { data: featuredPosts } = useQuery({
+    queryKey: ["featuredBlogPosts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*, destinations(*)")
+        .eq("status", "published")
+        .eq("is_featured", true)
+        .order("featured_order", { ascending: true })
+        .limit(2);
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Analyze image brightness and adjust text color
   useEffect(() => {
     if (!heroPhoto) {
@@ -197,33 +214,53 @@ const Home = () => {
           <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Featured Stories</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Placeholder cards - will be dynamic */}
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="group relative overflow-hidden rounded-2xl shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer"
-              >
-                <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-footer/20" />
-                <div className="absolute inset-0 bg-gradient-overlay" />
-                <div className="absolute bottom-0 left-0 right-0 p-8">
-                  <div className="flex items-center gap-2 text-sm text-primary-foreground/80 mb-2">
-                    <span>01/10/2023</span>
-                    <span>•</span>
-                    <span>JFK Airport</span>
+            {featuredPosts && featuredPosts.length > 0 ? (
+              featuredPosts.map((post) => (
+                <Link key={post.id} to={`/blog/${post.slug}`}>
+                  <div className="group relative overflow-hidden rounded-2xl shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer">
+                    <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-footer/20">
+                      {post.cover_image_url && (
+                        <img
+                          src={post.cover_image_url}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-overlay" />
+                    <div className="absolute bottom-0 left-0 right-0 p-8">
+                      <div className="flex items-center gap-2 text-sm text-primary-foreground/80 mb-2">
+                        {post.published_at && (
+                          <span>{new Date(post.published_at).toLocaleDateString()}</span>
+                        )}
+                        {post.destinations && (
+                          <>
+                            <span>•</span>
+                            <span>{post.destinations.name}</span>
+                          </>
+                        )}
+                      </div>
+                      <h3 className="text-2xl font-bold text-primary-foreground mb-3 group-hover:text-primary transition-colors">
+                        {post.title}
+                      </h3>
+                      {post.excerpt && (
+                        <p className="text-primary-foreground/90 mb-4 line-clamp-2">
+                          {post.excerpt}
+                        </p>
+                      )}
+                      <span className="text-primary font-medium flex items-center gap-2">
+                        Read Full Story
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-primary-foreground mb-3 group-hover:text-primary transition-colors">
-                    We have taken off! Goodbye New York.
-                  </h3>
-                  <p className="text-primary-foreground/90 mb-4">
-                    The bags are packed, the house is rented out. The adventure of a lifetime begins today.
-                  </p>
-                  <span className="text-primary font-medium flex items-center gap-2">
-                    Read Full Story
-                    <ArrowRight className="w-4 h-4" />
-                  </span>
-                </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-2 text-center text-muted-foreground py-12">
+                No featured stories yet. Check back soon!
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
