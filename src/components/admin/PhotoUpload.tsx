@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Loader2 } from "lucide-react";
 import ExifReader from "exifreader";
+import { z } from "zod";
 
 interface PhotoUploadProps {
   destinationId?: string;
@@ -15,6 +16,11 @@ interface PhotoUploadProps {
 export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+
+  const fileSchema = z.object({
+    size: z.number().max(10 * 1024 * 1024, { message: "File size must be less than 10MB" }),
+    type: z.string().regex(/^image\/(jpeg|jpg|png|webp|heic)$/i, { message: "Only JPEG, PNG, WebP, and HEIC images are allowed" })
+  });
 
   const extractExifData = async (file: File) => {
     try {
@@ -58,7 +64,7 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
         height,
       };
     } catch (error) {
-      console.error('Error extracting EXIF data:', error);
+      // EXIF extraction failed - continue without metadata
       return {};
     }
   };
@@ -66,6 +72,22 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    // Validate each file
+    for (const file of Array.from(files)) {
+      try {
+        fileSchema.parse({ size: file.size, type: file.type });
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          toast({
+            variant: "destructive",
+            title: "Validation Error",
+            description: `${file.name}: ${validationError.errors[0].message}`,
+          });
+          return;
+        }
+      }
+    }
 
     setUploading(true);
 
@@ -117,7 +139,6 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
 
       if (onUploadComplete) onUploadComplete();
     } catch (error: any) {
-      console.error('Upload error:', error);
       toast({
         variant: "destructive",
         title: "Upload failed",
@@ -141,14 +162,14 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
                 {uploading ? "Uploading..." : "Click to upload photos"}
               </p>
               <p className="text-sm text-muted-foreground">
-                EXIF data will be extracted automatically
+                Max 10MB per file. JPEG, PNG, WebP, HEIC supported.
               </p>
             </div>
           </div>
           <Input
             id="photo-upload"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic"
             multiple
             onChange={handleFileUpload}
             disabled={uploading}

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,12 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const authSchema = z.object({
+    email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
+    password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(100, { message: "Password must be less than 100 characters" }),
+    fullName: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" })
+  });
 
   useEffect(() => {
     // Check if user is already logged in
@@ -27,6 +34,25 @@ const Auth = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    try {
+      const validationData = isLogin 
+        ? { email, password, fullName: "placeholder" }
+        : { email, password, fullName };
+      
+      authSchema.parse(validationData);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: validationError.errors[0].message,
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -57,14 +83,13 @@ const Auth = () => {
 
         if (signUpError) throw signUpError;
 
-        // Create profile
+        // Create profile (role will be assigned separately by an admin)
         if (data.user) {
           const { error: profileError } = await supabase
             .from("profiles")
             .insert({
               user_id: data.user.id,
               full_name: fullName,
-              role: "admin",
             });
 
           if (profileError) throw profileError;
@@ -136,7 +161,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
 
