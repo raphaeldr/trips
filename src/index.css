@@ -24,7 +24,7 @@ All colors MUST be HSL.
     --popover-foreground: 24 9% 10%;
 
     /* Teal adventure accent */
-    --primary: 72 99.1416% 54.3137%;
+    --primary: 215 16.318% 46.8627%;
     --primary-foreground: 47 100% 96%;
     --primary-glow: 174 62% 67%;
 
@@ -34,7 +34,7 @@ All colors MUST be HSL.
     --muted: 23 5% 82%;
     --muted-foreground: 24 9% 10%;
     --accent: 47 100% 96%;
-    --accent-foreground: 72 99.1416% 54.3137%;
+    --accent-foreground: 215 16.318% 46.8627%;
 
     /* Dark navy footer */
     --footer: 220 40% 15%;
