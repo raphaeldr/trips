@@ -30,9 +30,12 @@ const BlogEditor = () => {
   });
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Only redirect after loading is complete
+    if (loading) return;
+    
+    if (!user) {
       navigate("/auth");
-    } else if (!loading && user && !isAdmin) {
+    } else if (!isAdmin) {
       navigate("/");
     }
   }, [user, isAdmin, loading, navigate]);
