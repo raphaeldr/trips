@@ -162,7 +162,7 @@ const Admin = () => {
             <p className="text-muted-foreground mb-6">
               Write rich multimedia blog posts about your adventures
             </p>
-            <Button className="w-full">
+            <Button className="w-full" onClick={() => navigate("/admin/blog/new")}>
               New Post
             </Button>
           </div>
