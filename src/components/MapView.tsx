@@ -309,7 +309,7 @@ export const MapView = ({ className = "" }: MapViewProps) => {
 
   return (
     <div className={`relative ${className}`}>
-      <div ref={mapContainer} className="absolute inset-0" />
+      <div ref={mapContainer} className="w-full h-full" />
     </div>
   );
 };
