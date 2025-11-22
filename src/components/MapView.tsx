@@ -25,6 +25,7 @@ export const MapView = ({ className = "" }: MapViewProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Fetch destinations
   useEffect(() => {
@@ -34,7 +35,11 @@ export const MapView = ({ className = "" }: MapViewProps) => {
         .select("*")
         .order("arrival_date", { ascending: true });
 
-      if (data && !error) {
+      if (error) {
+        console.error("Error loading destinations", error);
+      }
+
+      if (data) {
         setDestinations(data);
       }
       setLoading(false);
@@ -43,76 +48,94 @@ export const MapView = ({ className = "" }: MapViewProps) => {
     fetchDestinations();
   }, []);
 
-  // Initialize map once the container is mounted
+  // Initialize map once the container is mounted and token is available
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/outdoors-v12",
-      projection: "globe" as any,
-      zoom: 1.5,
-      center: [30, 15],
-      pitch: 45,
-    });
-
-    // Add navigation controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      "top-right"
-    );
-
-    // Disable scroll zoom
-    map.current.scrollZoom.disable();
-
-    // Add atmosphere and fog
-    map.current.on("style.load", () => {
-      map.current?.setFog({
-        color: "rgb(255, 255, 255)",
-        "high-color": "rgb(200, 200, 225)",
-        "horizon-blend": 0.2,
-      });
-    });
-
-    // Globe rotation
-    const secondsPerRevolution = 240;
-    const maxSpinZoom = 5;
-    const slowSpinZoom = 3;
-    let userInteracting = false;
-    let spinEnabled = true;
-
-    function spinGlobe() {
-      if (!map.current) return;
-      
-      const zoom = map.current.getZoom();
-      if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
-        let distancePerSecond = 360 / secondsPerRevolution;
-        if (zoom > slowSpinZoom) {
-          const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
-          distancePerSecond *= zoomDif;
+    const init = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-mapbox-token`);
+        if (!res.ok) {
+          throw new Error("Failed to load map service");
         }
-        const center = map.current.getCenter();
-        center.lng -= distancePerSecond;
-        map.current.easeTo({ center, duration: 1000, easing: (n) => n });
+        const body = await res.json();
+        if (!body.token) {
+          throw new Error("Map token is not configured");
+        }
+
+        mapboxgl.accessToken = body.token;
+
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current!,
+          style: "mapbox://styles/mapbox/outdoors-v12",
+          projection: "globe" as any,
+          zoom: 1.5,
+          center: [30, 15],
+          pitch: 45,
+        });
+
+        // Add navigation controls
+        map.current.addControl(
+          new mapboxgl.NavigationControl({
+            visualizePitch: true,
+          }),
+          "top-right"
+        );
+
+        // Disable scroll zoom
+        map.current.scrollZoom.disable();
+
+        // Add atmosphere and fog
+        map.current.on("style.load", () => {
+          map.current?.setFog({
+            color: "rgb(255, 255, 255)",
+            "high-color": "rgb(200, 200, 225)",
+            "horizon-blend": 0.2,
+          });
+        });
+
+        // Globe rotation
+        const secondsPerRevolution = 240;
+        const maxSpinZoom = 5;
+        const slowSpinZoom = 3;
+        let userInteracting = false;
+        let spinEnabled = true;
+
+        function spinGlobe() {
+          if (!map.current) return;
+          
+          const zoom = map.current.getZoom();
+          if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
+            let distancePerSecond = 360 / secondsPerRevolution;
+            if (zoom > slowSpinZoom) {
+              const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
+              distancePerSecond *= zoomDif;
+            }
+            const center = map.current.getCenter();
+            center.lng -= distancePerSecond;
+            map.current.easeTo({ center, duration: 1000, easing: (n) => n });
+          }
+        }
+
+        map.current.on("mousedown", () => { userInteracting = true; });
+        map.current.on("dragstart", () => { userInteracting = true; });
+        map.current.on("mouseup", () => { userInteracting = false; spinGlobe(); });
+        map.current.on("touchend", () => { userInteracting = false; spinGlobe(); });
+        map.current.on("moveend", () => { spinGlobe(); });
+
+        spinGlobe();
+      } catch (err: any) {
+        console.error("Error initializing map", err);
+        setMapError(err.message || "Failed to load map");
       }
-    }
+    };
 
-    map.current.on("mousedown", () => { userInteracting = true; });
-    map.current.on("dragstart", () => { userInteracting = true; });
-    map.current.on("mouseup", () => { userInteracting = false; spinGlobe(); });
-    map.current.on("touchend", () => { userInteracting = false; spinGlobe(); });
-    map.current.on("moveend", () => { spinGlobe(); });
-
-    spinGlobe();
+    init();
 
     return () => {
       map.current?.remove();
     };
-  }, [loading]);
+  }, []);
 
   // Add markers and routes when destinations load
   useEffect(() => {
@@ -252,6 +275,14 @@ export const MapView = ({ className = "" }: MapViewProps) => {
       }
     };
   }, [destinations]);
+
+  if (mapError) {
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <p className="text-muted-foreground text-sm">{mapError}</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
