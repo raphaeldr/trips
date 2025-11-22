@@ -18,6 +18,21 @@ const Home = () => {
     },
   });
 
+  // Fetch latest photos for homepage
+  const { data: latestPhotos } = useQuery({
+    queryKey: ["latestPhotos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Calculate current day
   const calculateCurrentDay = () => {
     if (!tripSettings) return 124; // fallback
@@ -157,12 +172,20 @@ const Home = () => {
           <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest Snapshots</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div
-                key={i}
-                className="aspect-square bg-gradient-to-br from-primary/10 to-footer/10 rounded-xl overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer hover:scale-105"
-              />
-            ))}
+            {latestPhotos?.map((photo) => {
+              const photoUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+              return (
+                <Link key={photo.id} to="/gallery">
+                  <div className="aspect-square rounded-xl overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer hover:scale-105">
+                    <img
+                      src={photoUrl}
+                      alt={photo.title || photo.ai_caption || "Travel photo"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           <div className="text-center mt-12">
