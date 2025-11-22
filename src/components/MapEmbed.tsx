@@ -112,12 +112,28 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Remove existing route layer
-    if (map.getLayer("route-line")) {
-      map.removeLayer("route-line");
+    // Wait for style to be ready before manipulating layers
+    if (!map.isStyleLoaded()) {
+      map.once('styledata', () => {
+        addDestinationsToMap(map, destinations);
+      });
+      return;
     }
-    if (map.getSource("route")) {
-      map.removeSource("route");
+
+    addDestinationsToMap(map, destinations);
+  }, [destinations, mapLoaded]);
+
+  const addDestinationsToMap = (map: mapboxgl.Map, destinations: Destination[]) => {
+    // Remove existing route layer safely
+    try {
+      if (map.getLayer("route-line")) {
+        map.removeLayer("route-line");
+      }
+      if (map.getSource("route")) {
+        map.removeSource("route");
+      }
+    } catch (error) {
+      console.log("Layer cleanup skipped - style not ready");
     }
 
     // Add route line
@@ -221,7 +237,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       bounds.extend([dest.longitude, dest.latitude]);
     });
     map.fitBounds(bounds, { padding: 80, maxZoom: 4 });
-  }, [destinations, mapLoaded]);
+  };
 
   return <div ref={mapContainer} className={className} />;
 };
