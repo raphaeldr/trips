@@ -9,103 +9,82 @@ import { supabase } from "@/integrations/supabase/client";
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
   // Fetch trip settings for dynamic day counter
-  const {
-    data: tripSettings
-  } = useQuery({
+  const { data: tripSettings } = useQuery({
     queryKey: ["tripSettings"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("trip_settings").select("*").single();
+      const { data, error } = await supabase.from("trip_settings").select("*").single();
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   // Fetch latest photos for homepage
-  const {
-    data: latestPhotos
-  } = useQuery({
+  const { data: latestPhotos } = useQuery({
     queryKey: ["latestPhotos"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("photos").select("*").order("created_at", {
-        ascending: false
-      }).limit(8);
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(8);
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   // Fetch hero image
-  const {
-    data: heroPhoto
-  } = useQuery({
+  const { data: heroPhoto } = useQuery({
     queryKey: ["heroPhoto"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("photos").select("*").eq("is_hero", true).single();
+      const { data, error } = await supabase.from("photos").select("*").eq("is_hero", true).single();
       if (error && error.code !== "PGRST116") throw error;
       return data;
-    }
+    },
   });
 
   // Fetch latest blog posts
-  const {
-    data: featuredPosts
-  } = useQuery({
+  const { data: featuredPosts } = useQuery({
     queryKey: ["latestBlogPosts"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("blog_posts").select("*, destinations(*)").eq("status", "published").order("published_at", {
-        ascending: false
-      }).limit(2);
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*, destinations(*)")
+        .eq("status", "published")
+        .order("published_at", {
+          ascending: false,
+        })
+        .limit(2);
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   // Fetch destination count
-  const {
-    data: destinationCount
-  } = useQuery({
+  const { data: destinationCount } = useQuery({
     queryKey: ["destinationCount"],
     queryFn: async () => {
-      const {
-        count,
-        error
-      } = await supabase.from("destinations").select("*", {
+      const { count, error } = await supabase.from("destinations").select("*", {
         count: "exact",
-        head: true
+        head: true,
       });
       if (error) throw error;
       return count || 0;
-    }
+    },
   });
 
   // Fetch total photo count
-  const {
-    data: photoCount
-  } = useQuery({
+  const { data: photoCount } = useQuery({
     queryKey: ["photoCount"],
     queryFn: async () => {
-      const {
-        count,
-        error
-      } = await supabase.from("photos").select("*", {
+      const { count, error } = await supabase.from("photos").select("*", {
         count: "exact",
-        head: true
+        head: true,
       });
       if (error) throw error;
       return count || 0;
-    }
+    },
   });
 
   // Analyze image brightness and adjust text color
@@ -173,33 +152,35 @@ const Home = () => {
   const totalDays = tripSettings?.total_days || 180;
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
-  return <div className="min-h-screen bg-background">
+  return (
+    <div className="min-h-screen bg-background">
       <Navigation />
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image or Video */}
-        {heroPhoto ? <>
+        {heroPhoto ? (
+          <>
             {heroPhoto.animated_path ? (
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover"
-              >
-                <source 
+              <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
+                <source
                   src={supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl}
                   type="video/mp4"
                 />
               </video>
             ) : (
-              <div className="absolute inset-0 bg-cover bg-center" style={{
-                backgroundImage: `url(${supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl})`
-              }} />
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{
+                  backgroundImage: `url(${supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl})`,
+                }}
+              />
             )}
             <div className="absolute inset-0 bg-black/40" />
-          </> : <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />}
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
+        )}
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-overlay opacity-50" />
@@ -212,25 +193,36 @@ const Home = () => {
             </span>
           </div>
 
-          <h1 className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in" style={{
-          animationDelay: "0.1s"
-        }}>
-            {tagline.split(". ").map((part, i) => <span key={i}>
+          <h1
+            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in"
+            style={{
+              animationDelay: "0.1s",
+            }}
+          >
+            {tagline.split(". ").map((part, i) => (
+              <span key={i}>
                 {part}
                 {i < tagline.split(". ").length - 1 ? "." : ""}
                 {i < tagline.split(". ").length - 1 && <br />}
-              </span>)}
+              </span>
+            ))}
           </h1>
 
-          <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90" style={{
-          animationDelay: "0.2s"
-        }}>
+          <p
+            className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90"
+            style={{
+              animationDelay: "0.2s",
+            }}
+          >
             Join {familyName} as we explore continents, chase sunsets, and learn about the world together.
           </p>
 
-          <div className="flex gap-4 justify-center animate-fade-in" style={{
-          animationDelay: "0.3s"
-        }}>
+          <div
+            className="flex gap-4 justify-center animate-fade-in"
+            style={{
+              animationDelay: "0.3s",
+            }}
+          >
             <Link to="/blog">
               <Button size="lg" className="gap-2 shadow-elegant hover:shadow-xl transition-all">
                 Read journal
@@ -252,35 +244,43 @@ const Home = () => {
           <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest stories</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featuredPosts && featuredPosts.length > 0 ? featuredPosts.map(post => <Link key={post.id} to={`/blog/${post.slug}`}>
+            {featuredPosts && featuredPosts.length > 0 ? (
+              featuredPosts.map((post) => (
+                <Link key={post.id} to={`/blog/${post.slug}`}>
                   <div className="group relative overflow-hidden rounded-2xl shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer">
                     <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-footer/20">
-                      {post.cover_image_url && <img src={post.cover_image_url} alt={post.title} className="w-full h-full object-cover" />}
+                      {post.cover_image_url && (
+                        <img src={post.cover_image_url} alt={post.title} className="w-full h-full object-cover" />
+                      )}
                     </div>
                     <div className="absolute inset-0 bg-gradient-overlay" />
                     <div className="absolute bottom-0 left-0 right-0 p-8">
                       <div className="flex items-center gap-2 text-sm text-primary-foreground/80 mb-2">
                         {post.published_at && <span>{new Date(post.published_at).toLocaleDateString()}</span>}
-                        {post.destinations && <>
+                        {post.destinations && (
+                          <>
                             <span>•</span>
                             <span>{post.destinations.name}</span>
-                          </>}
+                          </>
+                        )}
                       </div>
                       <h3 className="text-2xl font-bold text-primary-foreground mb-3 group-hover:text-primary transition-colors">
                         {post.title}
                       </h3>
-                      {post.excerpt && <p className="text-primary-foreground/90 mb-4 line-clamp-2">
-                          {post.excerpt}
-                        </p>}
+                      {post.excerpt && <p className="text-primary-foreground/90 mb-4 line-clamp-2">{post.excerpt}</p>}
                       <span className="text-primary font-medium flex items-center gap-2">
                         Read Full Story
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     </div>
                   </div>
-                </Link>) : <div className="col-span-2 text-center text-muted-foreground py-12">
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-2 text-center text-muted-foreground py-12">
                 No featured stories yet. Check back soon!
-              </div>}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -292,7 +292,7 @@ const Home = () => {
             <h2 className="text-4xl font-display font-bold text-foreground">Where we've been</h2>
             <Link to="/map">
               <Button variant="outline" className="gap-2">
-                Full Screen map     
+                Full Screen map
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -310,14 +310,20 @@ const Home = () => {
           <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest snapshots</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {latestPhotos?.map(photo => {
-            const photoUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-            return <Link key={photo.id} to="/gallery">
+            {latestPhotos?.map((photo) => {
+              const photoUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+              return (
+                <Link key={photo.id} to="/gallery">
                   <div className="aspect-square rounded-xl overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer hover:scale-105">
-                    <img src={photoUrl} alt={photo.title || photo.ai_caption || "Travel photo"} className="w-full h-full object-cover" />
+                    <img
+                      src={photoUrl}
+                      alt={photo.title || photo.ai_caption || "Travel photo"}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                </Link>;
-          })}
+                </Link>
+              );
+            })}
           </div>
 
           <div className="text-center mt-12">
@@ -336,10 +342,10 @@ const Home = () => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <h3 className="font-display text-2xl font-bold mb-4">Wereldrijst</h3>
+              <h3 className="font-display text-2xl font-bold mb-4">Our trip</h3>
               <p className="text-footer-foreground/70">
-                Documenting our 6-month journey around the globe. Exploring cultures, tasting foods, and
-                creating memories.
+                Documenting our 6-month journey around the globe. Exploring cultures, tasting foods, and creating
+                memories.
               </p>
             </div>
 
@@ -364,7 +370,8 @@ const Home = () => {
             <div>
               <h4 className="font-semibold mb-4">Follow Us</h4>
               <p className="text-footer-foreground/70">
-                Journey stats: {currentDay} days traveled, {destinationCount} countries visited, {photoCount} photos captured
+                Journey stats: <br>{currentDay} days traveled</br>
+                <br>{destinationCount} countries visited</br> <br>{photoCount} photos captured</br>
               </p>
             </div>
           </div>
@@ -374,6 +381,7 @@ const Home = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
 export default Home;
