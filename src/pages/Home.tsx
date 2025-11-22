@@ -218,13 +218,13 @@ const Home = () => {
         }}>
             <Link to="/blog">
               <Button size="lg" className="gap-2 shadow-elegant hover:shadow-xl transition-all">
-                Read Journal
+                Read journal
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link to="/map">
               <Button size="lg" className="gap-2 shadow-elegant hover:shadow-xl transition-all">
-                View Map
+                View map
               </Button>
             </Link>
           </div>
@@ -234,7 +234,7 @@ const Home = () => {
       {/* Featured Stories Section */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-6">
-          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest Stories</h2>
+          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest stories</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {featuredPosts && featuredPosts.length > 0 ? featuredPosts.map(post => <Link key={post.id} to={`/blog/${post.slug}`}>
@@ -274,10 +274,10 @@ const Home = () => {
       <section className="py-24 bg-muted">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-4xl font-display font-bold text-foreground">Where We've Been</h2>
+            <h2 className="text-4xl font-display font-bold text-foreground">Where we've been</h2>
             <Link to="/map">
               <Button variant="outline" className="gap-2">
-                Full Screen Map
+                Full Screen map     
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -292,7 +292,7 @@ const Home = () => {
       {/* Latest Snapshots */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-6">
-          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest Snapshots</h2>
+          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest snapshots</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {latestPhotos?.map(photo => {
@@ -308,7 +308,7 @@ const Home = () => {
           <div className="text-center mt-12">
             <Link to="/gallery">
               <Button size="lg" variant="outline" className="gap-2">
-                View Full Gallery
+                View full gallery
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
