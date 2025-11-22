@@ -130,11 +130,18 @@ const Map = () => {
   useEffect(() => {
     if (!map.current || destinations.length === 0) return;
 
-    map.current.on("load", () => {
+    const addMarkersAndRoutes = () => {
+      if (!map.current) return;
+
+      // Remove existing sources and layers if they exist
+      if (map.current.getLayer("route-arrow")) map.current.removeLayer("route-arrow");
+      if (map.current.getLayer("route")) map.current.removeLayer("route");
+      if (map.current.getSource("route")) map.current.removeSource("route");
+
       // Add route line
       const coordinates = destinations.map(d => [Number(d.longitude), Number(d.latitude)]);
       
-      map.current?.addSource("route", {
+      map.current.addSource("route", {
         type: "geojson",
         data: {
           type: "Feature",
@@ -146,7 +153,7 @@ const Map = () => {
         },
       });
 
-      map.current?.addLayer({
+      map.current.addLayer({
         id: "route",
         type: "line",
         source: "route",
@@ -162,7 +169,7 @@ const Map = () => {
       });
 
       // Add animated line
-      map.current?.addLayer({
+      map.current.addLayer({
         id: "route-arrow",
         type: "line",
         source: "route",
@@ -183,7 +190,7 @@ const Map = () => {
       const animate = () => {
         animationPhase = (animationPhase + 0.01) % 1;
         
-        if (map.current) {
+        if (map.current && map.current.getLayer("route-arrow")) {
           map.current.setPaintProperty("route-arrow", "line-dasharray", [
             0,
             animationPhase * 7,
@@ -240,9 +247,22 @@ const Map = () => {
           (bounds, coord) => bounds.extend(coord as [number, number]),
           new mapboxgl.LngLatBounds(coordinates[0] as [number, number], coordinates[0] as [number, number])
         );
-        map.current?.fitBounds(bounds, { padding: 100, maxZoom: 8 });
+        map.current.fitBounds(bounds, { padding: 100, maxZoom: 8 });
       }
-    });
+    };
+
+    // Check if map is already loaded
+    if (map.current.loaded()) {
+      addMarkersAndRoutes();
+    } else {
+      map.current.on("load", addMarkersAndRoutes);
+    }
+
+    return () => {
+      if (map.current) {
+        map.current.off("load", addMarkersAndRoutes);
+      }
+    };
   }, [destinations]);
 
   // Timeline animation
