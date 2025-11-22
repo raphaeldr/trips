@@ -54,16 +54,20 @@ export const MapView = ({ className = "" }: MapViewProps) => {
 
     const init = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-mapbox-token`);
-        if (!res.ok) {
-          throw new Error("Failed to load map service");
-        }
-        const body = await res.json();
-        if (!body.token) {
-          throw new Error("Map token is not configured");
+        const { data, error } = await supabase.functions.invoke<{ token: string }>(
+          "get-mapbox-token"
+        );
+
+        if (error) {
+          throw error;
         }
 
-        mapboxgl.accessToken = body.token;
+        const token = data?.token;
+        if (!token) {
+          throw new Error("Map service is not configured yet.");
+        }
+
+        mapboxgl.accessToken = token;
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current!,
