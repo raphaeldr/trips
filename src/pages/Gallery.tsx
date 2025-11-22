@@ -125,7 +125,7 @@ const Gallery = () => {
           
           {photos && photos.some(p => !p.ai_tags || p.ai_tags.length === 0) && <Button onClick={handleAutoTagAll} className="gap-2">
               <Sparkles className="w-4 h-4" />
-              Auto-tag All Photos
+              Auto-tag all photos
             </Button>}
         </div>
 
