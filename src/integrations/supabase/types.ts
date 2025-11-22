@@ -171,6 +171,7 @@ export type Database = {
           file_size: number | null
           height: number | null
           id: string
+          is_hero: boolean | null
           latitude: number | null
           longitude: number | null
           mime_type: string | null
@@ -193,6 +194,7 @@ export type Database = {
           file_size?: number | null
           height?: number | null
           id?: string
+          is_hero?: boolean | null
           latitude?: number | null
           longitude?: number | null
           mime_type?: string | null
@@ -215,6 +217,7 @@ export type Database = {
           file_size?: number | null
           height?: number | null
           id?: string
+          is_hero?: boolean | null
           latitude?: number | null
           longitude?: number | null
           mime_type?: string | null

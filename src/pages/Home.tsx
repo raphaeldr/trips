@@ -33,6 +33,21 @@ const Home = () => {
     },
   });
 
+  // Fetch hero image
+  const { data: heroPhoto } = useQuery({
+    queryKey: ["heroPhoto"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .eq("is_hero", true)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      return data;
+    },
+  });
+
   // Calculate current day
   const calculateCurrentDay = () => {
     if (!tripSettings) return 124; // fallback
@@ -56,11 +71,23 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Image - placeholder for now */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
+        {/* Background Image */}
+        {heroPhoto ? (
+          <>
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl})`
+              }}
+            />
+            <div className="absolute inset-0 bg-black/40" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
+        )}
 
         {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-overlay" />
+        <div className="absolute inset-0 bg-gradient-overlay opacity-50" />
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-6 text-center">

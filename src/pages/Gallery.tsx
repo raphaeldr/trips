@@ -181,6 +181,8 @@ const Gallery = () => {
                   takenAt={photo.taken_at}
                   cameraMake={photo.camera_make}
                   cameraModel={photo.camera_model}
+                  isHero={photo.is_hero}
+                  onHeroToggle={refetch}
                 />
               ))}
             </div>
