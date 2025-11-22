@@ -2,6 +2,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -21,7 +24,7 @@ All colors MUST be HSL.
     --popover-foreground: 24 9% 10%;
 
     /* Teal adventure accent */
-    --primary: 37 92% 50%;
+    --primary: 72 99.1416% 54.3137%;
     --primary-foreground: 47 100% 96%;
     --primary-glow: 174 62% 67%;
 
@@ -31,7 +34,7 @@ All colors MUST be HSL.
     --muted: 23 5% 82%;
     --muted-foreground: 24 9% 10%;
     --accent: 47 100% 96%;
-    --accent-foreground: 37 92% 50%;
+    --accent-foreground: 72 99.1416% 54.3137%;
 
     /* Dark navy footer */
     --footer: 220 40% 15%;
