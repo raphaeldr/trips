@@ -2,10 +2,40 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
-  const currentDay = 124; // This will be dynamic later
-  const totalDays = 180;
+  // Fetch trip settings for dynamic day counter
+  const { data: tripSettings } = useQuery({
+    queryKey: ['tripSettings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trip_settings')
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Calculate current day
+  const calculateCurrentDay = () => {
+    if (!tripSettings) return 124; // fallback
+    
+    const startDate = new Date(tripSettings.start_date);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.min(diffDays, tripSettings.total_days);
+  };
+
+  const currentDay = calculateCurrentDay();
+  const totalDays = tripSettings?.total_days || 180;
+  const familyName = tripSettings?.family_name || 'Anderson Family';
+  const tagline = tripSettings?.tagline || 'Six Months. One World. Infinite Memories.';
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,13 +58,16 @@ const Home = () => {
           </div>
           
           <h1 className="font-display text-6xl md:text-8xl font-bold text-foreground mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Six Months. One World.
-            <br />
-            Infinite Memories.
+            {tagline.split('. ').map((part, i) => (
+              <span key={i}>
+                {part}{i < tagline.split('. ').length - 1 ? '.' : ''}
+                {i < tagline.split('. ').length - 1 && <br />}
+              </span>
+            ))}
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Join the Anderson family as we explore continents, chase sunsets, and learn about the world together.
+            Join the {familyName} as we explore continents, chase sunsets, and learn about the world together.
           </p>
           
           <div className="flex gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -144,7 +177,7 @@ const Home = () => {
             <div>
               <h3 className="font-display text-2xl font-bold mb-4">WanderLust</h3>
               <p className="text-footer-foreground/70">
-                Documenting our family's 6-month journey around the globe. Exploring cultures, tasting foods, and creating memories.
+                Documenting the {familyName}'s 6-month journey around the globe. Exploring cultures, tasting foods, and creating memories.
               </p>
             </div>
             
