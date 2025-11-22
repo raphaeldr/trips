@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { MapView } from "@/components/MapView";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -138,10 +139,7 @@ const Home = () => {
           </div>
           
           <div className="aspect-[16/9] bg-secondary rounded-2xl shadow-card overflow-hidden">
-            {/* Map will go here */}
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              Interactive map coming soon
-            </div>
+            <MapView className="w-full h-full" />
           </div>
         </div>
       </section>
