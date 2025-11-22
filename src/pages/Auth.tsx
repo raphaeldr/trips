@@ -117,7 +117,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="font-display text-4xl font-bold text-foreground mb-2">
-            WanderLust
+            Wereldrijst
           </h1>
           <p className="text-muted-foreground">
             {isLogin ? "Welcome back" : "Join the journey"}
