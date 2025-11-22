@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Camera, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Calendar, Camera, Sparkles, Image as ImageIcon } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface PhotoCardProps {
   id: string;
@@ -17,9 +21,12 @@ interface PhotoCardProps {
   takenAt?: string;
   cameraMake?: string;
   cameraModel?: string;
+  isHero?: boolean;
+  onHeroToggle?: () => void;
 }
 
 export const PhotoCard = ({
+  id,
   storagePath,
   title,
   aiCaption,
@@ -29,11 +36,48 @@ export const PhotoCard = ({
   takenAt,
   cameraMake,
   cameraModel,
+  isHero,
+  onHeroToggle,
 }: PhotoCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isTogglingHero, setIsTogglingHero] = useState(false);
+  const { toast } = useToast();
+  const { isAdmin } = useAdminAuth();
 
   const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${storagePath}`;
+
+  const handleSetAsHero = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsTogglingHero(true);
+    
+    try {
+      const { error } = await supabase
+        .from("photos")
+        .update({ is_hero: !isHero })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: isHero ? "Removed from hero" : "Set as hero image",
+        description: isHero 
+          ? "This photo is no longer the hero image" 
+          : "This photo is now displayed on the homepage",
+      });
+
+      if (onHeroToggle) onHeroToggle();
+    } catch (error) {
+      console.error("Error setting hero image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update hero image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTogglingHero(false);
+    }
+  };
 
   return (
     <>
@@ -57,14 +101,20 @@ export const PhotoCard = ({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             
-            {aiTags && aiTags.length > 0 && (
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {isHero && (
+                <Badge variant="default" className="gap-1 bg-primary/90 backdrop-blur-sm">
+                  <ImageIcon className="w-3 h-3" />
+                  Hero
+                </Badge>
+              )}
+              {aiTags && aiTags.length > 0 && (
                 <Badge variant="secondary" className="gap-1 bg-background/90 backdrop-blur-sm">
                   <Sparkles className="w-3 h-3" />
                   AI Tagged
                 </Badge>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
               {aiCaption && (
@@ -92,11 +142,24 @@ export const PhotoCard = ({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="space-y-4">
-            <img
-              src={publicUrl}
-              alt={title || "Travel photo"}
-              className="w-full rounded-lg"
-            />
+            <div className="relative">
+              <img
+                src={publicUrl}
+                alt={title || "Travel photo"}
+                className="w-full rounded-lg"
+              />
+              {isAdmin && (
+                <Button
+                  onClick={handleSetAsHero}
+                  disabled={isTogglingHero}
+                  variant={isHero ? "default" : "outline"}
+                  className="absolute top-4 right-4"
+                >
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  {isHero ? "Hero Image" : "Set as Hero"}
+                </Button>
+              )}
+            </div>
             
             {aiCaption && (
               <div className="space-y-2">
