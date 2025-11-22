@@ -370,8 +370,13 @@ const Home = () => {
             <div>
               <h4 className="font-semibold mb-4">Follow Us</h4>
               <p className="text-footer-foreground/70">
-                Journey stats: <br>{currentDay} days traveled</br>
-                <br>{destinationCount} countries visited</br> <br>{photoCount} photos captured</br>
+                Journey stats:
+                <br />
+                {currentDay} days traveled
+                <br />
+                {destinationCount} countries visited
+                <br />
+                {photoCount} photos captured
               </p>
             </div>
           </div>
