@@ -1,5 +1,5 @@
 import { Navigation } from "@/components/Navigation";
-import { MapView } from "@/components/MapView";
+import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -139,7 +139,7 @@ const Home = () => {
           </div>
           
           <div className="aspect-[16/9] bg-secondary rounded-2xl shadow-card overflow-hidden">
-            <MapView className="w-full h-full" />
+            <MapEmbed className="w-full h-full" />
           </div>
         </div>
       </section>
