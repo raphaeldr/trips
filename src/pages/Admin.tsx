@@ -1,15 +1,15 @@
 import { Navigation } from "@/components/Navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Loader2, Upload, FileText, Image as ImageIcon, MapPin } from "lucide-react";
+import { Loader2, Upload, FileText, Image as ImageIcon, MapPin, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoUpload } from "@/components/admin/PhotoUpload";
 import { useQuery } from "@tanstack/react-query";
 
 const Admin = () => {
-  const { user, loading, signOut } = useAuth();
+  const { user, isAdmin, loading } = useAdminAuth();
   const navigate = useNavigate();
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
 
@@ -37,8 +37,10 @@ const Admin = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+    } else if (!loading && user && !isAdmin) {
+      navigate("/");
     }
-  }, [user, loading, navigate]);
+  }, [user, isAdmin, loading, navigate]);
 
   if (loading) {
     return (
@@ -48,12 +50,20 @@ const Admin = () => {
     );
   }
 
-  if (!user) {
-    return null;
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center p-8">
+          <ShieldAlert className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
   }
 
   const handleSignOut = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     navigate("/");
   };
 
