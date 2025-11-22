@@ -130,11 +130,16 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
           .insert(photoData);
 
         if (dbError) throw dbError;
+
+        // Trigger AI tagging in the background (don't wait for it)
+        supabase.functions.invoke("tag-photo", {
+          body: { photoId: (await supabase.from('photos').select('id').eq('storage_path', fileName).single()).data?.id },
+        }).catch(console.error);
       }
 
       toast({
         title: "Success!",
-        description: `${files.length} photo(s) uploaded successfully.`,
+        description: `${files.length} photo(s) uploaded successfully. AI tagging in progress...`,
       });
 
       if (onUploadComplete) onUploadComplete();
