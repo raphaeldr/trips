@@ -36,6 +36,36 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     });
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.scrollZoom.disable();
+
+    // Auto-rotation
+    const secondsPerRevolution = 240;
+    const maxSpinZoom = 5;
+    const slowSpinZoom = 3;
+    let userInteracting = false;
+
+    function spinGlobe() {
+      if (!mapRef.current) return;
+      const zoom = mapRef.current.getZoom();
+      if (!userInteracting && zoom < maxSpinZoom) {
+        let distancePerSecond = 360 / secondsPerRevolution;
+        if (zoom > slowSpinZoom) {
+          const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
+          distancePerSecond *= zoomDif;
+        }
+        const center = mapRef.current.getCenter();
+        center.lng -= distancePerSecond;
+        mapRef.current.easeTo({ center, duration: 1000, easing: (n) => n });
+      }
+    }
+
+    map.on("mousedown", () => { userInteracting = true; });
+    map.on("dragstart", () => { userInteracting = true; });
+    map.on("mouseup", () => { userInteracting = false; spinGlobe(); });
+    map.on("touchend", () => { userInteracting = false; spinGlobe(); });
+    map.on("moveend", () => { spinGlobe(); });
+
+    spinGlobe();
 
     new mapboxgl.Marker({ color: "#0f766e" })
       .setLngLat([6.1296, 49.8153])
