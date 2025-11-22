@@ -50,16 +50,15 @@ const Home = () => {
     },
   });
 
-  // Fetch featured blog posts
+  // Fetch latest blog posts
   const { data: featuredPosts } = useQuery({
-    queryKey: ["featuredBlogPosts"],
+    queryKey: ["latestBlogPosts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_posts")
         .select("*, destinations(*)")
         .eq("status", "published")
-        .eq("is_featured", true)
-        .order("featured_order", { ascending: true })
+        .order("published_at", { ascending: false })
         .limit(2);
 
       if (error) throw error;
@@ -211,7 +210,7 @@ const Home = () => {
       {/* Featured Stories Section */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-6">
-          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Featured Stories</h2>
+          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-center">Latest Stories</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {featuredPosts && featuredPosts.length > 0 ? (
