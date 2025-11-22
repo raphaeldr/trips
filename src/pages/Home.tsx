@@ -92,8 +92,9 @@ const Home = () => {
 
         const avgBrightness = totalBrightness / (data.length / 4);
         
-        // If average brightness > 128 (midpoint), image is light, use dark text
-        setTextColor(avgBrightness > 128 ? "text-gray-900" : "text-white");
+        // If average brightness > 128 (midpoint), image is light, use darker text
+        // Use softer colors: light gray for dark images, dark gray for light images
+        setTextColor(avgBrightness > 128 ? "text-gray-800" : "text-gray-200");
       } catch (error) {
         console.error("Error analyzing image:", error);
         setTextColor("text-white");
