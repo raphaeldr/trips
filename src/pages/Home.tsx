@@ -124,11 +124,15 @@ const Home = () => {
 
   // Calculate current day
   const calculateCurrentDay = () => {
-    if (!tripSettings) return 124; // fallback
+    if (!tripSettings) return 0; // fallback
 
     const startDate = new Date(tripSettings.start_date);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    
+    // If trip hasn't started yet, return 0
+    if (today < startDate) return 0;
+    
+    const diffTime = today.getTime() - startDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return Math.min(diffDays, tripSettings.total_days);
