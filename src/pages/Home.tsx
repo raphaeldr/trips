@@ -327,7 +327,7 @@ const Home = () => {
             <div>
               <h3 className="font-display text-2xl font-bold mb-4">Wereldrijst</h3>
               <p className="text-footer-foreground/70">
-                Documenting the {familyName}&apos;s 6-month journey around the globe. Exploring cultures, tasting foods, and
+                Documenting our 6-month journey around the globe. Exploring cultures, tasting foods, and
                 creating memories.
               </p>
             </div>
