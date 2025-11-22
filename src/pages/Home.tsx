@@ -185,7 +185,7 @@ const Home = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 hover:bg-primary hover:text-primary-foreground transition-all"
+                className="gap-2 bg-background/80 backdrop-blur-sm border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
               >
                 View Map
               </Button>
