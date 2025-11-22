@@ -10,7 +10,7 @@ export const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <NavLink to="/" className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors">
-            <span className="font-display text-2xl">WanderLust</span>
+            <span className="font-display text-2xl">Wereldrijst</span>
           </NavLink>
           
           <div className="flex items-center gap-8">
