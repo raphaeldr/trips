@@ -46,7 +46,16 @@ serve(async (req) => {
     // Download the image
     const imageResponse = await fetch(publicUrl);
     const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    
+    // Convert to base64 in chunks to avoid stack overflow
+    const uint8Array = new Uint8Array(imageBuffer);
+    const chunkSize = 8192;
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const base64Image = btoa(binary);
 
     // Call Lovable AI for tagging
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
