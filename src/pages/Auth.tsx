@@ -18,9 +18,20 @@ const Auth = () => {
   const { toast } = useToast();
 
   const authSchema = z.object({
-    email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
-    password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(100, { message: "Password must be less than 100 characters" }),
-    fullName: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" })
+    email: z
+      .string()
+      .trim()
+      .email({ message: "Invalid email address" })
+      .max(255, { message: "Email must be less than 255 characters" }),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters" })
+      .max(100, { message: "Password must be less than 100 characters" }),
+    fullName: z
+      .string()
+      .trim()
+      .min(1, { message: "Name is required" })
+      .max(100, { message: "Name must be less than 100 characters" }),
   });
 
   useEffect(() => {
@@ -34,13 +45,11 @@ const Auth = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate inputs
     try {
-      const validationData = isLogin 
-        ? { email, password, fullName: "placeholder" }
-        : { email, password, fullName };
-      
+      const validationData = isLogin ? { email, password, fullName: "placeholder" } : { email, password, fullName };
+
       authSchema.parse(validationData);
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
@@ -85,12 +94,10 @@ const Auth = () => {
 
         // Create profile (role will be assigned separately by an admin)
         if (data.user) {
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .insert({
-              user_id: data.user.id,
-              full_name: fullName,
-            });
+          const { error: profileError } = await supabase.from("profiles").insert({
+            user_id: data.user.id,
+            full_name: fullName,
+          });
 
           if (profileError) throw profileError;
         }
@@ -116,12 +123,8 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-footer/10 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="font-display text-4xl font-bold text-foreground mb-2">
-            Wereldrijst
-          </h1>
-          <p className="text-muted-foreground">
-            {isLogin ? "Welcome back" : "Join the journey"}
-          </p>
+          <h1 className="font-display text-4xl font-bold text-foreground mb-2">Our trip</h1>
+          <p className="text-muted-foreground">{isLogin ? "Welcome back" : "Join the journey"}</p>
         </div>
 
         <div className="bg-card rounded-2xl shadow-elegant p-8">
@@ -165,25 +168,15 @@ const Auth = () => {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
+            <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline">
+              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
           </div>
         </div>
