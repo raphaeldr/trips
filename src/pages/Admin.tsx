@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoUpload } from "@/components/admin/PhotoUpload";
 import { DestinationForm } from "@/components/admin/DestinationForm";
+import { HeroPhotoManager } from "@/components/admin/HeroPhotoManager";
 import { useQuery } from "@tanstack/react-query";
 
 const Admin = () => {
@@ -200,6 +201,17 @@ const Admin = () => {
               </Button>
             )}
           </div>
+        </div>
+
+        <div className="mt-6 bg-card rounded-2xl shadow-card p-8">
+          <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+            <Upload className="w-6 h-6 text-primary" />
+            Hero Photo & Animation
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Set your hero photo and upload an animated MP4 version for the homepage
+          </p>
+          <HeroPhotoManager />
         </div>
       </div>
     </div>
