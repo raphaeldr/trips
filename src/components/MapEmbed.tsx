@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Fetch destinations
   const { data: destinations } = useQuery({
@@ -38,6 +39,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     },
   });
 
+  // Initialize map
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -59,72 +61,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
         "high-color": "rgb(200,200,225)",
         "horizon-blend": 0.2,
       });
-
-      // Add route line if destinations exist
-      if (destinations && destinations.length > 1) {
-        map.addSource("route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: destinations.map(d => [d.longitude, d.latitude]),
-            },
-          },
-        });
-
-        map.addLayer({
-          id: "route-line",
-          type: "line",
-          source: "route",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": "#0f766e",
-            "line-width": 2,
-            "line-dasharray": [2, 2],
-          },
-        });
-
-        // Animate the dash
-        let dashArraySequence = [
-          [0, 4, 3],
-          [0.5, 4, 2.5],
-          [1, 4, 2],
-          [1.5, 4, 1.5],
-          [2, 4, 1],
-          [2.5, 4, 0.5],
-          [3, 4, 0],
-          [0, 0.5, 3, 3.5],
-          [0, 1, 3, 3],
-          [0, 1.5, 3, 2.5],
-          [0, 2, 3, 2],
-          [0, 2.5, 3, 1.5],
-          [0, 3, 3, 1],
-          [0, 3.5, 3, 0.5],
-        ];
-        let step = 0;
-
-        function animateDashArray(timestamp: number) {
-          if (!map.getLayer("route-line")) return;
-          const newStep = parseInt(
-            ((timestamp / 50) % dashArraySequence.length).toString()
-          );
-          if (newStep !== step) {
-            map.setPaintProperty(
-              "route-line",
-              "line-dasharray",
-              dashArraySequence[step]
-            );
-            step = newStep;
-          }
-          requestAnimationFrame(animateDashArray);
-        }
-        animateDashArray(0);
-      }
+      setMapLoaded(true);
     });
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
@@ -159,49 +96,132 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
     spinGlobe();
 
-    // Add markers for destinations
-    if (destinations && destinations.length > 0) {
-      destinations.forEach((dest) => {
-        const el = document.createElement('div');
-        el.style.backgroundColor = dest.is_current ? '#ef4444' : '#0f766e';
-        el.style.width = '20px';
-        el.style.height = '20px';
-        el.style.borderRadius = '50% 50% 50% 0';
-        el.style.transform = 'rotate(-45deg)';
-        el.style.border = '2px solid white';
-        el.style.cursor = 'pointer';
-        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-
-        const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
-          .setHTML(`
-            <div style="padding: 8px;">
-              <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
-              <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
-              ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ''}
-            </div>
-          `);
-
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([dest.longitude, dest.latitude])
-          .setPopup(popup)
-          .addTo(map);
-
-        markersRef.current.push(marker);
-      });
-
-      // Fit bounds to show all destinations
-      const bounds = new mapboxgl.LngLatBounds();
-      destinations.forEach(dest => {
-        bounds.extend([dest.longitude, dest.latitude]);
-      });
-      map.fitBounds(bounds, { padding: 80, maxZoom: 4 });
-    }
-
     return () => {
       markersRef.current = [];
       map.remove();
     };
-  }, [destinations]);
+  }, []);
+
+  // Add destinations when data loads
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !destinations || destinations.length === 0) return;
+
+    const map = mapRef.current;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Remove existing route layer
+    if (map.getLayer("route-line")) {
+      map.removeLayer("route-line");
+    }
+    if (map.getSource("route")) {
+      map.removeSource("route");
+    }
+
+    // Add route line
+    if (destinations.length > 1) {
+      map.addSource("route", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: destinations.map(d => [d.longitude, d.latitude]),
+          },
+        },
+      });
+
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "route",
+        layout: {
+          "line-join": "round",
+          "line-cap": "round",
+        },
+        paint: {
+          "line-color": "#0f766e",
+          "line-width": 2,
+          "line-dasharray": [2, 2],
+        },
+      });
+
+      // Animate the dash
+      let dashArraySequence = [
+        [0, 4, 3],
+        [0.5, 4, 2.5],
+        [1, 4, 2],
+        [1.5, 4, 1.5],
+        [2, 4, 1],
+        [2.5, 4, 0.5],
+        [3, 4, 0],
+        [0, 0.5, 3, 3.5],
+        [0, 1, 3, 3],
+        [0, 1.5, 3, 2.5],
+        [0, 2, 3, 2],
+        [0, 2.5, 3, 1.5],
+        [0, 3, 3, 1],
+        [0, 3.5, 3, 0.5],
+      ];
+      let step = 0;
+
+      function animateDashArray(timestamp: number) {
+        if (!map.getLayer("route-line")) return;
+        const newStep = parseInt(
+          ((timestamp / 50) % dashArraySequence.length).toString()
+        );
+        if (newStep !== step) {
+          map.setPaintProperty(
+            "route-line",
+            "line-dasharray",
+            dashArraySequence[step]
+          );
+          step = newStep;
+        }
+        requestAnimationFrame(animateDashArray);
+      }
+      animateDashArray(0);
+    }
+
+    // Add markers
+    destinations.forEach((dest) => {
+      const el = document.createElement('div');
+      el.style.backgroundColor = dest.is_current ? '#ef4444' : '#0f766e';
+      el.style.width = '20px';
+      el.style.height = '20px';
+      el.style.borderRadius = '50% 50% 50% 0';
+      el.style.transform = 'rotate(-45deg)';
+      el.style.border = '2px solid white';
+      el.style.cursor = 'pointer';
+      el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+        .setHTML(`
+          <div style="padding: 8px;">
+            <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
+            <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
+            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ''}
+          </div>
+        `);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([dest.longitude, dest.latitude])
+        .setPopup(popup)
+        .addTo(map);
+
+      markersRef.current.push(marker);
+    });
+
+    // Fit bounds to show all destinations
+    const bounds = new mapboxgl.LngLatBounds();
+    destinations.forEach(dest => {
+      bounds.extend([dest.longitude, dest.latitude]);
+    });
+    map.fitBounds(bounds, { padding: 80, maxZoom: 4 });
+  }, [destinations, mapLoaded]);
 
   return <div ref={mapContainer} className={className} />;
 };
