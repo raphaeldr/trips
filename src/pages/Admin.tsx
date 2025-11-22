@@ -6,12 +6,14 @@ import { Loader2, Upload, FileText, Image as ImageIcon, MapPin, ShieldAlert } fr
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoUpload } from "@/components/admin/PhotoUpload";
+import { DestinationForm } from "@/components/admin/DestinationForm";
 import { useQuery } from "@tanstack/react-query";
 
 const Admin = () => {
   const { user, isAdmin, loading } = useAdminAuth();
   const navigate = useNavigate();
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [showDestinationForm, setShowDestinationForm] = useState(false);
 
   // Fetch stats
   const { data: stats, refetch: refetchStats } = useQuery({
@@ -186,9 +188,17 @@ const Admin = () => {
             <p className="text-muted-foreground mb-6">
               Track new locations on your journey around the world
             </p>
-            <Button className="w-full">
-              Add Location
-            </Button>
+            
+            {showDestinationForm ? (
+              <DestinationForm onSuccess={() => {
+                setShowDestinationForm(false);
+                refetchStats();
+              }} />
+            ) : (
+              <Button className="w-full" onClick={() => setShowDestinationForm(true)}>
+                Add Location
+              </Button>
+            )}
           </div>
         </div>
       </div>
