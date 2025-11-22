@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,13 +31,95 @@ interface DestinationFormProps {
 
 export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<DestinationFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<DestinationFormData>({
     resolver: zodResolver(destinationSchema),
     defaultValues: {
       is_current: false,
     }
   });
+
+  const name = watch("name");
+  const country = watch("country");
+
+  const getContinent = (countryCode: string): string => {
+    const continentMap: Record<string, string> = {
+      // Europe
+      'GB': 'Europe', 'FR': 'Europe', 'DE': 'Europe', 'IT': 'Europe', 'ES': 'Europe',
+      'PT': 'Europe', 'NL': 'Europe', 'BE': 'Europe', 'CH': 'Europe', 'AT': 'Europe',
+      'SE': 'Europe', 'NO': 'Europe', 'DK': 'Europe', 'FI': 'Europe', 'IE': 'Europe',
+      'PL': 'Europe', 'CZ': 'Europe', 'HU': 'Europe', 'RO': 'Europe', 'GR': 'Europe',
+      // Asia
+      'JP': 'Asia', 'CN': 'Asia', 'KR': 'Asia', 'IN': 'Asia', 'TH': 'Asia',
+      'VN': 'Asia', 'SG': 'Asia', 'MY': 'Asia', 'ID': 'Asia', 'PH': 'Asia',
+      'TR': 'Asia', 'AE': 'Asia', 'SA': 'Asia', 'IL': 'Asia', 'KZ': 'Asia',
+      // North America
+      'US': 'North America', 'CA': 'North America', 'MX': 'North America',
+      // South America
+      'BR': 'South America', 'AR': 'South America', 'CL': 'South America', 
+      'PE': 'South America', 'CO': 'South America', 'EC': 'South America',
+      // Africa
+      'ZA': 'Africa', 'EG': 'Africa', 'MA': 'Africa', 'KE': 'Africa', 'TZ': 'Africa',
+      // Oceania
+      'AU': 'Oceania', 'NZ': 'Oceania', 'FJ': 'Oceania',
+    };
+    return continentMap[countryCode] || 'Unknown';
+  };
+
+  useEffect(() => {
+    const geocodeLocation = async () => {
+      if (!name || !country) return;
+      
+      setIsGeocoding(true);
+      try {
+        const { data: tokenData } = await supabase.functions.invoke('get-mapbox-token');
+        const mapboxToken = tokenData?.token;
+        
+        if (!mapboxToken) {
+          throw new Error("Mapbox token not available");
+        }
+
+        const query = encodeURIComponent(`${name}, ${country}`);
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxToken}&limit=1`
+        );
+        
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          const [longitude, latitude] = data.features[0].center;
+          const context = data.features[0].context || [];
+          
+          // Find country code from context
+          const countryContext = context.find((c: any) => c.id.startsWith('country'));
+          const countryCode = countryContext?.short_code?.toUpperCase();
+          
+          setValue("latitude", latitude.toString());
+          setValue("longitude", longitude.toString());
+          
+          if (countryCode) {
+            setValue("continent", getContinent(countryCode));
+          }
+          
+          toast.success("Location coordinates found!");
+        } else {
+          toast.error("Location not found. Please enter coordinates manually.");
+        }
+      } catch (error) {
+        console.error("Geocoding error:", error);
+        toast.error("Failed to geocode location");
+      } finally {
+        setIsGeocoding(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      geocodeLocation();
+    }, 1000);
+
+    return () => clearTimeout(debounceTimer);
+  }, [name, country, setValue]);
 
   const onSubmit = async (data: DestinationFormData) => {
     setIsSubmitting(true);
@@ -96,11 +178,13 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="continent">Continent</Label>
+          <Label htmlFor="continent">Continent {isGeocoding && "(auto-detecting...)"}</Label>
           <Input
             id="continent"
             {...register("continent")}
             placeholder="e.g., Asia"
+            readOnly
+            className="bg-muted"
           />
           {errors.continent && (
             <p className="text-sm text-destructive mt-1">{errors.continent.message}</p>
@@ -129,13 +213,15 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="latitude">Latitude</Label>
+          <Label htmlFor="latitude">Latitude {isGeocoding && "(auto-detecting...)"}</Label>
           <Input
             id="latitude"
             type="number"
             step="any"
             {...register("latitude")}
             placeholder="e.g., 35.6762"
+            readOnly
+            className="bg-muted"
           />
           {errors.latitude && (
             <p className="text-sm text-destructive mt-1">{errors.latitude.message}</p>
@@ -143,13 +229,15 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="longitude">Longitude</Label>
+          <Label htmlFor="longitude">Longitude {isGeocoding && "(auto-detecting...)"}</Label>
           <Input
             id="longitude"
             type="number"
             step="any"
             {...register("longitude")}
             placeholder="e.g., 139.6503"
+            readOnly
+            className="bg-muted"
           />
           {errors.longitude && (
             <p className="text-sm text-destructive mt-1">{errors.longitude.message}</p>
