@@ -141,15 +141,18 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // Wait for style to be ready before manipulating layers
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => {
+    // Small delay to ensure map is fully ready
+    const timer = setTimeout(() => {
+      if (map.isStyleLoaded()) {
         addDestinationsToMap(map, destinations);
-      });
-      return;
-    }
+      } else {
+        map.once("idle", () => {
+          addDestinationsToMap(map, destinations);
+        });
+      }
+    }, 100);
 
-    addDestinationsToMap(map, destinations);
+    return () => clearTimeout(timer);
   }, [destinations, mapLoaded]);
 
   const addDestinationsToMap = (map: mapboxgl.Map, destinations: Destination[]) => {
