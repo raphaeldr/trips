@@ -215,16 +215,17 @@ const Map = () => {
       markersRef.current.push(marker);
     });
 
-    // Fit bounds to show all destinations
+    // Fly to first destination on load
     if (destinations.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      destinations.forEach((dest) => {
-        bounds.extend([dest.longitude, dest.latitude]);
-      });
-      map.fitBounds(bounds, {
-        padding: 100,
-        maxZoom: 5,
-      });
+      setTimeout(() => {
+        map.flyTo({
+          center: [destinations[0].longitude, destinations[0].latitude],
+          zoom: 6,
+          pitch: 45,
+          duration: 2000,
+          essential: true,
+        });
+      }, 500);
     }
 
     // Calculate total days
@@ -266,6 +267,34 @@ const Map = () => {
       }
     };
   }, [isPlaying, totalDays, destinations]);
+
+  // Fly to destination based on timeline
+  useEffect(() => {
+    if (!mapRef.current || !destinations?.length) return;
+
+    // Calculate which destination corresponds to current day
+    const firstDate = new Date(destinations[0].arrival_date);
+    const currentDate = new Date(firstDate.getTime() + currentDay * 24 * 60 * 60 * 1000);
+
+    let targetDestination = destinations[0];
+    for (const dest of destinations) {
+      const arrivalDate = new Date(dest.arrival_date);
+      if (currentDate >= arrivalDate) {
+        targetDestination = dest;
+      } else {
+        break;
+      }
+    }
+
+    // Fly to the destination
+    mapRef.current.flyTo({
+      center: [targetDestination.longitude, targetDestination.latitude],
+      zoom: 6,
+      pitch: 45,
+      duration: 2000,
+      essential: true,
+    });
+  }, [currentDay, destinations]);
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
