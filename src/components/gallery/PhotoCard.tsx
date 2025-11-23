@@ -188,7 +188,7 @@ export const PhotoCard = ({
               {takenAt && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="w-4 h-4" />
-                  {format(new Date(takenAt), "PPP")}
+                  {format(new Date(takenAt), "d MMMM yyyy")}
                 </div>
               )}
               

@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
   // Fetch trip settings for dynamic day counter
@@ -247,7 +248,7 @@ const Home = () => {
                     <div className="absolute inset-0 bg-gradient-overlay" />
                     <div className="absolute bottom-0 left-0 right-0 p-8">
                       <div className="flex items-center gap-2 text-sm text-primary-foreground/80 mb-2">
-                        {post.published_at && <span>{new Date(post.published_at).toLocaleDateString()}</span>}
+                        {post.published_at && <span>{format(new Date(post.published_at), "d MMMM yyyy")}</span>}
                         {post.destinations && <>
                             <span>•</span>
                             <span>{post.destinations.name}</span>
