@@ -43,77 +43,91 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-
-    const map = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/outdoors-v12",
-      projection: "globe" as any,
-      zoom: 1.2,
-      center: [20, 20],
-      pitch: 0,
-    });
-    mapRef.current = map;
-
-    map.on("style.load", () => {
-      // CHANGED: "Space" Atmosphere configuration
-      map.setFog({
-        color: "rgb(186, 210, 235)", // Lower atmosphere (horizon glow)
-        "high-color": "rgb(36, 92, 223)", // Upper atmosphere (deep blue)
-        "horizon-blend": 0.02, // Crisper horizon line
-        "space-color": "rgb(11, 11, 25)", // Dark background matching space
-        "star-intensity": 0.6, // Adds visible stars in the background
-      });
-      setMapLoaded(true);
-    });
-
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
-    map.scrollZoom.disable();
-
-    // Auto-rotation Logic (Kept exactly as you had it)
-    const secondsPerRevolution = 240;
-    const maxSpinZoom = 5;
-    const slowSpinZoom = 3;
-    let userInteracting = false;
-
-    function spinGlobe() {
-      if (!mapRef.current) return;
-      const zoom = mapRef.current.getZoom();
-      if (!userInteracting && zoom < maxSpinZoom) {
-        let distancePerSecond = 360 / secondsPerRevolution;
-        if (zoom > slowSpinZoom) {
-          const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
-          distancePerSecond *= zoomDif;
-        }
-        const center = mapRef.current.getCenter();
-        center.lng -= distancePerSecond;
-        mapRef.current.easeTo({ center, duration: 1000, easing: (n) => n });
-      }
+    // Gracefully skip map setup on browsers that don't fully support Mapbox GL (older iOS, etc.)
+    if (!mapboxgl.supported({ failIfMajorPerformanceCaveat: true })) {
+      console.warn("Mapbox GL not supported in this browser; skipping embedded map initialization.");
+      return;
     }
 
-    map.on("mousedown", () => {
-      userInteracting = true;
-    });
-    map.on("dragstart", () => {
-      userInteracting = true;
-    });
-    map.on("mouseup", () => {
-      userInteracting = false;
-      spinGlobe();
-    });
-    map.on("touchend", () => {
-      userInteracting = false;
-      spinGlobe();
-    });
-    map.on("moveend", () => {
-      spinGlobe();
-    });
+    mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    spinGlobe();
+    try {
+      const map = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/outdoors-v12",
+        projection: "globe" as any,
+        zoom: 1.2,
+        center: [20, 20],
+        pitch: 0,
+      });
+      mapRef.current = map;
+
+      map.on("style.load", () => {
+        // "Space" Atmosphere configuration
+        map.setFog({
+          color: "rgb(186, 210, 235)", // Lower atmosphere (horizon glow)
+          "high-color": "rgb(36, 92, 223)", // Upper atmosphere (deep blue)
+          "horizon-blend": 0.02, // Crisper horizon line
+          "space-color": "rgb(11, 11, 25)", // Dark background matching space
+          "star-intensity": 0.6, // Adds visible stars in the background
+        });
+        setMapLoaded(true);
+      });
+
+      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+      map.scrollZoom.disable();
+
+      // Auto-rotation Logic (Kept exactly as you had it)
+      const secondsPerRevolution = 240;
+      const maxSpinZoom = 5;
+      const slowSpinZoom = 3;
+      let userInteracting = false;
+
+      function spinGlobe() {
+        if (!mapRef.current) return;
+        const zoom = mapRef.current.getZoom();
+        if (!userInteracting && zoom < maxSpinZoom) {
+          let distancePerSecond = 360 / secondsPerRevolution;
+          if (zoom > slowSpinZoom) {
+            const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
+            distancePerSecond *= zoomDif;
+          }
+          const center = mapRef.current.getCenter();
+          center.lng -= distancePerSecond;
+          mapRef.current.easeTo({ center, duration: 1000, easing: (n) => n });
+        }
+      }
+
+      map.on("mousedown", () => {
+        userInteracting = true;
+      });
+      map.on("dragstart", () => {
+        userInteracting = true;
+      });
+      map.on("mouseup", () => {
+        userInteracting = false;
+        spinGlobe();
+      });
+      map.on("touchend", () => {
+        userInteracting = false;
+        spinGlobe();
+      });
+      map.on("moveend", () => {
+        spinGlobe();
+      });
+
+      spinGlobe();
+    } catch (error) {
+      console.error("Failed to initialize embedded Mapbox map", error);
+    }
 
     return () => {
+      markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-      map.remove();
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, []);
 
