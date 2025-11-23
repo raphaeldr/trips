@@ -54,7 +54,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     try {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/outdoors-v12",
+        style: "mapbox://styles/mapbox/light-v11",
         projection: "globe" as any,
         zoom: 1.2,
         center: [20, 20],
