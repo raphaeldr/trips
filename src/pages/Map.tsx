@@ -272,6 +272,19 @@ const Map = () => {
   useEffect(() => {
     if (!mapRef.current || !destinations?.length) return;
 
+    // If at the end of timeline, show last destination
+    if (currentDay >= totalDays) {
+      const lastDestination = destinations[destinations.length - 1];
+      mapRef.current.flyTo({
+        center: [lastDestination.longitude, lastDestination.latitude],
+        zoom: 6,
+        pitch: 45,
+        duration: 2000,
+        essential: true,
+      });
+      return;
+    }
+
     // Calculate which destination corresponds to current day
     const firstDate = new Date(destinations[0].arrival_date);
     const currentDate = new Date(firstDate.getTime() + currentDay * 24 * 60 * 60 * 1000);
@@ -294,7 +307,7 @@ const Map = () => {
       duration: 2000,
       essential: true,
     });
-  }, [currentDay, destinations]);
+  }, [currentDay, destinations, totalDays]);
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
