@@ -242,8 +242,8 @@ export const MapView = ({ className = "" }: MapViewProps) => {
             <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f172a;">${destination.name}</h3>
             <p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">${destination.country}</p>
             <p style="font-size: 12px; color: #94a3b8;">
-              ${format(new Date(destination.arrival_date), "MMM d, yyyy")}
-              ${destination.departure_date ? ` - ${format(new Date(destination.departure_date), "MMM d, yyyy")}` : " - Present"}
+              ${format(new Date(destination.arrival_date), "d MMMM yyyy")}
+              ${destination.departure_date ? ` - ${format(new Date(destination.departure_date), "d MMMM yyyy")}` : " - Present"}
             </p>
             ${destination.description ? `<p style="font-size: 13px; margin-top: 8px; color: #475569;">${destination.description}</p>` : ""}
             ${destination.is_current ? '<span style="display: inline-block; margin-top: 4px; padding: 2px 8px; background: #ef4444; color: white; border-radius: 12px; font-size: 11px; font-weight: 600;">CURRENT LOCATION</span>' : ""}

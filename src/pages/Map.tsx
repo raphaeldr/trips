@@ -199,8 +199,8 @@ const Map = () => {
             <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
             <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
             <p style="font-size: 12px; color: #888; margin-bottom: 4px;">
-              ${format(new Date(dest.arrival_date), "MMM d, yyyy")}
-              ${dest.departure_date ? ` - ${format(new Date(dest.departure_date), "MMM d, yyyy")}` : " - Present"}
+              ${format(new Date(dest.arrival_date), "d MMMM yyyy")}
+              ${dest.departure_date ? ` - ${format(new Date(dest.departure_date), "d MMMM yyyy")}` : " - Present"}
             </p>
             ${dest.description ? `<p style="font-size: 13px; margin-top: 8px; color: #333;">${dest.description}</p>` : ""}
             ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
@@ -416,8 +416,8 @@ const Map = () => {
                 <p className="text-muted-foreground text-sm mb-3">{dest.country}</p>
 
                 <div className="text-sm text-muted-foreground mb-3">
-                  {format(new Date(dest.arrival_date), "MMM d, yyyy")}
-                  {dest.departure_date && ` - ${format(new Date(dest.departure_date), "MMM d, yyyy")}`}
+                  {format(new Date(dest.arrival_date), "d MMMM yyyy")}
+                  {dest.departure_date && ` - ${format(new Date(dest.departure_date), "d MMMM yyyy")}`}
                   {!dest.departure_date && " - Present"}
                 </div>
 

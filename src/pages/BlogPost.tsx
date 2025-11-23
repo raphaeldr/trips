@@ -92,7 +92,7 @@ const BlogPost = () => {
             {post.published_at && (
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                <span>{format(new Date(post.published_at), "MMMM dd, yyyy")}</span>
+                <span>{format(new Date(post.published_at), "d MMMM yyyy")}</span>
               </div>
             )}
             {post.destinations && (
