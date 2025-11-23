@@ -48,8 +48,7 @@ const Map = () => {
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      projection: "albers" as any,
+      style: "mapbox://styles/mapbox/standard",
       zoom: 2,
       center: [0, 20],
       pitch: 45,
