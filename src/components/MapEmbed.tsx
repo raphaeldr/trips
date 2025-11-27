@@ -13,7 +13,6 @@ interface MapEmbedProps {
 export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Fetch destinations
@@ -75,8 +74,6 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     }
 
     return () => {
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -89,10 +86,6 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     if (!mapRef.current || !mapLoaded || !destinations || destinations.length === 0) return;
 
     const map = mapRef.current;
-
-    // Clear existing markers
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = [];
 
     // Small delay to ensure map is fully ready
     const timer = setTimeout(() => {
@@ -181,33 +174,107 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       animateDashArray(0);
     }
 
-    // Add markers
-    destinations.forEach((dest) => {
-      const el = document.createElement("div");
-      el.style.backgroundColor = dest.is_current ? "#ef4444" : "#0f766e";
-      el.style.width = "20px";
-      el.style.height = "20px";
-      el.style.borderRadius = "50% 50% 50% 0";
-      el.style.transform = "rotate(-45deg)";
-      el.style.border = "2px solid white";
-      el.style.cursor = "pointer";
-      el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+    // Add destination markers as circle layers
+    try {
+      if (map.getSource("destinations-embed")) {
+        map.removeSource("destinations-embed");
+      }
+    } catch (error) {
+      console.log("Source cleanup skipped");
+    }
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
-          <div style="padding: 8px;">
-            <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
-            <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
-            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
-          </div>
-        `);
-
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat([dest.longitude, dest.latitude])
-        .setPopup(popup)
-        .addTo(map);
-
-      markersRef.current.push(marker);
+    map.addSource("destinations-embed", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: destinations.map((dest) => ({
+          type: "Feature",
+          properties: {
+            id: dest.id,
+            name: dest.name,
+            country: dest.country,
+            isCurrent: dest.is_current,
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [dest.longitude, dest.latitude],
+          },
+        })),
+      },
     });
+
+    // Past destinations layer
+    if (!map.getLayer("destinations-embed-past")) {
+      map.addLayer({
+        id: "destinations-embed-past",
+        type: "circle",
+        source: "destinations-embed",
+        filter: ["!", ["get", "isCurrent"]],
+        paint: {
+          "circle-radius": 8,
+          "circle-color": "#0f766e",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+    }
+
+    // Current destination layer
+    if (!map.getLayer("destinations-embed-current")) {
+      map.addLayer({
+        id: "destinations-embed-current",
+        type: "circle",
+        source: "destinations-embed",
+        filter: ["get", "isCurrent"],
+        paint: {
+          "circle-radius": 10,
+          "circle-color": "#ef4444",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+    }
+
+    // Add hover cursor
+    map.on("mouseenter", "destinations-embed-past", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "destinations-embed-past", () => {
+      map.getCanvas().style.cursor = "";
+    });
+    map.on("mouseenter", "destinations-embed-current", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "destinations-embed-current", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
+    // Add popup on click
+    const popup = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: true,
+    });
+
+    const showPopup = (e: mapboxgl.MapMouseEvent) => {
+      if (!e.features || e.features.length === 0) return;
+      
+      const feature = e.features[0];
+      const coordinates = (feature.geometry as any).coordinates.slice();
+      const props = feature.properties as any;
+
+      const html = `
+        <div style="padding: 8px;">
+          <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${props.name}</h3>
+          <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${props.country}</p>
+          ${props.isCurrent ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
+        </div>
+      `;
+
+      popup.setLngLat(coordinates).setHTML(html).addTo(map);
+    };
+
+    map.on("click", "destinations-embed-past", showPopup);
+    map.on("click", "destinations-embed-current", showPopup);
 
     // Fit bounds to show all destinations
     const bounds = new mapboxgl.LngLatBounds();

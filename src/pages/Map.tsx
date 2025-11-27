@@ -14,7 +14,6 @@ import type { Destination } from "@/types";
 const Map = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentDay, setCurrentDay] = useState(0);
   const [totalDays, setTotalDays] = useState(0);
@@ -123,48 +122,103 @@ const Map = () => {
     // Auto-rotation
     setupGlobeRotation(map);
 
-    // Add markers
-    destinations.forEach((dest) => {
-      const el = document.createElement("div");
-      el.className = "marker-pin";
-      el.style.backgroundColor = dest.is_current ? "#ef4444" : "#0f766e";
-      el.style.width = "24px";
-      el.style.height = "24px";
-      el.style.borderRadius = "50% 50% 50% 0";
-      el.style.transform = "rotate(-45deg)";
-      el.style.border = "2px solid white";
-      el.style.cursor = "pointer";
-      el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
-      el.style.transition = "transform 0.2s";
-      el.addEventListener("mouseenter", () => {
-        el.style.transform = "rotate(-45deg) scale(1.2)";
-      });
-      el.addEventListener("mouseleave", () => {
-        el.style.transform = "rotate(-45deg) scale(1)";
-      });
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: false,
-      }).setHTML(`
-          <div style="padding: 8px;">
-            <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
-            <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
-            <p style="font-size: 12px; color: #888; margin-bottom: 4px;">
-              ${format(new Date(dest.arrival_date), "d MMMM yyyy")}
-              ${dest.departure_date ? ` - ${format(new Date(dest.departure_date), "d MMMM yyyy")}` : " - Present"}
-            </p>
-            ${dest.description ? `<p style="font-size: 13px; margin-top: 8px; color: #333;">${dest.description}</p>` : ""}
-            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
-          </div>
-        `);
-      const marker = new mapboxgl.Marker({
-        element: el,
-      })
-        .setLngLat([dest.longitude, dest.latitude])
-        .setPopup(popup)
-        .addTo(map);
-      markersRef.current.push(marker);
+    // Add destination markers as circle layers
+    map.addSource("destinations", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: destinations.map((dest) => ({
+          type: "Feature",
+          properties: {
+            id: dest.id,
+            name: dest.name,
+            country: dest.country,
+            arrivalDate: dest.arrival_date,
+            departureDate: dest.departure_date,
+            description: dest.description,
+            isCurrent: dest.is_current,
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [dest.longitude, dest.latitude],
+          },
+        })),
+      },
     });
+
+    // Past destinations layer
+    map.addLayer({
+      id: "destinations-past",
+      type: "circle",
+      source: "destinations",
+      filter: ["!", ["get", "isCurrent"]],
+      paint: {
+        "circle-radius": 10,
+        "circle-color": "#0f766e",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+
+    // Current destination layer
+    map.addLayer({
+      id: "destinations-current",
+      type: "circle",
+      source: "destinations",
+      filter: ["get", "isCurrent"],
+      paint: {
+        "circle-radius": 12,
+        "circle-color": "#ef4444",
+        "circle-stroke-width": 3,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+
+    // Add hover effect
+    map.on("mouseenter", "destinations-past", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "destinations-past", () => {
+      map.getCanvas().style.cursor = "";
+    });
+    map.on("mouseenter", "destinations-current", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "destinations-current", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
+    // Add popup on click
+    const popup = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: true,
+    });
+
+    const showPopup = (e: mapboxgl.MapMouseEvent) => {
+      if (!e.features || e.features.length === 0) return;
+      
+      const feature = e.features[0];
+      const coordinates = (feature.geometry as any).coordinates.slice();
+      const props = feature.properties as any;
+
+      const html = `
+        <div style="padding: 8px;">
+          <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${props.name}</h3>
+          <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${props.country}</p>
+          <p style="font-size: 12px; color: #888; margin-bottom: 4px;">
+            ${format(new Date(props.arrivalDate), "d MMMM yyyy")}
+            ${props.departureDate ? ` - ${format(new Date(props.departureDate), "d MMMM yyyy")}` : " - Present"}
+          </p>
+          ${props.description ? `<p style="font-size: 13px; margin-top: 8px; color: #333;">${props.description}</p>` : ""}
+          ${props.isCurrent ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
+        </div>
+      `;
+
+      popup.setLngLat(coordinates).setHTML(html).addTo(map);
+    };
+
+    map.on("click", "destinations-past", showPopup);
+    map.on("click", "destinations-current", showPopup);
 
     // Fly to first destination on load
     if (destinations.length > 0) {
@@ -191,7 +245,6 @@ const Map = () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      markersRef.current = [];
       map.remove();
     };
   }, [destinations]);
