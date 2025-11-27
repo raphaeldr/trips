@@ -9,18 +9,8 @@ import { Play, Pause, RotateCcw, MapPin } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-const MAPBOX_TOKEN = "pk.eyJ1IjoicmFwaGFlbGRyIiwiYSI6ImNtaWFjbTlocDByOGsya3M0dHl6MXFqbjAifQ.DFYSs0hNaDHZaRvX3rU4WA";
-interface Destination {
-  id: string;
-  name: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  arrival_date: string;
-  departure_date: string | null;
-  description: string | null;
-  is_current: boolean;
-}
+import { MAPBOX_TOKEN, MAP_CONFIG, setupGlobeRotation } from "@/lib/mapbox";
+import type { Destination } from "@/types";
 const Map = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -131,46 +121,7 @@ const Map = () => {
     map.scrollZoom.disable();
 
     // Auto-rotation
-    const secondsPerRevolution = 240;
-    const maxSpinZoom = 5;
-    const slowSpinZoom = 3;
-    let userInteracting = false;
-    function spinGlobe() {
-      if (!mapRef.current) return;
-      const zoom = mapRef.current.getZoom();
-      if (!userInteracting && zoom < maxSpinZoom) {
-        let distancePerSecond = 360 / secondsPerRevolution;
-        if (zoom > slowSpinZoom) {
-          const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
-          distancePerSecond *= zoomDif;
-        }
-        const center = mapRef.current.getCenter();
-        center.lng -= distancePerSecond;
-        mapRef.current.easeTo({
-          center,
-          duration: 1000,
-          easing: (n) => n,
-        });
-      }
-    }
-    map.on("mousedown", () => {
-      userInteracting = true;
-    });
-    map.on("dragstart", () => {
-      userInteracting = true;
-    });
-    map.on("mouseup", () => {
-      userInteracting = false;
-      spinGlobe();
-    });
-    map.on("touchend", () => {
-      userInteracting = false;
-      spinGlobe();
-    });
-    map.on("moveend", () => {
-      spinGlobe();
-    });
-    spinGlobe();
+    setupGlobeRotation(map);
 
     // Add markers
     destinations.forEach((dest) => {
