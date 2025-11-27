@@ -7,9 +7,27 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import type { Destination } from "@/types";
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
-  // Fetch trip settings for dynamic day counter
+  // Fetch destinations for day counter
+  const {
+    data: destinations
+  } = useQuery({
+    queryKey: ["destinations"],
+    queryFn: async () => {
+      const {
+        data,
+        error
+      } = await supabase.from("destinations").select("*").order("arrival_date", {
+        ascending: true
+      });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch trip settings for dynamic content
   const {
     data: tripSettings
   } = useQuery({
@@ -157,21 +175,28 @@ const Home = () => {
     };
   }, [heroPhoto]);
 
-  // Calculate current day
-  const calculateCurrentDay = () => {
-    if (!tripSettings) return 0; // fallback
+  // Calculate current day and total days from destinations
+  const calculateDays = () => {
+    if (!destinations || destinations.length === 0) return { currentDay: 0, totalDays: 0 };
 
-    const startDate = new Date(tripSettings.start_date);
+    const firstDate = new Date(destinations[0].arrival_date);
+    const lastDest = destinations[destinations.length - 1];
+    const lastDate = lastDest.departure_date ? new Date(lastDest.departure_date) : new Date();
     const today = new Date();
 
-    // If trip hasn't started yet, return 0
-    if (today < startDate) return 0;
-    const diffTime = today.getTime() - startDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.min(diffDays, tripSettings.total_days);
+    // Calculate total days from first arrival to last departure
+    const totalDays = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Calculate current day from first arrival to today
+    if (today < firstDate) return { currentDay: 0, totalDays };
+    const currentDay = Math.min(
+      Math.ceil((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)),
+      totalDays
+    );
+
+    return { currentDay, totalDays };
   };
-  const currentDay = calculateCurrentDay();
-  const totalDays = tripSettings?.total_days || 180;
+  const { currentDay, totalDays } = calculateDays();
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
   return <div className="min-h-screen bg-background">
