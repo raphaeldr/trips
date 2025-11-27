@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { BottomNav } from "@/components/BottomNav";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -109,8 +110,9 @@ const Gallery = () => {
       description: `Successfully tagged ${successCount} of ${untaggedPhotos.length} photos.`
     });
   };
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
+      <BottomNav />
       <div className="pt-20 container mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>

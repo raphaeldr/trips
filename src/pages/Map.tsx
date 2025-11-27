@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Navigation } from "@/components/Navigation";
+import { BottomNav } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -321,8 +322,9 @@ const Map = () => {
   };
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-16 md:pb-0">
         <Navigation />
+        <BottomNav />
         <main className="pt-20 container mx-auto px-6 py-12">
           <div className="flex items-center justify-center h-[600px]">
             <p className="text-muted-foreground">Loading map...</p>
@@ -332,9 +334,10 @@ const Map = () => {
     );
   }
   if (!destinations || destinations.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
+  return (
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <Navigation />
+      <BottomNav />
         <main className="pt-20 container mx-auto px-6 py-12">
           <header className="mb-6">
             <h1 className="text-4xl font-display font-bold text-foreground mb-2">Journey Map</h1>

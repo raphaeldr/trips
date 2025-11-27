@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
+import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -190,8 +191,9 @@ const Home = () => {
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
+      <BottomNav />
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
