@@ -45,21 +45,24 @@ const Map = () => {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current || !destinations?.length) return;
     mapboxgl.accessToken = MAPBOX_TOKEN;
+    const supportsGL = mapboxgl.supported({ failIfMajorPerformanceCaveat: true });
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/standard",
+      style: supportsGL ? "mapbox://styles/mapbox/standard" : "mapbox://styles/mapbox/light-v11",
       zoom: 2,
       center: [0, 20],
-      pitch: 45,
+      pitch: supportsGL ? 45 : 0,
     });
     mapRef.current = map;
 
     map.on("style.load", () => {
-      map.setFog({
-        color: "rgb(255,255,255)",
-        "high-color": "rgb(200,200,225)",
-        "horizon-blend": 0.2,
-      });
+      if (supportsGL) {
+        map.setFog({
+          color: "rgb(255,255,255)",
+          "high-color": "rgb(200,200,225)",
+          "horizon-blend": 0.2,
+        });
+      }
 
       map.addSource("route", {
         type: "geojson",
@@ -205,7 +208,7 @@ const Map = () => {
     const slowSpinZoom = 3;
     let userInteracting = false;
     function spinGlobe() {
-      if (!mapRef.current) return;
+      if (!supportsGL || !mapRef.current) return;
       const zoom = mapRef.current.getZoom();
       if (!userInteracting && zoom < maxSpinZoom) {
         let distancePerSecond = 360 / secondsPerRevolution;
