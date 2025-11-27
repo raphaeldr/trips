@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { BottomNav } from "@/components/BottomNav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -26,8 +27,9 @@ const Blog = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
+      <BottomNav />
       <div className="pt-20 container mx-auto px-6 py-12">
         <h1 className="text-4xl font-display font-bold text-foreground mb-8">
           Travel journal

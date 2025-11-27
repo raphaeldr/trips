@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigation } from "@/components/Navigation";
+import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
@@ -32,8 +33,9 @@ const BlogPost = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-16 md:pb-0">
         <Navigation />
+        <BottomNav />
         <div className="pt-20 container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse space-y-4">
@@ -49,8 +51,9 @@ const BlogPost = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-16 md:pb-0">
         <Navigation />
+        <BottomNav />
         <div className="pt-20 container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl font-display font-bold text-foreground mb-4">
@@ -69,8 +72,9 @@ const BlogPost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
+      <BottomNav />
       <div className="pt-20 container mx-auto px-6 py-12">
         <div className="max-w-4xl mx-auto">
           <Link to="/blog">
