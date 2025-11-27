@@ -175,18 +175,16 @@ const Home = () => {
     };
   }, [heroPhoto]);
 
-  // Calculate days of adventure from first destination to today
+  // Calculate total days of adventure from first to last destination
   const calculateDaysOfAdventure = () => {
     if (!destinations || destinations.length === 0) return 0;
 
     const firstDate = new Date(destinations[0].arrival_date);
-    const today = new Date();
-
-    // If trip hasn't started yet, return 0
-    if (today < firstDate) return 0;
+    const lastDest = destinations[destinations.length - 1];
+    const lastDate = lastDest.departure_date ? new Date(lastDest.departure_date) : new Date();
     
-    // Calculate days from first arrival to today
-    const daysOfAdventure = Math.ceil((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Calculate days from first arrival to last departure
+    const daysOfAdventure = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
     return daysOfAdventure;
   };
   const daysOfAdventure = calculateDaysOfAdventure();
