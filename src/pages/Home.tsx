@@ -109,19 +109,6 @@ const Home = () => {
     }
   });
 
-  // Fetch destinations range to compute dynamic days of adventure
-  const { data: destinationsRange } = useQuery({
-    queryKey: ["destinationsRange"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("destinations")
-        .select("arrival_date, departure_date")
-        .order("arrival_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-  });
-
   // Analyze image brightness and adjust text color
   useEffect(() => {
     if (!heroPhoto) {
@@ -170,15 +157,21 @@ const Home = () => {
     };
   }, [heroPhoto]);
 
-  // Calculate total trip days from first to last destination
-  const tripDays = (() => {
-    if (!destinationsRange || destinationsRange.length === 0) return 0;
-    const firstDate = new Date(destinationsRange[0].arrival_date);
-    const last = destinationsRange[destinationsRange.length - 1];
-    const lastDate = last.departure_date ? new Date(last.departure_date) : new Date();
-    const days = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(days, 0);
-  })();
+  // Calculate current day
+  const calculateCurrentDay = () => {
+    if (!tripSettings) return 0; // fallback
+
+    const startDate = new Date(tripSettings.start_date);
+    const today = new Date();
+
+    // If trip hasn't started yet, return 0
+    if (today < startDate) return 0;
+    const diffTime = today.getTime() - startDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.min(diffDays, tripSettings.total_days);
+  };
+  const currentDay = calculateCurrentDay();
+  const totalDays = tripSettings?.total_days || 180;
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
   return <div className="min-h-screen bg-background">
@@ -203,7 +196,7 @@ const Home = () => {
         <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
           <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in">
             <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
-              {tripDays} days of adventure
+              Day {currentDay} of {totalDays}
             </span>
           </div>
 
@@ -313,7 +306,7 @@ const Home = () => {
           })}
           </div>
 
-          <div className="text-left mt-12">
+          <div className="text-center mt-12">
             <Link to="/gallery">
               <Button size="lg" variant="outline" className="gap-2">
                 View full gallery
@@ -359,7 +352,7 @@ const Home = () => {
               <p className="text-footer-foreground/70">
                 Journey stats:
                 <br />
-                {tripDays} days traveled
+                {currentDay} days traveled
                 <br />
                 {destinationCount} countries visited
                 <br />

@@ -24,6 +24,7 @@ interface Destination {
 const Map = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentDay, setCurrentDay] = useState(0);
   const [totalDays, setTotalDays] = useState(0);
@@ -45,25 +46,24 @@ const Map = () => {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current || !destinations?.length) return;
     mapboxgl.accessToken = MAPBOX_TOKEN;
-    const supportsGL = mapboxgl.supported({ failIfMajorPerformanceCaveat: true });
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: supportsGL ? "mapbox://styles/mapbox/standard" : "mapbox://styles/mapbox/light-v11",
+      style: "mapbox://styles/mapbox/standard",
       zoom: 2,
       center: [0, 20],
-      pitch: supportsGL ? 45 : 0,
+      pitch: 45,
     });
     mapRef.current = map;
 
+    // Globe atmosphere
     map.on("style.load", () => {
-      if (supportsGL) {
-        map.setFog({
-          color: "rgb(255,255,255)",
-          "high-color": "rgb(200,200,225)",
-          "horizon-blend": 0.2,
-        });
-      }
+      map.setFog({
+        color: "rgb(255,255,255)",
+        "high-color": "rgb(200,200,225)",
+        "horizon-blend": 0.2,
+      });
 
+      // Add route line source
       map.addSource("route", {
         type: "geojson",
         data: {
@@ -76,6 +76,7 @@ const Map = () => {
         },
       });
 
+      // Add route line layer (teal)
       map.addLayer({
         id: "route-line",
         type: "line",
@@ -91,6 +92,7 @@ const Map = () => {
         },
       });
 
+      // Animate the dash
       let dashArraySequence = [
         [0, 4, 3],
         [0.5, 4, 2.5],
@@ -117,80 +119,6 @@ const Map = () => {
         requestAnimationFrame(animateDashArray);
       }
       animateDashArray(0);
-
-      const features = destinations.map((d) => ({
-        type: "Feature" as const,
-        properties: {
-          id: d.id,
-          name: d.name,
-          country: d.country,
-          arrival_date: d.arrival_date,
-          departure_date: d.departure_date,
-          description: d.description,
-          is_current: d.is_current,
-        },
-        geometry: {
-          type: "Point" as const,
-          coordinates: [d.longitude, d.latitude],
-        },
-      }));
-
-      map.addSource("destinations", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features },
-      });
-
-      map.addLayer({
-        id: "destinations-circles",
-        type: "circle",
-        source: "destinations",
-        paint: {
-          "circle-color": [
-            "case",
-            ["boolean", ["get", "is_current"], false],
-            "#ef4444",
-            "#0f766e",
-          ],
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            2,
-            4,
-            6,
-            8,
-            10,
-            12,
-          ],
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 2,
-          "circle-opacity": 0.9,
-        },
-      });
-
-      map.on("mouseenter", "destinations-circles", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "destinations-circles", () => {
-        map.getCanvas().style.cursor = "";
-      });
-      map.on("click", "destinations-circles", (e) => {
-        const f = e.features && e.features[0];
-        if (!f) return;
-        const p = f.properties as any;
-        const arrival = p.arrival_date ? format(new Date(p.arrival_date), "d MMMM yyyy") : "";
-        const departure = p.departure_date ? format(new Date(p.departure_date), "d MMMM yyyy") : "Present";
-        const html = `
-          <div style="padding: 8px;">
-            <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${p.name}</h3>
-            <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${p.country}</p>
-            <p style="font-size: 12px; color: #888; margin-bottom: 4px;">${arrival} - ${departure}</p>
-            ${p.description ? `<p style="font-size: 13px; margin-top: 8px; color: #333;">${p.description}</p>` : ""}
-            ${p.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
-          </div>
-        `;
-        new mapboxgl.Popup({ closeButton: false }).setLngLat(e.lngLat).setHTML(html).addTo(map);
-      });
     });
 
     // Navigation controls
@@ -208,7 +136,7 @@ const Map = () => {
     const slowSpinZoom = 3;
     let userInteracting = false;
     function spinGlobe() {
-      if (!supportsGL || !mapRef.current) return;
+      if (!mapRef.current) return;
       const zoom = mapRef.current.getZoom();
       if (!userInteracting && zoom < maxSpinZoom) {
         let distancePerSecond = 360 / secondsPerRevolution;
@@ -244,6 +172,48 @@ const Map = () => {
     });
     spinGlobe();
 
+    // Add markers
+    destinations.forEach((dest) => {
+      const el = document.createElement("div");
+      el.className = "marker-pin";
+      el.style.backgroundColor = dest.is_current ? "#ef4444" : "#0f766e";
+      el.style.width = "24px";
+      el.style.height = "24px";
+      el.style.borderRadius = "50% 50% 50% 0";
+      el.style.transform = "rotate(-45deg)";
+      el.style.border = "2px solid white";
+      el.style.cursor = "pointer";
+      el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+      el.style.transition = "transform 0.2s";
+      el.addEventListener("mouseenter", () => {
+        el.style.transform = "rotate(-45deg) scale(1.2)";
+      });
+      el.addEventListener("mouseleave", () => {
+        el.style.transform = "rotate(-45deg) scale(1)";
+      });
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: false,
+      }).setHTML(`
+          <div style="padding: 8px;">
+            <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
+            <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
+            <p style="font-size: 12px; color: #888; margin-bottom: 4px;">
+              ${format(new Date(dest.arrival_date), "d MMMM yyyy")}
+              ${dest.departure_date ? ` - ${format(new Date(dest.departure_date), "d MMMM yyyy")}` : " - Present"}
+            </p>
+            ${dest.description ? `<p style="font-size: 13px; margin-top: 8px; color: #333;">${dest.description}</p>` : ""}
+            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
+          </div>
+        `);
+      const marker = new mapboxgl.Marker({
+        element: el,
+      })
+        .setLngLat([dest.longitude, dest.latitude])
+        .setPopup(popup)
+        .addTo(map);
+      markersRef.current.push(marker);
+    });
 
     // Fly to first destination on load
     if (destinations.length > 0) {
@@ -270,6 +240,7 @@ const Map = () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+      markersRef.current = [];
       map.remove();
     };
   }, [destinations]);
@@ -348,7 +319,7 @@ const Map = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main className="pt-20 container mx-auto px-6 py-12 pb-20 md:pb-0">
+        <main className="pt-20 container mx-auto px-6 py-12">
           <div className="flex items-center justify-center h-[600px]">
             <p className="text-muted-foreground">Loading map...</p>
           </div>
@@ -360,7 +331,7 @@ const Map = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main className="pt-20 container mx-auto px-6 py-12 pb-20 md:pb-0">
+        <main className="pt-20 container mx-auto px-6 py-12">
           <header className="mb-6">
             <h1 className="text-4xl font-display font-bold text-foreground mb-2">Journey Map</h1>
             <p className="text-muted-foreground">Track your adventures across the globe.</p>
@@ -378,7 +349,7 @@ const Map = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="pt-20 container mx-auto px-6 py-12 pb-20 md:pb-0">
+      <main className="pt-20 container mx-auto px-6 py-12">
         <header className="mb-6">
           <h1 className="text-4xl font-display font-bold text-foreground mb-2">Journey map</h1>
           <p className="text-muted-foreground">

@@ -3,7 +3,6 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoicmFwaGFlbGRyIiwiYSI6ImNtaWFjbTlocDByOGsya3M0dHl6MXFqbjAifQ.DFYSs0hNaDHZaRvX3rU4WA";
 
@@ -17,9 +16,6 @@ interface Destination {
   country: string;
   latitude: number;
   longitude: number;
-  arrival_date: string;
-  departure_date: string | null;
-  description: string | null;
   is_current: boolean;
 }
 
@@ -27,7 +23,6 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const destinationsRef = useRef<Destination[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Fetch destinations
@@ -36,7 +31,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("destinations")
-        .select("id, name, country, latitude, longitude, arrival_date, departure_date, description, is_current")
+        .select("id, name, country, latitude, longitude, is_current")
         .order("arrival_date", { ascending: true });
 
       if (error) throw error;
@@ -59,7 +54,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     try {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/standard",
+        style: "mapbox://styles/mapbox/light-v11",
         projection: "globe" as any,
         zoom: 1.2,
         center: [20, 20],
@@ -70,14 +65,13 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       map.on("style.load", () => {
         // "Space" Atmosphere configuration
         map.setFog({
-          color: "rgb(255,255,255)",
-          "high-color": "rgb(200,200,225)",
-          "horizon-blend": 0.2,
+          color: "rgb(186, 210, 235)", // Lower atmosphere (horizon glow)
+          "high-color": "rgb(36, 92, 223)", // Upper atmosphere (deep blue)
+          "horizon-blend": 0.02, // Crisper horizon line
+          "space-color": "rgb(11, 11, 25)", // Dark background matching space
+          "star-intensity": 0.6, // Adds visible stars in the background
         });
         setMapLoaded(true);
-        if (destinationsRef.current.length > 0) {
-          addDestinationsToMap(map, destinationsRef.current);
-        }
       });
 
       map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
@@ -139,7 +133,6 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
   // Add destinations when data loads
   useEffect(() => {
-    destinationsRef.current = destinations || [];
     if (!mapRef.current || !mapLoaded || !destinations || destinations.length === 0) return;
 
     const map = mapRef.current;
@@ -171,12 +164,6 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       if (map.getSource("route")) {
         map.removeSource("route");
       }
-      if (map.getLayer("destinations-circles")) {
-        map.removeLayer("destinations-circles");
-      }
-      if (map.getSource("destinations")) {
-        map.removeSource("destinations");
-      }
     } catch (error) {
       console.log("Layer cleanup skipped - style not ready");
     }
@@ -205,7 +192,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
         },
         paint: {
           "line-color": "#0f766e",
-          "line-width": 3,
+          "line-width": 2,
           "line-dasharray": [2, 2],
         },
       });
@@ -241,79 +228,32 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       animateDashArray(0);
     }
 
-    // Add destinations as a circle layer (WebGL-rendered markers)
-    const features = destinations.map((d) => ({
-      type: "Feature" as const,
-      properties: {
-        id: d.id,
-        name: d.name,
-        country: d.country,
-        arrival_date: d.arrival_date,
-        departure_date: d.departure_date,
-        description: d.description,
-        is_current: d.is_current,
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [d.longitude, d.latitude],
-      },
-    }));
+    // Add markers
+    destinations.forEach((dest) => {
+      const el = document.createElement("div");
+      el.style.backgroundColor = dest.is_current ? "#ef4444" : "#0f766e";
+      el.style.width = "20px";
+      el.style.height = "20px";
+      el.style.borderRadius = "50% 50% 50% 0";
+      el.style.transform = "rotate(-45deg)";
+      el.style.border = "2px solid white";
+      el.style.cursor = "pointer";
+      el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
 
-    map.addSource("destinations", {
-      type: "geojson",
-      data: { type: "FeatureCollection", features },
-    });
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
+          <div style="padding: 8px;">
+            <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${dest.name}</h3>
+            <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${dest.country}</p>
+            ${dest.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
+          </div>
+        `);
 
-    map.addLayer({
-      id: "destinations-circles",
-      type: "circle",
-      source: "destinations",
-      paint: {
-        "circle-color": [
-          "case",
-          ["boolean", ["get", "is_current"], false],
-          "#ef4444",
-          "#0f766e",
-        ],
-        "circle-radius": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-        ],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 2,
-        "circle-opacity": 0.9,
-      },
-    });
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([dest.longitude, dest.latitude])
+        .setPopup(popup)
+        .addTo(map);
 
-    map.on("mouseenter", "destinations-circles", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", "destinations-circles", () => {
-      map.getCanvas().style.cursor = "";
-    });
-    map.on("click", "destinations-circles", (e) => {
-      const f = e.features && e.features[0];
-      if (!f) return;
-      const p = f.properties as any;
-      const arrival = p.arrival_date ? format(new Date(p.arrival_date), "d MMMM yyyy") : "";
-      const departure = p.departure_date ? format(new Date(p.departure_date), "d MMMM yyyy") : "Present";
-      const html = `
-        <div style="padding: 8px;">
-          <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${p.name}</h3>
-          <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${p.country}</p>
-          <p style="font-size: 12px; color: #888; margin-bottom: 4px;">${arrival} - ${departure}</p>
-          ${p.description ? `<p style=\"font-size: 13px; margin-top: 8px; color: #333;\">${p.description}</p>` : ""}
-          ${p.is_current ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
-        </div>
-      `;
-      new mapboxgl.Popup({ closeButton: false }).setLngLat(e.lngLat).setHTML(html).addTo(map);
+      markersRef.current.push(marker);
     });
 
     // Fit bounds to show all destinations
