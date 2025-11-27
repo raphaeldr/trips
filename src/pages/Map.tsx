@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Navigation } from "@/components/Navigation";
@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, MapPin } from "lucide-react";
+import { Play, Pause, RotateCcw } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -36,43 +36,44 @@ const Map = () => {
 
   // Initialize map
   useEffect(() => {
-    // 1. Safety check
     if (!mapContainer.current || mapRef.current || !destinations?.length) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      // CHANGE: Using 'streets-v12' is much safer than 'standard' for preventing blank screens
       style: "mapbox://styles/mapbox/streets-v12",
       zoom: 2,
       center: [0, 20],
-      pitch: 0, // Start flat to ensure it renders easier
+      pitch: 0,
       cooperativeGestures: true,
-      projection: "globe", // Explicitly enable globe if supported
+      projection: "globe" as any,
     });
     mapRef.current = map;
 
-    // 2. CRITICAL FIX: Force resize slightly after mount to catch layout shifts
+    // CRITICAL FIX: Force resize to prevent blank map on mobile
     const resizeObserver = new ResizeObserver(() => {
       if (map) map.resize();
     });
     resizeObserver.observe(mapContainer.current);
 
-    // Force a resize after 100ms just in case
-    setTimeout(() => {
-      map.resize();
-    }, 100);
+    setTimeout(() => map.resize(), 100);
 
     map.on("load", () => {
       map.resize();
 
-      // Auto-fit bounds
-      const bounds = new mapboxgl.LngLatBounds();
-      destinations.forEach((d) => bounds.extend([d.longitude, d.latitude]));
-      map.fitBounds(bounds, { padding: 50, duration: 1000 });
+      // CHANGE: Zoom in on the first destination immediately
+      if (destinations.length > 0) {
+        const firstDest = destinations[0];
+        map.flyTo({
+          center: [firstDest.longitude, firstDest.latitude],
+          zoom: 4, // Start with a nice overview zoom of the first location
+          speed: 1.5,
+          curve: 1,
+        });
+      }
 
-      // Globe atmosphere (Only works if projection is globe)
+      // Globe atmosphere
       map.setFog({
         color: "rgb(255,255,255)",
         "high-color": "rgb(200,200,225)",
@@ -191,16 +192,13 @@ const Map = () => {
       });
     });
 
-    // Navigation controls
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
     map.scrollZoom.disable();
 
-    // Auto-rotation
     if (typeof setupGlobeRotation === "function") {
       setupGlobeRotation(map);
     }
 
-    // Interactions
     const cursorPointer = () => (map.getCanvas().style.cursor = "pointer");
     const cursorDefault = () => (map.getCanvas().style.cursor = "");
 
@@ -258,10 +256,10 @@ const Map = () => {
           setIsPlaying(false);
           return totalDays;
         }
-        return prev + 1;
+        return prev + 0.5; // Smaller step for smoother animation
       });
       animationRef.current = requestAnimationFrame(() => {
-        setTimeout(animate, 50);
+        setTimeout(animate, 20); // Slightly faster refresh for smoothness
       });
     };
     animate();
@@ -270,13 +268,75 @@ const Map = () => {
     };
   }, [isPlaying, totalDays, destinations]);
 
-  // Fly to destination based on timeline
+  // Fly to destination based on timeline (Interpolation Logic)
   useEffect(() => {
     if (!mapRef.current || !destinations?.length) return;
-    // ... flyTo logic ...
+
+    const firstDate = new Date(destinations[0].arrival_date);
+    const currentDateTimestamp = firstDate.getTime() + currentDay * 24 * 60 * 60 * 1000;
+
+    let targetLng = destinations[0].longitude;
+    let targetLat = destinations[0].latitude;
+
+    // Calculate position along the route
+    for (let i = 0; i < destinations.length - 1; i++) {
+      const curr = destinations[i];
+      const next = destinations[i + 1];
+
+      const currArrival = new Date(curr.arrival_date).getTime();
+      const nextArrival = new Date(next.arrival_date).getTime();
+
+      // If current timeline date is between this destination and the next
+      if (currentDateTimestamp >= currArrival && currentDateTimestamp < nextArrival) {
+        // Check if we are "staying" (before departure) or "moving" (after departure)
+        const currDeparture = curr.departure_date ? new Date(curr.departure_date).getTime() : currArrival; // If no departure date, assume we leave immediately (or change logic to +1 day)
+
+        if (currentDateTimestamp <= currDeparture) {
+          // We are staying at the current location
+          targetLng = curr.longitude;
+          targetLat = curr.latitude;
+        } else {
+          // We are travelling between curr and next
+          const travelTime = nextArrival - currDeparture;
+          const timeTraveled = currentDateTimestamp - currDeparture;
+
+          // Avoid division by zero
+          if (travelTime > 0) {
+            const progress = timeTraveled / travelTime;
+            // Linear Interpolation (Lerp)
+            targetLng = curr.longitude + (next.longitude - curr.longitude) * progress;
+            targetLat = curr.latitude + (next.latitude - curr.latitude) * progress;
+          }
+        }
+        break;
+      }
+    }
+
+    // If we are past the last destination, lock to the last one
+    const lastDest = destinations[destinations.length - 1];
+    const lastArrival = new Date(lastDest.arrival_date).getTime();
+    if (currentDateTimestamp >= lastArrival) {
+      targetLng = lastDest.longitude;
+      targetLat = lastDest.latitude;
+    }
+
+    // Smoothly pan to the calculated position
+    mapRef.current.easeTo({
+      center: [targetLng, targetLat],
+      zoom: 4,
+      duration: 100, // Fast duration for smooth continuous movement
+      easing: (t) => t, // Linear easing
+    });
   }, [currentDay, destinations, totalDays]);
 
-  const handlePlayPause = () => setIsPlaying(!isPlaying);
+  const handlePlayPause = () => {
+    // Auto-rewind if at the end
+    if (!isPlaying && currentDay >= totalDays) {
+      setCurrentDay(0);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   const handleReset = () => {
     setIsPlaying(false);
     setCurrentDay(0);
@@ -310,7 +370,6 @@ const Map = () => {
 
         {/* Map Section */}
         <section className="rounded-xl md:rounded-2xl shadow-card overflow-hidden mb-8 border border-border">
-          {/* Added bg-muted to verify container visibility */}
           <div className="relative w-full h-[50vh] md:h-[600px] bg-muted">
             <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
           </div>
@@ -336,7 +395,7 @@ const Map = () => {
               />
 
               <div className="text-xs md:text-sm font-medium text-muted-foreground shrink-0 min-w-[80px] text-right">
-                Day {currentDay} / {totalDays}
+                Day {Math.floor(currentDay)} / {totalDays}
               </div>
             </div>
           </div>
