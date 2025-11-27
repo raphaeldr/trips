@@ -3,20 +3,11 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-
-const MAPBOX_TOKEN = "pk.eyJ1IjoicmFwaGFlbGRyIiwiYSI6ImNtaWFjbTlocDByOGsya3M0dHl6MXFqbjAifQ.DFYSs0hNaDHZaRvX3rU4WA";
+import { MAPBOX_TOKEN, MAP_CONFIG, setupGlobeRotation } from "@/lib/mapbox";
+import type { Destination } from "@/types";
 
 interface MapEmbedProps {
   className?: string;
-}
-
-interface Destination {
-  id: string;
-  name: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  is_current: boolean;
 }
 
 export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
@@ -63,13 +54,13 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       mapRef.current = map;
 
       map.on("style.load", () => {
-        // "Space" Atmosphere configuration
+        const spaceFog = MAP_CONFIG.spaceFog;
         map.setFog({
-          color: "rgb(186, 210, 235)", // Lower atmosphere (horizon glow)
-          "high-color": "rgb(36, 92, 223)", // Upper atmosphere (deep blue)
-          "horizon-blend": 0.02, // Crisper horizon line
-          "space-color": "rgb(11, 11, 25)", // Dark background matching space
-          "star-intensity": 0.6, // Adds visible stars in the background
+          color: spaceFog.color,
+          "high-color": spaceFog.highColor,
+          "horizon-blend": spaceFog.horizonBlend,
+          "space-color": spaceFog.spaceColor,
+          "star-intensity": spaceFog.starIntensity,
         });
         setMapLoaded(true);
       });
@@ -77,46 +68,8 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
       map.scrollZoom.disable();
 
-      // Auto-rotation Logic (Kept exactly as you had it)
-      const secondsPerRevolution = 240;
-      const maxSpinZoom = 5;
-      const slowSpinZoom = 3;
-      let userInteracting = false;
-
-      function spinGlobe() {
-        if (!mapRef.current) return;
-        const zoom = mapRef.current.getZoom();
-        if (!userInteracting && zoom < maxSpinZoom) {
-          let distancePerSecond = 360 / secondsPerRevolution;
-          if (zoom > slowSpinZoom) {
-            const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
-            distancePerSecond *= zoomDif;
-          }
-          const center = mapRef.current.getCenter();
-          center.lng -= distancePerSecond;
-          mapRef.current.easeTo({ center, duration: 1000, easing: (n) => n });
-        }
-      }
-
-      map.on("mousedown", () => {
-        userInteracting = true;
-      });
-      map.on("dragstart", () => {
-        userInteracting = true;
-      });
-      map.on("mouseup", () => {
-        userInteracting = false;
-        spinGlobe();
-      });
-      map.on("touchend", () => {
-        userInteracting = false;
-        spinGlobe();
-      });
-      map.on("moveend", () => {
-        spinGlobe();
-      });
-
-      spinGlobe();
+      // Auto-rotation
+      setupGlobeRotation(map);
     } catch (error) {
       console.error("Failed to initialize embedded Mapbox map", error);
     }
