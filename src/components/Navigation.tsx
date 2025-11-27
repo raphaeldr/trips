@@ -16,7 +16,7 @@ export const Navigation = () => {
             <span className="font-display text-2xl">Our trip</span>
           </NavLink>
 
-          <div className="flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8">
             <NavLink
               to="/"
               end
