@@ -273,7 +273,7 @@ const Home = () => {
                       <h3 className="text-2xl font-bold text-primary-foreground mb-3 group-hover:text-primary transition-colors">
                         {post.title}
                       </h3>
-                      {post.excerpt && <p className="text-primary-foreground/90 mb-4 line-clamp-2">{post.excerpt}</p>}
+                      {post.excerpt && <p className="hidden md:block text-primary-foreground/90 mb-4 line-clamp-2">{post.excerpt}</p>}
                       <span className="text-primary font-medium flex items-center gap-2">
                         Read Full Story
                         <ArrowRight className="w-4 h-4" />
