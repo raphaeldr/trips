@@ -175,28 +175,21 @@ const Home = () => {
     };
   }, [heroPhoto]);
 
-  // Calculate current day and total days from destinations
-  const calculateDays = () => {
-    if (!destinations || destinations.length === 0) return { currentDay: 0, totalDays: 0 };
+  // Calculate days of adventure from first destination to today
+  const calculateDaysOfAdventure = () => {
+    if (!destinations || destinations.length === 0) return 0;
 
     const firstDate = new Date(destinations[0].arrival_date);
-    const lastDest = destinations[destinations.length - 1];
-    const lastDate = lastDest.departure_date ? new Date(lastDest.departure_date) : new Date();
     const today = new Date();
 
-    // Calculate total days from first arrival to last departure
-    const totalDays = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    // Calculate current day from first arrival to today
-    if (today < firstDate) return { currentDay: 0, totalDays };
-    const currentDay = Math.min(
-      Math.ceil((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)),
-      totalDays
-    );
-
-    return { currentDay, totalDays };
+    // If trip hasn't started yet, return 0
+    if (today < firstDate) return 0;
+    
+    // Calculate days from first arrival to today
+    const daysOfAdventure = Math.ceil((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOfAdventure;
   };
-  const { currentDay, totalDays } = calculateDays();
+  const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
   return <div className="min-h-screen bg-background">
@@ -221,7 +214,7 @@ const Home = () => {
         <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
           <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in">
             <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
-              Day {currentDay} of {totalDays}
+              {daysOfAdventure} days of adventure
             </span>
           </div>
 
@@ -377,7 +370,7 @@ const Home = () => {
               <p className="text-footer-foreground/70">
                 Journey stats:
                 <br />
-                {currentDay} days traveled
+                {daysOfAdventure} days traveled
                 <br />
                 {destinationCount} countries visited
                 <br />
