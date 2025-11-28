@@ -8,7 +8,6 @@ import { supabase } from "../integrations/supabase/client";
 import { PhotoUpload } from "../components/admin/PhotoUpload";
 import { PhotoManager } from "../components/admin/PhotoManager";
 import { DestinationForm } from "../components/admin/DestinationForm";
-import { HeroPhotoManager } from "../components/admin/HeroPhotoManager";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -126,19 +125,61 @@ const Admin = () => {
         </div>
 
         {/* Main Content Area with Tabs */}
-        <Tabs defaultValue="content" className="space-y-6">
+        <Tabs defaultValue="media" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:w-[400px] h-auto p-1">
-            <TabsTrigger value="content" className="py-2 gap-2">
-              <LayoutDashboard className="w-4 h-4" />
-              Content & Trips
-            </TabsTrigger>
             <TabsTrigger value="media" className="py-2 gap-2">
               <ImageIcon className="w-4 h-4" />
               Photos & Media
             </TabsTrigger>
+            <TabsTrigger value="content" className="py-2 gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Content & Trips
+            </TabsTrigger>
           </TabsList>
 
-          {/* TAB 1: Content & Trips */}
+          {/* TAB 1: Photos & Media */}
+          <TabsContent value="media" className="space-y-6 animate-in fade-in-50 duration-500">
+            {/* Upload Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-primary" />
+                  Upload Photos
+                </CardTitle>
+                <CardDescription>
+                  Upload high-quality photos from your travels. Supports EXIF data extraction.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {showPhotoUpload ? (
+                  <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                    <PhotoUpload
+                      onUploadComplete={() => {
+                        setShowPhotoUpload(false);
+                        refetchStats();
+                      }}
+                    />
+                    <Button variant="ghost" size="sm" className="mt-4 w-full" onClick={() => setShowPhotoUpload(false)}>
+                      Hide Uploader
+                    </Button>
+                  </div>
+                ) : (
+                  <Button className="w-full" onClick={() => setShowPhotoUpload(true)}>
+                    Open Uploader
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Media Library - Full Width */}
+            <Card>
+              <CardContent className="p-6">
+                <PhotoManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB 2: Content & Trips */}
           <TabsContent value="content" className="space-y-6 animate-in fade-in-50 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Blog Post Section */}
@@ -189,67 +230,6 @@ const Admin = () => {
                       Add New Location
                     </Button>
                   )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* TAB 2: Photos & Media */}
-          <TabsContent value="media" className="space-y-6 animate-in fade-in-50 duration-500">
-            {/* Upload Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-primary" />
-                  Upload Photos
-                </CardTitle>
-                <CardDescription>
-                  Upload high-quality photos from your travels. Supports EXIF data extraction.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {showPhotoUpload ? (
-                  <div className="bg-muted/30 p-4 rounded-lg border border-border">
-                    <PhotoUpload
-                      onUploadComplete={() => {
-                        setShowPhotoUpload(false);
-                        refetchStats();
-                      }}
-                    />
-                    <Button variant="ghost" size="sm" className="mt-4 w-full" onClick={() => setShowPhotoUpload(false)}>
-                      Hide Uploader
-                    </Button>
-                  </div>
-                ) : (
-                  <Button className="w-full" onClick={() => setShowPhotoUpload(true)}>
-                    Open Uploader
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {/* Hero Photo Manager */}
-              <Card className="h-fit">
-                <CardHeader>
-                  <CardTitle>Hero Photo & Animation</CardTitle>
-                  <CardDescription>Select the main photo for your homepage and add motion effects.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <HeroPhotoManager />
-                </CardContent>
-              </Card>
-
-              {/* Photo Captions Manager */}
-              <Card className="h-fit">
-                <CardHeader>
-                  <CardTitle>Photo Captions</CardTitle>
-                  <CardDescription>Manage captions and details for your gallery photos.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="max-h-[600px] overflow-y-auto pr-2">
-                    <PhotoManager />
-                  </div>
                 </CardContent>
               </Card>
             </div>
