@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Camera, Sparkles, Image as ImageIcon } from "lucide-react";
+import { MapPin, Calendar, Camera, Image as ImageIcon } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,8 +14,6 @@ interface PhotoCardProps {
   storagePath: string;
   title?: string;
   description?: string;
-  aiCaption?: string;
-  aiTags?: string[];
   latitude?: number;
   longitude?: number;
   takenAt?: string;
@@ -29,8 +27,7 @@ export const PhotoCard = ({
   id,
   storagePath,
   title,
-  aiCaption,
-  aiTags,
+  description,
   latitude,
   longitude,
   takenAt,
@@ -108,81 +105,47 @@ export const PhotoCard = ({
                   Hero
                 </Badge>
               )}
-              {aiTags && aiTags.length > 0 && (
-                <Badge variant="secondary" className="gap-1 bg-background/90 backdrop-blur-sm">
-                  <Sparkles className="w-3 h-3" />
-                  AI Tagged
-                </Badge>
-              )}
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-              {aiCaption && (
-                <p className="text-white text-sm font-medium mb-2 line-clamp-2">
-                  {aiCaption}
+            {description && (
+              <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent">
+                <p className="text-white text-sm font-medium line-clamp-2">
+                  {description}
                 </p>
-              )}
-              <div className="flex flex-wrap gap-1">
-                {aiTags?.slice(0, 3).map((tag, idx) => (
-                  <Badge key={idx} variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-                    {tag}
-                  </Badge>
-                ))}
-                {aiTags && aiTags.length > 3 && (
-                  <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-                    +{aiTags.length - 3}
-                  </Badge>
-                )}
               </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="space-y-4">
-            <div className="relative">
-              <img
-                src={publicUrl}
-                alt={title || "Travel photo"}
-                className="w-full rounded-lg"
-              />
-              {isAdmin && (
-                <Button
-                  onClick={handleSetAsHero}
-                  disabled={isTogglingHero}
-                  variant={isHero ? "default" : "outline"}
-                  className="absolute top-4 right-4"
-                >
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  {isHero ? "Hero Image" : "Set as Hero"}
-                </Button>
-              )}
-            </div>
-            
-            {aiCaption && (
-              <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  AI Caption
-                </h3>
-                <p className="text-muted-foreground">{aiCaption}</p>
+            <div className="space-y-4">
+              <div className="relative">
+                <img
+                  src={publicUrl}
+                  alt={title || "Travel photo"}
+                  className="w-full rounded-lg"
+                />
+                {isAdmin && (
+                  <Button
+                    onClick={handleSetAsHero}
+                    disabled={isTogglingHero}
+                    variant={isHero ? "default" : "outline"}
+                    className="absolute top-4 right-4"
+                  >
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    {isHero ? "Hero Image" : "Set as Hero"}
+                  </Button>
+                )}
               </div>
-            )}
-
-            {aiTags && aiTags.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {aiTags.map((tag, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
+              
+              {description && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Caption</h3>
+                  <p className="text-muted-foreground">{description}</p>
                 </div>
-              </div>
-            )}
+              )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
               {takenAt && (

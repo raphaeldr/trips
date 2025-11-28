@@ -6,6 +6,7 @@ import { Loader2, Upload, FileText, Image as ImageIcon, MapPin, ShieldAlert } fr
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoUpload } from "@/components/admin/PhotoUpload";
+import { PhotoManager } from "@/components/admin/PhotoManager";
 import { DestinationForm } from "@/components/admin/DestinationForm";
 import { HeroPhotoManager } from "@/components/admin/HeroPhotoManager";
 import { useQuery } from "@tanstack/react-query";
@@ -140,7 +141,7 @@ const Admin = () => {
               Upload Photos
             </h2>
             <p className="text-muted-foreground mb-6">
-              Upload photos with automatic EXIF data extraction and AI-powered tagging
+              Upload photos with automatic EXIF data extraction
             </p>
             
             {showPhotoUpload ? (
@@ -212,6 +213,10 @@ const Admin = () => {
             Set your hero photo and upload an animated MP4 version for the homepage
           </p>
           <HeroPhotoManager />
+        </div>
+
+        <div className="mt-6 bg-card rounded-2xl shadow-card p-8">
+          <PhotoManager />
         </div>
       </div>
     </div>
