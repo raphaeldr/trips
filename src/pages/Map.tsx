@@ -10,7 +10,7 @@ import { Play, Pause, RotateCcw } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { MAPBOX_TOKEN, setupGlobeRotation } from "@/lib/mapbox";
+import { MAPBOX_TOKEN } from "@/lib/mapbox";
 import type { Destination } from "@/types";
 
 const Map = () => {
@@ -195,9 +195,7 @@ const Map = () => {
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
     map.scrollZoom.disable();
 
-    if (typeof setupGlobeRotation === "function") {
-      setupGlobeRotation(map);
-    }
+    // REMOVED: setupGlobeRotation(map) call to stop spinning
 
     const cursorPointer = () => (map.getCanvas().style.cursor = "pointer");
     const cursorDefault = () => (map.getCanvas().style.cursor = "");
