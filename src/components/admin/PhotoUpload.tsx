@@ -2,75 +2,77 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import ExifReader from "exifreader";
 import { z } from "zod";
 
 interface PhotoUploadProps {
-  destinationId?: string;
   onUploadComplete?: () => void;
 }
 
-export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProps) => {
+export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
   const [uploading, setUploading] = useState(false);
-  const [uploadingAnimated, setUploadingAnimated] = useState(false);
+  const [selectedDestId, setSelectedDestId] = useState<string>("none");
   const { toast } = useToast();
+
+  const { data: destinations } = useQuery({
+    queryKey: ["destinations-upload-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("destinations")
+        .select("id, name, country")
+        .order("arrival_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const fileSchema = z.object({
     size: z.number().max(10 * 1024 * 1024, { message: "File size must be less than 10MB" }),
-    type: z.string().regex(/^image\/(jpeg|jpg|png|webp|heic)$/i, { message: "Only JPEG, PNG, WebP, and HEIC images are allowed" })
-  });
-
-  const animatedFileSchema = z.object({
-    size: z.number().max(50 * 1024 * 1024, { message: "Animated file size must be less than 50MB" }),
-    type: z.string().regex(/^(video\/(mp4|webm)|image\/(gif|webp))$/i, { message: "Only MP4, WebM video or GIF/WebP animations are allowed" })
+    type: z
+      .string()
+      .regex(/^image\/(jpeg|jpg|png|webp|heic)$/i, { message: "Only JPEG, PNG, WebP, and HEIC images are allowed" }),
   });
 
   const extractExifData = async (file: File) => {
     try {
       const tags = await ExifReader.load(file);
-      
-      // Extract GPS coordinates
+
       let latitude = null;
       let longitude = null;
-      
+
       if (tags.GPSLatitude && tags.GPSLongitude) {
-        const latRef = tags.GPSLatitudeRef?.description || 'N';
-        const lonRef = tags.GPSLongitudeRef?.description || 'E';
-        
+        const latRef = tags.GPSLatitudeRef?.description || "N";
+        const lonRef = tags.GPSLongitudeRef?.description || "E";
+
         latitude = tags.GPSLatitude.description;
         longitude = tags.GPSLongitude.description;
-        
-        if (latRef === 'S') latitude = -latitude;
-        if (lonRef === 'W') longitude = -longitude;
+
+        if (latRef === "S") latitude = -latitude;
+        if (lonRef === "W") longitude = -longitude;
       }
 
-      // Extract date taken
-      const dateTaken = tags.DateTimeOriginal?.description || 
-                       tags.DateTime?.description || 
-                       null;
+      const dateTaken = tags.DateTimeOriginal?.description || tags.DateTime?.description || null;
 
-      // Extract camera info
       const cameraMake = tags.Make?.description || null;
       const cameraModel = tags.Model?.description || null;
-
-      // Image dimensions
       const width = tags.ImageWidth?.value || null;
       const height = tags.ImageHeight?.value || null;
 
       return {
         latitude,
         longitude,
-        taken_at: dateTaken ? new Date(dateTaken.replace(/:/g, '-').replace(' ', 'T')) : null,
+        taken_at: dateTaken ? new Date(dateTaken.replace(/:/g, "-").replace(" ", "T")) : null,
         camera_make: cameraMake,
         camera_model: cameraModel,
         width,
         height,
       };
     } catch (error) {
-      // EXIF extraction failed - continue without metadata
       return {};
     }
   };
@@ -79,7 +81,6 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate each file
     for (const file of Array.from(files)) {
       try {
         fileSchema.parse({ size: file.size, type: file.type });
@@ -98,42 +99,32 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
     setUploading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
       for (const file of Array.from(files)) {
-        // Extract EXIF data
         const exifData = await extractExifData(file);
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        // Upload to storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('photos')
-          .upload(fileName, file);
+        const { error: uploadError } = await supabase.storage.from("photos").upload(fileName, file);
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('photos')
-          .getPublicUrl(fileName);
-
-        // Save to database with EXIF data
         const photoData: any = {
           user_id: user.id,
-          destination_id: destinationId || null,
+          destination_id: selectedDestId === "none" ? null : selectedDestId,
           storage_path: fileName,
           title: file.name,
           mime_type: file.type,
           file_size: file.size,
+          description: null, // Removed caption/description logic
           ...exifData,
         };
 
-        const { error: dbError } = await supabase
-          .from('photos')
-          .insert(photoData);
+        const { error: dbError } = await supabase.from("photos").insert(photoData);
 
         if (dbError) throw dbError;
       }
@@ -144,7 +135,10 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
       });
 
       if (onUploadComplete) onUploadComplete();
+      // Reset input value to allow re-uploading same file if needed
+      e.target.value = "";
     } catch (error: any) {
+      console.error(error);
       toast({
         variant: "destructive",
         title: "Upload failed",
@@ -155,66 +149,30 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
     }
   };
 
-  const handleAnimatedUpload = async (e: React.ChangeEvent<HTMLInputElement>, photoId: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      animatedFileSchema.parse({ size: file.size, type: file.type });
-    } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        toast({
-          variant: "destructive",
-          title: "Validation Error",
-          description: validationError.errors[0].message,
-        });
-        return;
-      }
-    }
-
-    setUploadingAnimated(true);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/animated/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { error: updateError } = await supabase
-        .from('photos')
-        .update({ animated_path: fileName })
-        .eq('id', photoId);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Success!",
-        description: "Animated version uploaded successfully",
-      });
-
-      if (onUploadComplete) onUploadComplete();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error.message || "Failed to upload animated version",
-      });
-    } finally {
-      setUploadingAnimated(false);
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-        <Label htmlFor="photo-upload" className="cursor-pointer">
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Link to Destination (Optional)</Label>
+        <Select value={selectedDestId} onValueChange={setSelectedDestId}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a destination for these photos..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No specific destination</SelectItem>
+            {destinations?.map((dest) => (
+              <SelectItem key={dest.id} value={dest.id}>
+                {dest.name}, {dest.country}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Selected destination will be applied to all photos in this batch.
+        </p>
+      </div>
+
+      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-muted/50 transition-colors">
+        <Label htmlFor="photo-upload" className="cursor-pointer block h-full w-full">
           <div className="flex flex-col items-center gap-4">
             <div className="p-4 bg-primary/10 rounded-full">
               <Upload className="w-8 h-8 text-primary" />
@@ -223,9 +181,7 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
               <p className="text-lg font-medium text-foreground mb-1">
                 {uploading ? "Uploading..." : "Click to upload photos"}
               </p>
-              <p className="text-sm text-muted-foreground">
-                Max 10MB per file. JPEG, PNG, WebP, HEIC supported.
-              </p>
+              <p className="text-sm text-muted-foreground">Max 10MB per file. JPEG, PNG, WebP, HEIC supported.</p>
             </div>
           </div>
           <Input
@@ -241,9 +197,9 @@ export const PhotoUpload = ({ destinationId, onUploadComplete }: PhotoUploadProp
       </div>
 
       {uploading && (
-        <div className="flex items-center justify-center gap-2 text-primary">
+        <div className="flex items-center justify-center gap-2 text-primary animate-pulse">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Processing photos...</span>
+          <span className="text-sm font-medium">Processing & uploading photos...</span>
         </div>
       )}
     </div>
