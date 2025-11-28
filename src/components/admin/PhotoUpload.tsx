@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Loader2, MapPin } from "lucide-react";
+import { Upload, Loader2, Video } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import ExifReader from "exifreader";
 import { z } from "zod";
@@ -31,14 +31,18 @@ export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
     },
   });
 
+  // Increased limit to 50MB for videos
   const fileSchema = z.object({
-    size: z.number().max(10 * 1024 * 1024, { message: "File size must be less than 10MB" }),
-    type: z
-      .string()
-      .regex(/^image\/(jpeg|jpg|png|webp|heic)$/i, { message: "Only JPEG, PNG, WebP, and HEIC images are allowed" }),
+    size: z.number().max(50 * 1024 * 1024, { message: "File size must be less than 50MB" }),
+    type: z.string().regex(/^(image\/(jpeg|jpg|png|webp|heic)|video\/(mp4|webm))$/i, {
+      message: "Supported formats: JPEG, PNG, WebP, HEIC, MP4, WebM",
+    }),
   });
 
   const extractExifData = async (file: File) => {
+    // Skip EXIF for videos
+    if (file.type.startsWith("video/")) return {};
+
     try {
       const tags = await ExifReader.load(file);
 
@@ -120,7 +124,7 @@ export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
           title: file.name,
           mime_type: file.type,
           file_size: file.size,
-          description: null, // Removed caption/description logic
+          description: null,
           ...exifData,
         };
 
@@ -131,18 +135,17 @@ export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
 
       toast({
         title: "Success!",
-        description: `${files.length} photo(s) uploaded successfully.`,
+        description: `${files.length} items uploaded successfully.`,
       });
 
       if (onUploadComplete) onUploadComplete();
-      // Reset input value to allow re-uploading same file if needed
       e.target.value = "";
     } catch (error: any) {
       console.error(error);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error.message || "Failed to upload photos. Please try again.",
+        description: error.message || "Failed to upload files. Please try again.",
       });
     } finally {
       setUploading(false);
@@ -155,7 +158,7 @@ export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
         <Label className="text-sm font-medium">Link to Destination (Optional)</Label>
         <Select value={selectedDestId} onValueChange={setSelectedDestId}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a destination for these photos..." />
+            <SelectValue placeholder="Select a destination for this batch..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">No specific destination</SelectItem>
@@ -167,27 +170,29 @@ export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Selected destination will be applied to all photos in this batch.
+          Selected destination will be applied to all photos and videos in this batch.
         </p>
       </div>
 
-      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-muted/50 transition-colors">
+      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-muted/50 transition-colors group">
         <Label htmlFor="photo-upload" className="cursor-pointer block h-full w-full">
           <div className="flex flex-col items-center gap-4">
-            <div className="p-4 bg-primary/10 rounded-full">
+            <div className="p-4 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
               <Upload className="w-8 h-8 text-primary" />
             </div>
             <div>
               <p className="text-lg font-medium text-foreground mb-1">
-                {uploading ? "Uploading..." : "Click to upload photos"}
+                {uploading ? "Uploading..." : "Click to upload media"}
               </p>
-              <p className="text-sm text-muted-foreground">Max 10MB per file. JPEG, PNG, WebP, HEIC supported.</p>
+              <p className="text-sm text-muted-foreground">
+                Photos (JPEG, PNG, WebP) or Videos (MP4, WebM) up to 50MB.
+              </p>
             </div>
           </div>
           <Input
             id="photo-upload"
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,video/mp4,video/webm"
             multiple
             onChange={handleFileUpload}
             disabled={uploading}
@@ -199,7 +204,7 @@ export const PhotoUpload = ({ onUploadComplete }: PhotoUploadProps) => {
       {uploading && (
         <div className="flex items-center justify-center gap-2 text-primary animate-pulse">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm font-medium">Processing & uploading photos...</span>
+          <span className="text-sm font-medium">Processing & uploading media...</span>
         </div>
       )}
     </div>
