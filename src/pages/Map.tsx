@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MapPin, Calendar, ArrowRight } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { MAPBOX_TOKEN } from "@/lib/mapbox";
 import type { Destination } from "@/types";
 
@@ -31,6 +31,18 @@ const Map = () => {
       return data as Destination[];
     },
   });
+
+  // Calculate total days
+  const totalDays =
+    destinations && destinations.length > 0
+      ? (() => {
+          const start = new Date(destinations[0].arrival_date);
+          const end = destinations[destinations.length - 1].departure_date
+            ? new Date(destinations[destinations.length - 1].departure_date!)
+            : new Date(); // If no departure date, assume current date
+          return differenceInDays(end, start) + 1; // +1 to include the start day
+        })()
+      : 0;
 
   // Initialize map
   useEffect(() => {
@@ -194,8 +206,7 @@ const Map = () => {
           <div className="p-6 border-b border-border">
             <h1 className="text-2xl font-display font-bold text-foreground">Our Journey</h1>
             <p className="text-muted-foreground text-sm">
-              {destinations?.length} stops •{" "}
-              {destinations?.filter((d) => d.is_current).length ? "Currently traveling" : "Trip completed"}
+              {destinations?.length} destinations • {totalDays} days of adventure
             </p>
           </div>
 
