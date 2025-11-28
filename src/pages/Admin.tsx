@@ -162,7 +162,7 @@ const Admin = () => {
             Photo Management
           </h2>
           <p className="text-muted-foreground mb-6">
-            Upload photos with automatic EXIF data extraction, set hero photo, and manage captions
+            Upload photos, set hero photo with animation, and manage captions
           </p>
           
           {showPhotoUpload ? (
@@ -178,13 +178,11 @@ const Admin = () => {
 
           <div className="border-t border-border pt-6 mt-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Hero Photo & Animation</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Set your hero photo and upload an animated MP4 version for the homepage
-            </p>
             <HeroPhotoManager />
           </div>
 
           <div className="border-t border-border pt-6 mt-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Photo Captions</h3>
             <PhotoManager />
           </div>
         </div>
