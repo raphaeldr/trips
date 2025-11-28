@@ -1,15 +1,17 @@
-import { Navigation } from "@/components/Navigation";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Navigation } from "../components/Navigation";
+import { useAdminAuth } from "../hooks/useAdminAuth";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Loader2, Upload, FileText, MapPin, ShieldAlert } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Loader2, Upload, FileText, MapPin, ShieldAlert, LayoutDashboard, Image as ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { PhotoUpload } from "@/components/admin/PhotoUpload";
-import { PhotoManager } from "@/components/admin/PhotoManager";
-import { DestinationForm } from "@/components/admin/DestinationForm";
-import { HeroPhotoManager } from "@/components/admin/HeroPhotoManager";
+import { supabase } from "../integrations/supabase/client";
+import { PhotoUpload } from "../components/admin/PhotoUpload";
+import { PhotoManager } from "../components/admin/PhotoManager";
+import { DestinationForm } from "../components/admin/DestinationForm";
+import { HeroPhotoManager } from "../components/admin/HeroPhotoManager";
 import { useQuery } from "@tanstack/react-query";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 const Admin = () => {
   const { user, isAdmin, loading } = useAdminAuth();
@@ -19,12 +21,12 @@ const Admin = () => {
 
   // Fetch stats
   const { data: stats, refetch: refetchStats } = useQuery({
-    queryKey: ['adminStats'],
+    queryKey: ["adminStats"],
     queryFn: async () => {
       const [photos, posts, destinations] = await Promise.all([
-        supabase.from('photos').select('id', { count: 'exact', head: true }),
-        supabase.from('blog_posts').select('id', { count: 'exact', head: true }),
-        supabase.from('destinations').select('id', { count: 'exact', head: true }),
+        supabase.from("photos").select("id", { count: "exact", head: true }),
+        supabase.from("blog_posts").select("id", { count: "exact", head: true }),
+        supabase.from("destinations").select("id", { count: "exact", head: true }),
       ]);
 
       return {
@@ -72,31 +74,34 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="pt-20 container mx-auto px-6 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-display font-bold text-foreground">
-            Backend Dashboard
-          </h1>
-          <Button variant="outline" onClick={handleSignOut}>
+      <div className="pt-24 container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Manage your travel content and media</p>
+          </div>
+          <Button variant="outline" onClick={handleSignOut} className="w-full sm:w-auto">
             Sign Out
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-card rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-4 mb-4">
+        {/* Quick Stats Row - Always Visible */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Upload className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{stats?.photos || 0}</p>
-                <p className="text-sm text-muted-foreground">Photos</p>
+                <p className="text-sm text-muted-foreground">Total Photos</p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-card rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-4 mb-4">
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <FileText className="w-6 h-6 text-primary" />
               </div>
@@ -104,11 +109,11 @@ const Admin = () => {
                 <p className="text-2xl font-bold text-foreground">{stats?.posts || 0}</p>
                 <p className="text-sm text-muted-foreground">Blog Posts</p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-card rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-4 mb-4">
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <MapPin className="w-6 h-6 text-primary" />
               </div>
@@ -116,80 +121,143 @@ const Admin = () => {
                 <p className="text-2xl font-bold text-foreground">{stats?.destinations || 0}</p>
                 <p className="text-sm text-muted-foreground">Destinations</p>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Area with Tabs */}
+        <Tabs defaultValue="content" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:w-[400px] h-auto p-1">
+            <TabsTrigger value="content" className="py-2 gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Content & Trips
+            </TabsTrigger>
+            <TabsTrigger value="media" className="py-2 gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Photos & Media
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB 1: Content & Trips */}
+          <TabsContent value="content" className="space-y-6 animate-in fade-in-50 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Blog Post Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Blog Posts
+                  </CardTitle>
+                  <CardDescription>Write rich multimedia blog posts about your adventures</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full" onClick={() => navigate("/admin/blog/new")}>
+                    Create New Post
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Destination Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    Destinations
+                  </CardTitle>
+                  <CardDescription>Track new locations on your journey around the world</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {showDestinationForm ? (
+                    <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                      <DestinationForm
+                        onSuccess={() => {
+                          setShowDestinationForm(false);
+                          refetchStats();
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-4 w-full"
+                        onClick={() => setShowDestinationForm(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="secondary" className="w-full" onClick={() => setShowDestinationForm(true)}>
+                      Add New Location
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
+          </TabsContent>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-card rounded-2xl shadow-card p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <FileText className="w-6 h-6 text-primary" />
-              Create Blog Post
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Write rich multimedia blog posts about your adventures
-            </p>
-            <Button className="w-full" onClick={() => navigate("/admin/blog/new")}>
-              New Post
-            </Button>
-          </div>
+          {/* TAB 2: Photos & Media */}
+          <TabsContent value="media" className="space-y-6 animate-in fade-in-50 duration-500">
+            {/* Upload Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-primary" />
+                  Upload Photos
+                </CardTitle>
+                <CardDescription>
+                  Upload high-quality photos from your travels. Supports EXIF data extraction.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {showPhotoUpload ? (
+                  <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                    <PhotoUpload
+                      onUploadComplete={() => {
+                        setShowPhotoUpload(false);
+                        refetchStats();
+                      }}
+                    />
+                    <Button variant="ghost" size="sm" className="mt-4 w-full" onClick={() => setShowPhotoUpload(false)}>
+                      Hide Uploader
+                    </Button>
+                  </div>
+                ) : (
+                  <Button className="w-full" onClick={() => setShowPhotoUpload(true)}>
+                    Open Uploader
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
 
-          <div className="bg-card rounded-2xl shadow-card p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-primary" />
-              Add Destination
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Track new locations on your journey around the world
-            </p>
-            
-            {showDestinationForm ? (
-              <DestinationForm onSuccess={() => {
-                setShowDestinationForm(false);
-                refetchStats();
-              }} />
-            ) : (
-              <Button className="w-full" onClick={() => setShowDestinationForm(true)}>
-                Add Location
-              </Button>
-            )}
-          </div>
-        </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Hero Photo Manager */}
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>Hero Photo & Animation</CardTitle>
+                  <CardDescription>Select the main photo for your homepage and add motion effects.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HeroPhotoManager />
+                </CardContent>
+              </Card>
 
-        <div className="bg-card rounded-2xl shadow-card p-8 mb-6">
-          <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-            <Upload className="w-6 h-6 text-primary" />
-            Photo Management
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Upload photos, set hero photo with animation, and manage captions
-          </p>
-          
-          {showPhotoUpload ? (
-            <PhotoUpload onUploadComplete={() => {
-              setShowPhotoUpload(false);
-              refetchStats();
-            }} />
-          ) : (
-            <Button className="w-full mb-6" onClick={() => setShowPhotoUpload(true)}>
-              Upload New Photos
-            </Button>
-          )}
-
-          <div className="border-t border-border pt-6 mt-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Hero Photo & Animation</h3>
-            <HeroPhotoManager />
-          </div>
-
-          <div className="border-t border-border pt-6 mt-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Photo Captions</h3>
-            <PhotoManager />
-          </div>
-        </div>
+              {/* Photo Captions Manager */}
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>Photo Captions</CardTitle>
+                  <CardDescription>Manage captions and details for your gallery photos.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-[600px] overflow-y-auto pr-2">
+                    <PhotoManager />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 };
 
 export default Admin;
-
