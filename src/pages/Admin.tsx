@@ -2,7 +2,7 @@ import { Navigation } from "@/components/Navigation";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Loader2, Upload, FileText, Image as ImageIcon, MapPin, ShieldAlert } from "lucide-react";
+import { Loader2, Upload, FileText, MapPin, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoUpload } from "@/components/admin/PhotoUpload";
@@ -21,17 +21,15 @@ const Admin = () => {
   const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ['adminStats'],
     queryFn: async () => {
-      const [photos, posts, stories, destinations] = await Promise.all([
+      const [photos, posts, destinations] = await Promise.all([
         supabase.from('photos').select('id', { count: 'exact', head: true }),
         supabase.from('blog_posts').select('id', { count: 'exact', head: true }),
-        supabase.from('stories').select('id', { count: 'exact', head: true }),
         supabase.from('destinations').select('id', { count: 'exact', head: true }),
       ]);
 
       return {
         photos: photos.count || 0,
         posts: posts.count || 0,
-        stories: stories.count || 0,
         destinations: destinations.count || 0,
       };
     },
@@ -84,7 +82,7 @@ const Admin = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-card rounded-2xl shadow-card p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 bg-primary/10 rounded-lg">
@@ -112,18 +110,6 @@ const Admin = () => {
           <div className="bg-card rounded-2xl shadow-card p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 bg-primary/10 rounded-lg">
-                <ImageIcon className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats?.stories || 0}</p>
-                <p className="text-sm text-muted-foreground">Stories</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
                 <MapPin className="w-6 h-6 text-primary" />
               </div>
               <div>
@@ -134,28 +120,7 @@ const Admin = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-card rounded-2xl shadow-card p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Upload className="w-6 h-6 text-primary" />
-              Upload Photos
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Upload photos with automatic EXIF data extraction
-            </p>
-            
-            {showPhotoUpload ? (
-              <PhotoUpload onUploadComplete={() => {
-                setShowPhotoUpload(false);
-                refetchStats();
-              }} />
-            ) : (
-              <Button className="w-full" onClick={() => setShowPhotoUpload(true)}>
-                Choose Files
-              </Button>
-            )}
-          </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-card rounded-2xl shadow-card p-8">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <FileText className="w-6 h-6 text-primary" />
@@ -166,19 +131,6 @@ const Admin = () => {
             </p>
             <Button className="w-full" onClick={() => navigate("/admin/blog/new")}>
               New Post
-            </Button>
-          </div>
-
-          <div className="bg-card rounded-2xl shadow-card p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <ImageIcon className="w-6 h-6 text-primary" />
-              Create Story
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Share daily highlights with Instagram-style stories
-            </p>
-            <Button className="w-full">
-              New Story
             </Button>
           </div>
 
@@ -204,19 +156,37 @@ const Admin = () => {
           </div>
         </div>
 
-        <div className="mt-6 bg-card rounded-2xl shadow-card p-8">
+        <div className="bg-card rounded-2xl shadow-card p-8 mb-6">
           <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
             <Upload className="w-6 h-6 text-primary" />
-            Hero Photo & Animation
+            Photo Management
           </h2>
           <p className="text-muted-foreground mb-6">
-            Set your hero photo and upload an animated MP4 version for the homepage
+            Upload photos with automatic EXIF data extraction, set hero photo, and manage captions
           </p>
-          <HeroPhotoManager />
-        </div>
+          
+          {showPhotoUpload ? (
+            <PhotoUpload onUploadComplete={() => {
+              setShowPhotoUpload(false);
+              refetchStats();
+            }} />
+          ) : (
+            <Button className="w-full mb-6" onClick={() => setShowPhotoUpload(true)}>
+              Upload New Photos
+            </Button>
+          )}
 
-        <div className="mt-6 bg-card rounded-2xl shadow-card p-8">
-          <PhotoManager />
+          <div className="border-t border-border pt-6 mt-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Hero Photo & Animation</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set your hero photo and upload an animated MP4 version for the homepage
+            </p>
+            <HeroPhotoManager />
+          </div>
+
+          <div className="border-t border-border pt-6 mt-6">
+            <PhotoManager />
+          </div>
         </div>
       </div>
     </div>
