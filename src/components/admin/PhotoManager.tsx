@@ -85,10 +85,9 @@ export const PhotoManager = () => {
   // --- Filtering & Pagination ---
 
   const filteredPhotos = photos?.filter((photo) => {
-    if (activeTab === "hero") return photo.is_hero;
     if (activeTab === "videos") return photo.mime_type?.startsWith("video/") || photo.animated_path;
     if (activeTab === "images") return !photo.mime_type?.startsWith("video/");
-    return true;
+    return true; // "all"
   });
 
   const totalPages = Math.ceil((filteredPhotos?.length || 0) / itemsPerPage);
@@ -259,13 +258,10 @@ export const PhotoManager = () => {
           }}
           className="w-full"
         >
-          <TabsList className="grid w-full sm:w-[400px] grid-cols-4">
+          <TabsList className="grid w-full sm:w-[300px] grid-cols-3">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="videos">Videos</TabsTrigger>
-            <TabsTrigger value="hero" className="text-yellow-600 data-[state=active]:text-yellow-700">
-              <Star className="w-3.5 h-3.5 mr-1" /> Hero
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-6 space-y-6">
