@@ -111,7 +111,22 @@ const Home = () => {
     }
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
+
+    // Check if it's a video or image
+    const isVideo = heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path;
+    const mediaUrl =
+      isVideo && heroPhoto.animated_path
+        ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl
+        : supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
+
+    if (isVideo) {
+      // For video, we default to white text as it's hard to analyze video brightness client-side efficiently
+      // without loading the video into a canvas. A dark overlay is usually sufficient.
+      setTextColor("text-white");
+      return;
+    }
+
+    img.src = mediaUrl;
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
@@ -125,9 +140,19 @@ const Home = () => {
         const sampleSize = 200;
         const x = (canvas.width - sampleSize) / 2;
         const y = (canvas.height - sampleSize) / 2;
-        const imageData = ctx.getImageData(x, y, sampleSize, sampleSize);
+
+        // Ensure coordinates are within bounds
+        const safeX = Math.max(0, Math.min(x, canvas.width - 1));
+        const safeY = Math.max(0, Math.min(y, canvas.height - 1));
+        const safeWidth = Math.min(sampleSize, canvas.width - safeX);
+        const safeHeight = Math.min(sampleSize, canvas.height - safeY);
+
+        if (safeWidth <= 0 || safeHeight <= 0) return;
+
+        const imageData = ctx.getImageData(safeX, safeY, safeWidth, safeHeight);
         const data = imageData.data;
         let totalBrightness = 0;
+
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
           const g = data[i + 1];
@@ -136,11 +161,13 @@ const Home = () => {
           const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
           totalBrightness += brightness;
         }
+
         const avgBrightness = totalBrightness / (data.length / 4);
 
         // If average brightness > 128 (midpoint), image is light, use darker text
         // Use softer colors: light gray for dark images, dark gray for light images
-        setTextColor(avgBrightness > 128 ? "text-gray-800" : "text-gray-200");
+        // Adjusted threshold slightly higher to favor white text on mid-tones
+        setTextColor(avgBrightness > 160 ? "text-slate-800" : "text-slate-100");
       } catch (error) {
         console.error("Error analyzing image:", error);
         setTextColor("text-white");
@@ -167,6 +194,7 @@ const Home = () => {
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
   const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
+
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
@@ -177,10 +205,14 @@ const Home = () => {
         {/* Background Image or Video */}
         {heroPhoto ? (
           <>
-            {heroPhoto.animated_path ? (
+            {heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path ? (
               <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
                 <source
-                  src={supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl}
+                  src={
+                    heroPhoto.animated_path
+                      ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl
+                      : supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl
+                  }
                   type="video/mp4"
                 />
               </video>
@@ -192,14 +224,12 @@ const Home = () => {
                 }}
               />
             )}
-            <div className="absolute inset-0 bg-black/40" />
+            {/* Conditional overlay based on text color to ensure readability */}
+            <div className={`absolute inset-0 ${textColor === "text-slate-800" ? "bg-white/20" : "bg-black/30"}`} />
           </>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
         )}
-
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-overlay opacity-50" />
 
         {/* Content */}
         <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
@@ -210,7 +240,7 @@ const Home = () => {
           </div>
 
           <h1
-            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in"
+            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in drop-shadow-md"
             style={{
               animationDelay: "0.1s",
             }}
@@ -225,7 +255,7 @@ const Home = () => {
           </h1>
 
           <p
-            className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90"
+            className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90 drop-shadow-sm"
             style={{
               animationDelay: "0.2s",
             }}
