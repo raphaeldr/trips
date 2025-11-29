@@ -22,11 +22,9 @@ import { z } from "zod";
 // Schema for animated files (video or gif)
 const animatedFileSchema = z.object({
   size: z.number().max(50 * 1024 * 1024, { message: "File size must be less than 50MB" }),
-  type: z
-    .string()
-    .regex(/^(video\/(mp4|webm)|image\/(gif|webp))$/i, {
-      message: "Only MP4, WebM video or GIF/WebP animations are allowed",
-    }),
+  type: z.string().regex(/^(video\/(mp4|webm)|image\/(gif|webp))$/i, {
+    message: "Only MP4, WebM video or GIF/WebP animations are allowed",
+  }),
 });
 
 export const PhotoManager = () => {
@@ -232,6 +230,9 @@ export const PhotoManager = () => {
         {photos?.map((photo) => {
           const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`;
           const isVideo = photo.mime_type?.startsWith("video/");
+          const animatedUrl = photo.animated_path
+            ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${photo.animated_path}`
+            : null;
           const isProcessing = processingId === photo.id;
 
           return (
@@ -243,9 +244,10 @@ export const PhotoManager = () => {
             >
               {/* Image Thumbnail */}
               <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                {isVideo ? (
+                {isVideo || animatedUrl ? (
                   <video
-                    src={publicUrl}
+                    src={isVideo ? publicUrl : animatedUrl!}
+                    poster={isVideo ? undefined : publicUrl}
                     className="w-full h-full object-cover"
                     muted
                     playsInline
@@ -266,7 +268,7 @@ export const PhotoManager = () => {
                 )}
 
                 {/* Status Badges */}
-                <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                <div className="absolute top-2 left-2 flex flex-col gap-1.5 pointer-events-none">
                   {photo.is_hero && (
                     <Badge className="bg-primary/90 hover:bg-primary shadow-sm text-[10px] h-5 px-1.5 gap-1 animate-in fade-in zoom-in">
                       <Star className="w-3 h-3 fill-current" /> Hero
@@ -283,7 +285,7 @@ export const PhotoManager = () => {
                 </div>
 
                 {/* Type Icon */}
-                <div className="absolute top-2 right-2 text-white/90 drop-shadow-md">
+                <div className="absolute top-2 right-2 text-white/90 drop-shadow-md pointer-events-none">
                   {isVideo && <Video className="w-4 h-4" />}
                 </div>
 
