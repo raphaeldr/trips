@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Star, Trash2, Video, Edit2, Film, Image as ImageIcon, X } from "lucide-react";
+import { Loader2, MapPin, Star, Trash2, Video, Edit2, Film, X, ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 
@@ -79,7 +79,7 @@ export const PhotoManager = () => {
 
     setProcessingId(photoId);
     try {
-      // 1. Unset any existing hero (DB trigger might handle this, but being explicit is safe)
+      // 1. Unset any existing hero
       await supabase.from("photos").update({ is_hero: false }).neq("id", "00000000-0000-0000-0000-000000000000");
 
       // 2. Set new hero
@@ -142,7 +142,6 @@ export const PhotoManager = () => {
 
       toast({ title: "Location updated" });
       refetch();
-      // Update local state to reflect change immediately in dialog
       setEditingPhoto((prev: any) => ({ ...prev, destination_id: destinationId }));
     } catch (error) {
       toast({
@@ -216,9 +215,12 @@ export const PhotoManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-card p-4 rounded-lg border shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card p-4 rounded-lg border shadow-sm gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Media Library</h3>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <ImageIcon className="w-5 h-5" />
+            Media Library
+          </h3>
           <p className="text-sm text-muted-foreground">Manage your photos, videos, and hero images.</p>
         </div>
         <Badge variant="secondary" className="px-3 py-1">
@@ -226,7 +228,7 @@ export const PhotoManager = () => {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
         {photos?.map((photo) => {
           const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`;
           const isVideo = photo.mime_type?.startsWith("video/");
@@ -235,18 +237,19 @@ export const PhotoManager = () => {
           return (
             <Card
               key={photo.id}
-              className={`group relative overflow-hidden transition-all duration-300 ${
-                photo.is_hero ? "ring-2 ring-primary shadow-lg scale-[1.02] z-10" : "hover:shadow-md"
+              className={`group flex flex-col overflow-hidden transition-all duration-300 ${
+                photo.is_hero ? "ring-2 ring-primary shadow-lg scale-[1.01]" : "hover:shadow-md"
               }`}
             >
               {/* Image Thumbnail */}
-              <div className="aspect-[4/3] bg-muted relative">
+              <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                 {isVideo ? (
                   <video
                     src={publicUrl}
                     className="w-full h-full object-cover"
                     muted
                     playsInline
+                    loop
                     onMouseOver={(e) => e.currentTarget.play()}
                     onMouseOut={(e) => {
                       e.currentTarget.pause();
@@ -262,26 +265,24 @@ export const PhotoManager = () => {
                   />
                 )}
 
-                {/* Overlays */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-                {/* Top Status Icons */}
-                <div className="absolute top-2 left-2 flex gap-1">
+                {/* Status Badges */}
+                <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                   {photo.is_hero && (
-                    <Badge className="bg-primary/90 hover:bg-primary shadow-sm text-[10px] h-5 px-1.5 gap-1">
+                    <Badge className="bg-primary/90 hover:bg-primary shadow-sm text-[10px] h-5 px-1.5 gap-1 animate-in fade-in zoom-in">
                       <Star className="w-3 h-3 fill-current" /> Hero
                     </Badge>
                   )}
                   {photo.animated_path && (
                     <Badge
                       variant="secondary"
-                      className="bg-white/90 shadow-sm text-[10px] h-5 px-1.5 gap-1 text-black"
+                      className="bg-white/90 shadow-sm text-[10px] h-5 px-1.5 gap-1 text-black backdrop-blur-sm"
                     >
                       <Film className="w-3 h-3" /> Motion
                     </Badge>
                   )}
                 </div>
 
+                {/* Type Icon */}
                 <div className="absolute top-2 right-2 text-white/90 drop-shadow-md">
                   {isVideo && <Video className="w-4 h-4" />}
                 </div>
@@ -292,53 +293,60 @@ export const PhotoManager = () => {
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
                 )}
-
-                {/* Hover Actions */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200 flex justify-between items-center gap-2">
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant={photo.is_hero ? "secondary" : "default"}
-                      className={`h-8 w-8 rounded-full shadow-sm ${photo.is_hero ? "bg-white text-yellow-500 hover:bg-white/90" : "bg-white/20 hover:bg-primary backdrop-blur-md"}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSetHero(photo.id, photo.is_hero || false);
-                      }}
-                      title={photo.is_hero ? "Currently Hero Image" : "Set as Hero Image"}
-                    >
-                      <Star className={`w-4 h-4 ${photo.is_hero ? "fill-current" : ""}`} />
-                    </Button>
-
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="h-8 w-8 rounded-full shadow-sm opacity-90 hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(photo.id, photo.storage_path, photo.animated_path);
-                      }}
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 px-3 text-xs bg-white/90 hover:bg-white text-black shadow-sm backdrop-blur-md"
-                    onClick={() => setEditingPhoto(photo)}
-                  >
-                    <Edit2 className="w-3 h-3 mr-1.5" /> Edit
-                  </Button>
-                </div>
               </div>
 
-              {/* Minimal Info Footer */}
-              <div className="p-3 bg-card border-t text-xs">
-                <div className="flex items-center gap-1.5 text-muted-foreground truncate">
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  <span className="truncate">{photo.destinations ? photo.destinations.name : "No location"}</span>
+              {/* Card Footer Content */}
+              <div className="flex flex-col flex-1 p-3 gap-3">
+                {/* Location Info */}
+                <div
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0"
+                  title={
+                    photo.destinations
+                      ? `${photo.destinations.name}, ${photo.destinations.country}`
+                      : "No location linked"
+                  }
+                >
+                  <MapPin className="w-3.5 h-3.5 shrink-0 text-primary/70" />
+                  <span className="truncate font-medium">
+                    {photo.destinations ? photo.destinations.name : "Unassigned"}
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-2 mt-auto pt-2 border-t border-border/50">
+                  <Button
+                    variant={photo.is_hero ? "secondary" : "outline"}
+                    size="sm"
+                    className={`h-8 px-0 text-xs ${photo.is_hero ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200" : ""}`}
+                    onClick={() => handleSetHero(photo.id, photo.is_hero || false)}
+                    disabled={isProcessing}
+                    title={photo.is_hero ? "Unset Hero" : "Set as Hero"}
+                  >
+                    <Star className={`w-3.5 h-3.5 ${photo.is_hero ? "fill-current" : "mr-1"}`} />
+                    {!photo.is_hero && "Hero"}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-0 text-xs hover:bg-muted"
+                    onClick={() => setEditingPhoto(photo)}
+                    disabled={isProcessing}
+                  >
+                    <Edit2 className="w-3.5 h-3.5 mr-1" />
+                    Edit
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-0 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDelete(photo.id, photo.storage_path, photo.animated_path)}
+                    disabled={isProcessing}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Del
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -357,26 +365,32 @@ export const PhotoManager = () => {
           {editingPhoto && (
             <div className="space-y-6 py-4">
               {/* Preview */}
-              <div className="flex gap-4 items-start">
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-muted shrink-0 border">
-                  <img
-                    src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${editingPhoto.storage_path}`}
-                    className="w-full h-full object-cover"
-                    alt="Preview"
-                  />
+              <div className="flex gap-4 items-start p-3 bg-muted/30 rounded-lg border">
+                <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted shrink-0 border">
+                  {editingPhoto.mime_type?.startsWith("video/") ? (
+                    <video
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${editingPhoto.storage_path}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${editingPhoto.storage_path}`}
+                      className="w-full h-full object-cover"
+                      alt="Preview"
+                    />
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none">{editingPhoto.title || "Untitled Media"}</p>
+                <div className="space-y-1 min-w-0">
+                  <p className="text-sm font-medium leading-none truncate" title={editingPhoto.title}>
+                    {editingPhoto.title || "Untitled Media"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {(editingPhoto.file_size / 1024 / 1024).toFixed(2)} MB • {editingPhoto.mime_type}
                   </p>
                   {editingPhoto.is_hero && (
-                    <Badge
-                      variant="outline"
-                      className="mt-2 text-[10px] border-yellow-500/50 text-yellow-600 bg-yellow-50"
-                    >
-                      <Star className="w-3 h-3 mr-1 fill-yellow-500" /> Hero Image
-                    </Badge>
+                    <div className="flex items-center gap-1 text-[10px] text-yellow-600 font-medium mt-1.5">
+                      <Star className="w-3 h-3 fill-current" /> Currently Hero Image
+                    </div>
                   )}
                 </div>
               </div>
@@ -403,29 +417,29 @@ export const PhotoManager = () => {
                 </div>
 
                 {!editingPhoto.mime_type?.startsWith("video/") && (
-                  <div className="space-y-2 pt-2 border-t">
+                  <div className="space-y-2 pt-4 border-t">
                     <Label className="flex items-center gap-2">
                       <Film className="w-4 h-4 text-primary" />
                       Animated Version (Motion Photo)
                     </Label>
-                    <div className="text-xs text-muted-foreground mb-2">
+                    <div className="text-xs text-muted-foreground mb-3">
                       Upload a short video loop (MP4/WebM) to bring this photo to life when used as the Hero image.
                     </div>
 
                     {editingPhoto.animated_path ? (
-                      <div className="flex items-center gap-2 p-2 bg-muted rounded-md border">
-                        <Film className="w-4 h-4" />
-                        <span className="text-xs flex-1 truncate">Animation active</span>
+                      <div className="flex items-center gap-2 p-2 bg-green-50/50 border border-green-100 rounded-md">
+                        <Film className="w-4 h-4 text-green-600" />
+                        <span className="text-xs flex-1 text-green-700 font-medium">Animation active</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0 hover:text-destructive"
+                          className="h-6 w-6 p-0 hover:text-destructive hover:bg-destructive/10 text-muted-foreground"
                           onClick={() => {
-                            // Logic to remove animation could go here
                             toast({ description: "To remove animation, please overwrite it or delete the photo." });
                           }}
+                          title="Remove animation"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     ) : (
@@ -433,7 +447,7 @@ export const PhotoManager = () => {
                         <Input
                           type="file"
                           accept="video/mp4,video/webm,image/gif,image/webp"
-                          className="text-xs"
+                          className="text-xs h-9"
                           disabled={uploadingAnimation}
                           onChange={(e) => handleAnimatedUpload(e, editingPhoto.id)}
                         />
