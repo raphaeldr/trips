@@ -154,6 +154,37 @@ export const PhotoManager = () => {
     }
   };
 
+  const handleRemoveAnimation = async (photoId: string, animatedPath: string) => {
+    if (!confirm("Remove the animated video version? The static photo will remain.")) return;
+
+    setProcessingId(photoId);
+    try {
+      // 1. Remove file from storage
+      const { error: storageError } = await supabase.storage.from("photos").remove([animatedPath]);
+      if (storageError) throw storageError;
+
+      // 2. Update DB record to nullify animated_path
+      const { error: dbError } = await supabase.from("photos").update({ animated_path: null }).eq("id", photoId);
+
+      if (dbError) throw dbError;
+
+      toast({ title: "Animation removed" });
+      refetch();
+      // Update local editing state if open
+      if (editingPhoto?.id === photoId) {
+        setEditingPhoto((prev: any) => ({ ...prev, animated_path: null }));
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to remove animation: " + error.message,
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleSaveDestination = async (photoId: string, destId: string) => {
     try {
       const destinationId = destId === "none" ? null : destId;
@@ -214,7 +245,8 @@ export const PhotoManager = () => {
         description: "Animated version attached to photo",
       });
       refetch();
-      setEditingPhoto(null);
+      // Update local state to reflect change immediately in dialog
+      setEditingPhoto((prev: any) => ({ ...prev, animated_path: fileName }));
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -507,9 +539,7 @@ export const PhotoManager = () => {
                           variant="ghost"
                           size="sm"
                           className="h-6 w-6 p-0 hover:text-destructive hover:bg-destructive/10 text-muted-foreground"
-                          onClick={() => {
-                            toast({ description: "To remove animation, please overwrite it or delete the photo." });
-                          }}
+                          onClick={() => handleRemoveAnimation(editingPhoto.id, editingPhoto.animated_path)}
                           title="Remove animation"
                         >
                           <X className="w-3.5 h-3.5" />
