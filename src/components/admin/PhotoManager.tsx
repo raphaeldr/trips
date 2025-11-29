@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -24,22 +23,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Star, Trash2, Video, Edit2, Film, X, ImageIcon, Image as LucideImage } from "lucide-react";
+import { Loader2, MapPin, Star, Trash2, Video, Edit2, ImageIcon, Image as LucideImage } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { z } from "zod";
-
-// Schema for animated files (video or gif)
-const animatedFileSchema = z.object({
-  size: z.number().max(50 * 1024 * 1024, { message: "File size must be less than 50MB" }),
-  type: z.string().regex(/^(video\/(mp4|webm)|image\/(gif|webp))$/i, {
-    message: "Only MP4, WebM video or GIF/WebP animations are allowed",
-  }),
-});
 
 export const PhotoManager = () => {
   const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [uploadingAnimation, setUploadingAnimation] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -85,9 +74,12 @@ export const PhotoManager = () => {
   // --- Filtering & Pagination ---
 
   const filteredPhotos = photos?.filter((photo) => {
-    if (activeTab === "videos") return photo.mime_type?.startsWith("video/") || photo.animated_path;
-    if (activeTab === "images") return !photo.mime_type?.startsWith("video/");
-    return true; // "all"
+    // Simple mime-type based filtering
+    const isVideo = photo.mime_type?.startsWith("video/");
+
+    if (activeTab === "videos") return isVideo;
+    if (activeTab === "images") return !isVideo;
+    return true; // "all" shows everything
   });
 
   const totalPages = Math.ceil((filteredPhotos?.length || 0) / itemsPerPage);
@@ -124,17 +116,17 @@ export const PhotoManager = () => {
     }
   };
 
-  const handleDelete = async (photoId: string, storagePath: string, animatedPath?: string) => {
+  const handleDelete = async (photoId: string, storagePath: string) => {
     if (!confirm("Are you sure you want to delete this media?")) return;
 
     setProcessingId(photoId);
     try {
-      const filesToRemove = [storagePath];
-      if (animatedPath) filesToRemove.push(animatedPath);
-
       // Delete from storage
-      const { error: storageError } = await supabase.storage.from("photos").remove(filesToRemove);
-      if (storageError) throw storageError;
+      const { error: storageError } = await supabase.storage.from("photos").remove([storagePath]);
+      if (storageError) {
+        console.error("Storage delete error:", storageError);
+        // Continue to delete from DB even if storage fails (orphan cleanup)
+      }
 
       // Delete from DB
       const { error: dbError } = await supabase.from("photos").delete().eq("id", photoId);
@@ -148,37 +140,6 @@ export const PhotoManager = () => {
         variant: "destructive",
         title: "Error",
         description: "Failed to delete item: " + error.message,
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleRemoveAnimation = async (photoId: string, animatedPath: string) => {
-    if (!confirm("Remove the animated video version? The static photo will remain.")) return;
-
-    setProcessingId(photoId);
-    try {
-      // 1. Remove file from storage
-      const { error: storageError } = await supabase.storage.from("photos").remove([animatedPath]);
-      if (storageError) throw storageError;
-
-      // 2. Update DB record to nullify animated_path
-      const { error: dbError } = await supabase.from("photos").update({ animated_path: null }).eq("id", photoId);
-
-      if (dbError) throw dbError;
-
-      toast({ title: "Animation removed" });
-      refetch();
-      // Update local editing state if open
-      if (editingPhoto?.id === photoId) {
-        setEditingPhoto((prev: any) => ({ ...prev, animated_path: null }));
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to remove animation: " + error.message,
       });
     } finally {
       setProcessingId(null);
@@ -204,60 +165,6 @@ export const PhotoManager = () => {
     }
   };
 
-  const handleAnimatedUpload = async (e: React.ChangeEvent<HTMLInputElement>, photoId: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      animatedFileSchema.parse({ size: file.size, type: file.type });
-    } catch (validationError: any) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: validationError.errors?.[0]?.message || "Invalid file",
-      });
-      return;
-    }
-
-    setUploadingAnimation(true);
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/animated/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage.from("photos").upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { error: updateError } = await supabase
-        .from("photos")
-        .update({ animated_path: fileName })
-        .eq("id", photoId);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Success",
-        description: "Animated version attached to photo",
-      });
-      refetch();
-      // Update local state to reflect change immediately in dialog
-      setEditingPhoto((prev: any) => ({ ...prev, animated_path: fileName }));
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error.message,
-      });
-    } finally {
-      setUploadingAnimation(false);
-    }
-  };
-
   if (photosLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -275,7 +182,7 @@ export const PhotoManager = () => {
               <ImageIcon className="w-5 h-5" />
               Media Library
             </h3>
-            <p className="text-sm text-muted-foreground">Manage your photos, videos, and hero images.</p>
+            <p className="text-sm text-muted-foreground">Manage your photos and videos.</p>
           </div>
           <Badge variant="secondary" className="px-3 py-1">
             {photos?.length || 0} items
@@ -301,9 +208,6 @@ export const PhotoManager = () => {
               {paginatedPhotos?.map((photo) => {
                 const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`;
                 const isVideo = photo.mime_type?.startsWith("video/");
-                const animatedUrl = photo.animated_path
-                  ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${photo.animated_path}`
-                  : null;
                 const isProcessing = processingId === photo.id;
 
                 return (
@@ -313,12 +217,11 @@ export const PhotoManager = () => {
                       photo.is_hero ? "ring-2 ring-primary shadow-lg scale-[1.01]" : "hover:shadow-md"
                     }`}
                   >
-                    {/* Image/Video Thumbnail */}
+                    {/* Media Thumbnail */}
                     <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                      {isVideo || animatedUrl ? (
+                      {isVideo ? (
                         <video
-                          src={isVideo ? publicUrl : animatedUrl!}
-                          poster={isVideo ? undefined : publicUrl}
+                          src={publicUrl}
                           className="w-full h-full object-cover"
                           muted
                           playsInline
@@ -343,14 +246,6 @@ export const PhotoManager = () => {
                         {photo.is_hero && (
                           <Badge className="bg-primary/90 hover:bg-primary shadow-sm text-[10px] h-5 px-1.5 gap-1 animate-in fade-in zoom-in">
                             <Star className="w-3 h-3 fill-current" /> Hero
-                          </Badge>
-                        )}
-                        {photo.animated_path && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-white/90 shadow-sm text-[10px] h-5 px-1.5 gap-1 text-black backdrop-blur-sm"
-                          >
-                            <Film className="w-3 h-3" /> Motion
                           </Badge>
                         )}
                       </div>
@@ -414,7 +309,7 @@ export const PhotoManager = () => {
                           variant="ghost"
                           size="sm"
                           className="h-8 px-0 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(photo.id, photo.storage_path, photo.animated_path)}
+                          onClick={() => handleDelete(photo.id, photo.storage_path)}
                           disabled={isProcessing}
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -464,7 +359,7 @@ export const PhotoManager = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Media Details</DialogTitle>
-            <DialogDescription>Update location or add motion effects to this photo.</DialogDescription>
+            <DialogDescription>Update location details.</DialogDescription>
           </DialogHeader>
 
           {editingPhoto && (
@@ -520,49 +415,6 @@ export const PhotoManager = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {!editingPhoto.mime_type?.startsWith("video/") && (
-                  <div className="space-y-2 pt-4 border-t">
-                    <Label className="flex items-center gap-2">
-                      <Film className="w-4 h-4 text-primary" />
-                      Animated Version (Motion Photo)
-                    </Label>
-                    <div className="text-xs text-muted-foreground mb-3">
-                      Upload a short video loop (MP4/WebM) to bring this photo to life when used as the Hero image.
-                    </div>
-
-                    {editingPhoto.animated_path ? (
-                      <div className="flex items-center gap-2 p-2 bg-green-50/50 border border-green-100 rounded-md">
-                        <Film className="w-4 h-4 text-green-600" />
-                        <span className="text-xs flex-1 text-green-700 font-medium">Animation active</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:text-destructive hover:bg-destructive/10 text-muted-foreground"
-                          onClick={() => handleRemoveAnimation(editingPhoto.id, editingPhoto.animated_path)}
-                          title="Remove animation"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Input
-                          type="file"
-                          accept="video/mp4,video/webm,image/gif,image/webp"
-                          className="text-xs h-9"
-                          disabled={uploadingAnimation}
-                          onChange={(e) => handleAnimatedUpload(e, editingPhoto.id)}
-                        />
-                        {uploadingAnimation && (
-                          <div className="flex items-center px-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           )}
