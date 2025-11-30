@@ -29,7 +29,7 @@ const Gallery = () => {
       const { data, error } = await supabase
         .from("photos")
         .select("*")
-        .not("mime_type", "ilike", "video/%") // Filter out videos server-side
+        // Removed filter for videos so they show up in gallery
         .order("taken_at", { ascending: false });
       if (error) throw error;
       return data;
