@@ -13,16 +13,16 @@ export const AirportText = ({ text, className = "" }: AirportTextProps) => {
 
   useEffect(() => {
     let iteration = 0;
-    const intervalSpeed = 30; // Speed of character cycling in ms
-    
+    const intervalSpeed = 300; // Speed of character cycling in ms
+
     // We want the text to start scrambling immediately
-    // If the text is shorter than current, we might want to pad it, 
+    // If the text is shorter than current, we might want to pad it,
     // but for this simple effect, we'll just build up to the new text length.
-    
+
     const interval = setInterval(() => {
       setDisplayText(() => {
         let result = "";
-        
+
         for (let i = 0; i < text.length; i++) {
           // Logic: We settle characters from left to right.
           // Each character cycles for a bit (i) then settles.
@@ -34,7 +34,7 @@ export const AirportText = ({ text, className = "" }: AirportTextProps) => {
             result += CHARS[Math.floor(Math.random() * CHARS.length)];
           }
         }
-        
+
         return result;
       });
 
