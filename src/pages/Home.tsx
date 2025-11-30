@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Map as MapIcon, Calendar, Camera, BookOpen, Globe } from "lucide-react";
+import { ArrowRight, Map as MapIcon, Calendar, Camera, BookOpen, Globe, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,7 +112,7 @@ const Home = () => {
               On the move
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-4 text-foreground leading-[1.1]">
-              {familyName}'s <br />
+              {familyName} <br />
               <span className="text-muted-foreground">Travel Journal</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-md">
