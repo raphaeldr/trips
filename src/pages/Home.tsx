@@ -78,16 +78,17 @@ const Home = () => {
     },
   });
 
-  // Fetch destination count
-  const { data: destinationCount } = useQuery({
-    queryKey: ["destinationCount"],
+  // Fetch unique country count (minus start country)
+  const { data: countryCount } = useQuery({
+    queryKey: ["countryCount"],
     queryFn: async () => {
-      const { count, error } = await supabase.from("destinations").select("*", {
-        count: "exact",
-        head: true,
-      });
+      const { data, error } = await supabase.from("destinations").select("country");
+
       if (error) throw error;
-      return count || 0;
+
+      const uniqueCountries = new Set(data.map((d) => d.country));
+      // Subtract 1 for the start country (Luxembourg)
+      return Math.max(0, uniqueCountries.size - 1);
     },
   });
 
@@ -439,7 +440,7 @@ const Home = () => {
                 <br />
                 {daysOfAdventure} days traveled
                 <br />
-                {destinationCount} countries visited
+                {countryCount || 0} countries visited
                 <br />
                 {photoCount} photos captured
               </p>
