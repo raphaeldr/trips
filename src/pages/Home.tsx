@@ -3,7 +3,7 @@ import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +41,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from("photos")
         .select("*")
-        .not("mime_type", "ilike", "video/%") // Filter out videos on the server side
+        // Removed explicit video exclusion
         .order("created_at", {
           ascending: false,
         })
@@ -357,15 +357,34 @@ const Home = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {latestPhotos?.map((photo) => {
-              const photoUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+              const publicUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+              const isVideo = photo.mime_type?.startsWith("video/");
+
               return (
                 <Link key={photo.id} to="/gallery">
-                  <div className="aspect-square rounded-xl overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer hover:scale-105">
-                    <img
-                      src={photoUrl}
-                      alt={photo.title || photo.ai_caption || "Travel photo"}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="aspect-square rounded-xl overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer hover:scale-105 group relative">
+                    {isVideo ? (
+                      <div className="relative w-full h-full">
+                        <video
+                          src={`${publicUrl}#t=0.1`}
+                          className="w-full h-full object-cover"
+                          preload="metadata"
+                          muted
+                          playsInline
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
+                          <div className="bg-black/30 backdrop-blur-sm p-3 rounded-full border border-white/20">
+                            <Play className="w-6 h-6 text-white fill-white" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={publicUrl}
+                        alt={photo.title || photo.ai_caption || "Travel photo"}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                   </div>
                 </Link>
               );
