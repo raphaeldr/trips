@@ -26,7 +26,11 @@ const Gallery = () => {
   } = useQuery({
     queryKey: ["photos"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("photos").select("*").order("taken_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .not("mime_type", "ilike", "video/%") // Filter out videos server-side
+        .order("taken_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -113,6 +117,7 @@ const Gallery = () => {
                             cameraMake={photo.camera_make}
                             cameraModel={photo.camera_model}
                             isHero={photo.is_hero}
+                            mimeType={photo.mime_type}
                             onHeroToggle={refetch}
                           />
                         ))}
