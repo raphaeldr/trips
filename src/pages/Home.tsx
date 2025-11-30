@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Map as MapIcon, Calendar, Camera, BookOpen, Globe, Play } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, Map as MapIcon, Calendar, Camera, BookOpen, Globe, Play, Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays, format } from "date-fns";
@@ -14,6 +14,10 @@ import { AirportBoard } from "@/components/ui/AirportText";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
+  const [scatterInView, setScatterInView] = useState(false);
+  const scatterRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
   // Fetch destinations for day counter & map
   const { data: destinations } = useQuery({
     queryKey: ["destinations"],
@@ -43,11 +47,10 @@ const Home = () => {
       const { data, error } = await supabase
         .from("photos")
         .select("*")
-        // Removed explicit video exclusion
         .order("created_at", {
           ascending: false,
         })
-        .limit(8);
+        .limit(12); // Increased limit for scatter grid
       if (error) throw error;
       return data;
     },
@@ -81,7 +84,7 @@ const Home = () => {
     },
   });
 
-  // Fetch latest blog posts (for featured section if needed, distinct from latestPost)
+  // Fetch latest blog posts (for featured section)
   const { data: featuredPosts } = useQuery({
     queryKey: ["latestBlogPosts"],
     queryFn: async () => {
@@ -98,32 +101,52 @@ const Home = () => {
     },
   });
 
-  // Fetch unique country count (minus start country)
+  // Fetch unique country count
   const { data: countryCount } = useQuery({
     queryKey: ["countryCount"],
     queryFn: async () => {
       const { data, error } = await supabase.from("destinations").select("country");
       if (error) throw error;
       const uniqueCountries = new Set(data.map((d) => d.country));
-      // Subtract 1 for the start country (approximate logic)
       return Math.max(0, uniqueCountries.size - 1);
     },
   });
 
-  // Fetch total photo count
-  const { data: photoCount } = useQuery({
-    queryKey: ["photoCount"],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("photos").select("*", {
-        count: "exact",
-        head: true,
-      });
-      if (error) throw error;
-      return count || 0;
-    },
-  });
+  // Intersection Observer for Scatter Grid
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setScatterInView(true);
+          }
+        });
+      },
+      { threshold: 0.2 }, // Trigger when 20% of the section is visible
+    );
 
-  // Analyze image brightness and adjust text color
+    if (scatterRef.current) {
+      observer.observe(scatterRef.current);
+    }
+
+    return () => {
+      if (scatterRef.current) {
+        observer.unobserve(scatterRef.current);
+      }
+    };
+  }, []);
+
+  // Generate random positions for the scatter effect (memoized to keep them stable)
+  const scatterStyles = useMemo(() => {
+    return (
+      latestPhotos?.map(() => ({
+        transform: `translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(${Math.random() * 40 - 20}deg) scale(${0.5 + Math.random() * 0.5})`,
+        opacity: 0,
+      })) || []
+    );
+  }, [latestPhotos]);
+
+  // Analyze image brightness
   useEffect(() => {
     if (!heroPhoto) {
       setTextColor("text-white");
@@ -132,7 +155,6 @@ const Home = () => {
     const img = new Image();
     img.crossOrigin = "Anonymous";
 
-    // Check if it's a video or image
     const isVideo = heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path;
     const mediaUrl =
       isVideo && heroPhoto.animated_path
@@ -140,7 +162,6 @@ const Home = () => {
         : supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
 
     if (isVideo) {
-      // For video, we default to white text as it's hard to analyze video brightness client-side efficiently
       setTextColor("text-white");
       return;
     }
@@ -155,12 +176,10 @@ const Home = () => {
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
-        // Sample center area of image
         const sampleSize = 200;
         const x = (canvas.width - sampleSize) / 2;
         const y = (canvas.height - sampleSize) / 2;
 
-        // Ensure coordinates are within bounds
         const safeX = Math.max(0, Math.min(x, canvas.width - 1));
         const safeY = Math.max(0, Math.min(y, canvas.height - 1));
         const safeWidth = Math.min(sampleSize, canvas.width - safeX);
@@ -176,7 +195,6 @@ const Home = () => {
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
-          // Calculate perceived brightness
           const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
           totalBrightness += brightness;
         }
@@ -193,7 +211,6 @@ const Home = () => {
     };
   }, [heroPhoto]);
 
-  // Calculate total days of adventure
   const calculateDaysOfAdventure = () => {
     if (!destinations || destinations.length === 0) return 0;
     const firstDate = new Date(destinations[0].arrival_date);
@@ -203,22 +220,88 @@ const Home = () => {
 
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "The Anderson Family";
-
-  // Current location for map card
   const currentDestination = destinations?.find((d) => d.is_current);
-
-  // Media URL handling
   const heroMediaUrl = heroPhoto
     ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path || heroPhoto.storage_path).data.publicUrl
     : null;
-
   const isVideo = heroPhoto?.mime_type?.startsWith("video/") || heroPhoto?.animated_path;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
+    <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-x-hidden">
       <Navigation />
 
       <main className="pt-24 md:pt-28 pb-12">
+        {/* Hero Section */}
+        <section className="relative h-[80vh] flex items-center justify-center overflow-hidden mb-12 rounded-b-3xl md:rounded-b-[3rem] shadow-lg">
+          {heroPhoto ? (
+            <>
+              {isVideo ? (
+                <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
+                  <source src={heroMediaUrl} type="video/mp4" />
+                </video>
+              ) : (
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
+                  style={{ backgroundImage: `url(${heroMediaUrl})` }}
+                />
+              )}
+              <div className={`absolute inset-0 ${textColor === "text-slate-800" ? "bg-white/20" : "bg-black/30"}`} />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
+          )}
+
+          <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
+            <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in shadow-sm">
+              <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
+                {daysOfAdventure} days of adventure
+              </span>
+            </div>
+
+            <div className="mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              <div className="flex justify-center">
+                <AirportBoard
+                  text={`${daysOfAdventure} days of adventures`}
+                  className="text-4xl md:text-6xl lg:text-8xl font-bold tracking-tight drop-shadow-md"
+                />
+              </div>
+            </div>
+
+            <p
+              className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90 drop-shadow-sm font-medium"
+              style={{ animationDelay: "0.2s" }}
+            >
+              Join {familyName} as we explore continents, chase sunsets, and learn about the world together.
+            </p>
+
+            <div className="animate-fade-in w-full max-w-md mx-auto" style={{ animationDelay: "0.3s" }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  navigate("/blog");
+                }}
+                className="relative flex items-center w-full bg-white/80 backdrop-blur-md rounded-full p-1.5 transition-all duration-300 hover:bg-white shadow-lg hover:shadow-xl border border-white/20 group"
+              >
+                <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-md" />
+                <div className="relative flex items-center pl-5 flex-1 z-10">
+                  <span className="text-muted-foreground/60 font-medium mr-1 select-none text-lg">journal/</span>
+                  <input
+                    type="text"
+                    placeholder="search..."
+                    className="w-full bg-transparent border-none outline-none text-gray-900 placeholder:text-muted-foreground/40 h-10 font-medium text-lg"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="relative z-10 rounded-full px-8 h-12 bg-gray-900 text-white hover:bg-black border-none shadow-md transition-all font-bold text-base hover:scale-105 active:scale-95"
+                >
+                  Explore
+                </Button>
+              </form>
+            </div>
+          </div>
+        </section>
+
         {/* Bento Grid Layout */}
         <div className="bento-grid">
           {/* 1. Header / Intro Block */}
@@ -243,7 +326,7 @@ const Home = () => {
             </p>
           </div>
 
-          {/* 2. Hero Media Block */}
+          {/* 2. Hero Media Block (Secondary) */}
           <div className="bento-card col-span-1 md:col-span-1 lg:col-span-2 lg:row-span-2 relative min-h-[300px] lg:min-h-[400px]">
             {heroLoading ? (
               <Skeleton className="w-full h-full" />
@@ -310,9 +393,10 @@ const Home = () => {
             className="bento-card col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-1 relative min-h-[240px] group cursor-pointer"
           >
             <div className="absolute inset-0 pointer-events-none">
-              <MapEmbed className="w-full h-full group-hover:grayscale-0 transition-all duration-500" />
+              <MapEmbed className="w-full h-full grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500" />
             </div>
-            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end bg-gradient-to-t from-background/60 to-transparent">
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end">
               <div>
                 <h3 className="text-xl font-bold mb-1">Live Journey Map</h3>
                 <p className="text-sm text-muted-foreground">
@@ -383,6 +467,72 @@ const Home = () => {
               Enter Gallery
             </span>
           </Link>
+        </div>
+
+        {/* Scattered Photo Grid Animation */}
+        <div ref={scatterRef} className="mt-32 mb-32 relative container mx-auto px-4 min-h-[800px]">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">Capturing every moment</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              From spontaneous snapshots to breathtaking landscapes, our gallery tells the story of our journey.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 scattered-grid">
+            {latestPhotos?.map((photo, index) => {
+              const publicUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+              const isVideo = photo.mime_type?.startsWith("video/");
+              // Apply random scatter style if not in view, else reset to grid
+              const style =
+                !scatterInView && scatterStyles[index]
+                  ? scatterStyles[index]
+                  : {
+                      transform: "translate3d(0, 0, 0) rotate(0deg) scale(1)",
+                      opacity: 1,
+                    };
+
+              // Stagger delay based on index
+              const transitionDelay = `${index * 0.1}s`;
+
+              return (
+                <div
+                  key={photo.id}
+                  className="scattered-item aspect-square rounded-2xl overflow-hidden shadow-card hover:shadow-xl transition-all duration-500 hover:scale-105 bg-card"
+                  style={{
+                    ...style,
+                    transitionDelay: scatterInView ? transitionDelay : "0s",
+                  }}
+                >
+                  {isVideo ? (
+                    <video
+                      src={`${publicUrl}#t=0.1`}
+                      className="w-full h-full object-cover"
+                      preload="metadata"
+                      muted
+                      playsInline
+                    />
+                  ) : (
+                    <img
+                      src={publicUrl}
+                      alt={photo.title || "Gallery photo"}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div
+            className={`text-center mt-16 transition-opacity duration-1000 delay-1000 ${scatterInView ? "opacity-100" : "opacity-0"}`}
+          >
+            <Link to="/gallery">
+              <Button size="lg" variant="outline" className="rounded-full px-8">
+                View Full Gallery
+              </Button>
+            </Link>
+          </div>
         </div>
       </main>
 
