@@ -1,19 +1,20 @@
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
-interface AirportTextProps {
+interface AirportBoardProps {
   text: string;
   className?: string;
 }
 
 // A mix of characters to cycle through for the "flipping" effect
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-., ";
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-., ";
 
-export const AirportText = ({ text, className = "" }: AirportTextProps) => {
+export const AirportBoard = ({ text, className = "" }: AirportBoardProps) => {
   const [renderedChars, setRenderedChars] = useState<string[]>([]);
   const requestRef = useRef<number>();
   const lastUpdateRef = useRef<number>(0);
 
+  // We use a ref for state that updates rapidly to avoid closure staleness in the animation loop
   const stateRef = useRef({
     currentIndex: 0,
     currentCycles: 0,
@@ -57,19 +58,8 @@ export const AirportText = ({ text, className = "" }: AirportTextProps) => {
       return;
     }
 
-    const currentCharTarget = state.targetText[state.currentIndex];
-
-    // Special handling for newline characters: don't animate, just set and move on
-    if (currentCharTarget === "\n") {
-      state.charsArray[state.currentIndex] = "\n";
-      state.currentIndex++;
-      state.currentCycles = 0;
-      setRenderedChars([...state.charsArray]);
-      requestRef.current = requestAnimationFrame(animate);
-      return;
-    }
-
     // "Stay longer" logic: Flip the current character X times before locking it
+    // 5 flips * 20ms = ~100ms dwell time per character
     const FLIPS_BEFORE_LOCK = 5;
 
     if (state.currentCycles < FLIPS_BEFORE_LOCK) {
@@ -78,7 +68,7 @@ export const AirportText = ({ text, className = "" }: AirportTextProps) => {
       state.currentCycles++;
     } else {
       // Phase 2: Lock the correct character and move to the next index
-      state.charsArray[state.currentIndex] = currentCharTarget;
+      state.charsArray[state.currentIndex] = state.targetText[state.currentIndex];
       state.currentIndex++;
       state.currentCycles = 0; // Reset cycle counter for the next character
     }
@@ -91,17 +81,15 @@ export const AirportText = ({ text, className = "" }: AirportTextProps) => {
   };
 
   return (
-    <div className={cn("inline-flex flex-wrap justify-center gap-[0.1em]", className)} aria-label={text}>
-      {renderedChars.map((char, i) => {
-        if (char === "\n") {
-          return <div key={i} className="basis-full h-0" />;
-        }
-        return (
-          <span key={i} className="inline-flex items-center justify-center min-w-[0.55em] text-white">
-            {char === " " ? "\u00A0" : char}
-          </span>
-        );
-      })}
+    <div className={cn("inline-flex flex-wrap justify-center gap-[2px]", className)} aria-label={text}>
+      {renderedChars.map((char, i) => (
+        <span
+          key={i}
+          className="inline-flex items-center justify-center min-w-[0.6em] px-1 bg-black/90 text-white rounded-[2px] shadow-sm overflow-hidden"
+        >
+          {char === " " ? "\u00A0" : char}
+        </span>
+      ))}
     </div>
   );
 };
