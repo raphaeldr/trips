@@ -10,8 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays, format } from "date-fns";
 import type { Destination } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AirportBoard } from "@/components/ui/AirportText";
 
 const Home = () => {
+  const [textColor, setTextColor] = useState("text-white");
   // Fetch destinations for day counter & map
   const { data: destinations } = useQuery({
     queryKey: ["destinations"],
@@ -29,6 +31,23 @@ const Home = () => {
     queryKey: ["tripSettings"],
     queryFn: async () => {
       const { data, error } = await supabase.from("trip_settings").select("*").single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch latest photos for homepage
+  const { data: latestPhotos } = useQuery({
+    queryKey: ["latestPhotos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        // Removed explicit video exclusion
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(8);
       if (error) throw error;
       return data;
     },
@@ -62,6 +81,23 @@ const Home = () => {
     },
   });
 
+  // Fetch latest blog posts (for featured section if needed, distinct from latestPost)
+  const { data: featuredPosts } = useQuery({
+    queryKey: ["latestBlogPosts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*, destinations(*)")
+        .eq("status", "published")
+        .order("published_at", {
+          ascending: false,
+        })
+        .limit(2);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch unique country count (minus start country)
   const { data: countryCount } = useQuery({
     queryKey: ["countryCount"],
@@ -74,6 +110,89 @@ const Home = () => {
     },
   });
 
+  // Fetch total photo count
+  const { data: photoCount } = useQuery({
+    queryKey: ["photoCount"],
+    queryFn: async () => {
+      const { count, error } = await supabase.from("photos").select("*", {
+        count: "exact",
+        head: true,
+      });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Analyze image brightness and adjust text color
+  useEffect(() => {
+    if (!heroPhoto) {
+      setTextColor("text-white");
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+
+    // Check if it's a video or image
+    const isVideo = heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path;
+    const mediaUrl =
+      isVideo && heroPhoto.animated_path
+        ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl
+        : supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
+
+    if (isVideo) {
+      // For video, we default to white text as it's hard to analyze video brightness client-side efficiently
+      setTextColor("text-white");
+      return;
+    }
+
+    img.src = mediaUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Sample center area of image
+        const sampleSize = 200;
+        const x = (canvas.width - sampleSize) / 2;
+        const y = (canvas.height - sampleSize) / 2;
+
+        // Ensure coordinates are within bounds
+        const safeX = Math.max(0, Math.min(x, canvas.width - 1));
+        const safeY = Math.max(0, Math.min(y, canvas.height - 1));
+        const safeWidth = Math.min(sampleSize, canvas.width - safeX);
+        const safeHeight = Math.min(sampleSize, canvas.height - safeY);
+
+        if (safeWidth <= 0 || safeHeight <= 0) return;
+
+        const imageData = ctx.getImageData(safeX, safeY, safeWidth, safeHeight);
+        const data = imageData.data;
+        let totalBrightness = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // Calculate perceived brightness
+          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+          totalBrightness += brightness;
+        }
+
+        const avgBrightness = totalBrightness / (data.length / 4);
+        setTextColor(avgBrightness > 160 ? "text-slate-800" : "text-slate-100");
+      } catch (error) {
+        console.error("Error analyzing image:", error);
+        setTextColor("text-white");
+      }
+    };
+    img.onerror = () => {
+      setTextColor("text-white");
+    };
+  }, [heroPhoto]);
+
   // Calculate total days of adventure
   const calculateDaysOfAdventure = () => {
     if (!destinations || destinations.length === 0) return 0;
@@ -84,6 +203,9 @@ const Home = () => {
 
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "The Anderson Family";
+
+  // Current location for map card
+  const currentDestination = destinations?.find((d) => d.is_current);
 
   // Media URL handling
   const heroMediaUrl = heroPhoto
@@ -188,13 +310,16 @@ const Home = () => {
             className="bento-card col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-1 relative min-h-[240px] group cursor-pointer"
           >
             <div className="absolute inset-0 pointer-events-none">
-              <MapEmbed className="w-full h-full grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500" />
+              <MapEmbed className="w-full h-full group-hover:grayscale-0 transition-all duration-500" />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent pointer-events-none" />
-            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end">
+            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end bg-gradient-to-t from-background/60 to-transparent">
               <div>
                 <h3 className="text-xl font-bold mb-1">Live Journey Map</h3>
-                <p className="text-sm text-muted-foreground">Track our route across the globe</p>
+                <p className="text-sm text-muted-foreground">
+                  {currentDestination
+                    ? `Currently in ${currentDestination.name}, ${currentDestination.country}`
+                    : "Track our route across the globe"}
+                </p>
               </div>
               <div className="bg-background/80 backdrop-blur-sm p-2 rounded-full border shadow-sm group-hover:scale-110 transition-transform">
                 <ArrowRight className="w-5 h-5" />
