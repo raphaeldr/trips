@@ -13,7 +13,7 @@ export const AirportText = ({ text, className = "" }: AirportTextProps) => {
 
   useEffect(() => {
     let iteration = 0;
-    const intervalSpeed = 30; // Speed of character cycling in ms
+    const intervalSpeed = 10; // Speed of character cycling in ms
 
     // We want the text to start scrambling immediately
     // If the text is shorter than current, we might want to pad it,
