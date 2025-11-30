@@ -7,9 +7,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* -------------------------------------------------------------------------- */
+/* BASE LAYER & VARIABLES                                                     */
+/* -------------------------------------------------------------------------- */
+
 @layer base {
   :root {
-    /* Existing variables preserved for shadcn/ui compatibility */
+    /* Standard shadcn/ui variables */
     --background: 0 0% 98%;
     --foreground: 24 9% 10%;
     --card: 0 0% 100%;
@@ -36,7 +40,7 @@
     --shadow-elegant: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
     --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
 
-    /* NEW: Portrait.so Inspired Variables */
+    /* Portrait.so Inspired Variables */
     --basier-to-junicode-multiplier: 1.2584423676;
     --gray-25: 238 238 238;
     --gray-50: 222 222 222;
@@ -63,10 +67,15 @@
     --font-basier-circle: "Basier Circle", "DM Sans", system-ui, sans-serif;
     --font-jetbrains-mono: "JetBrains Mono", "Source Code Pro", monospace;
 
-    /* Privy Colors (from your snippet) */
+    /* Privy Colors */
     --privy-color-background: #fff;
     --privy-color-foreground: #1f1f1f;
     --privy-color-accent: #202020;
+    --privy-border-radius-sm: 6px;
+    --privy-border-radius-md: 12px;
+    --privy-border-radius-mdlg: 25px;
+    --privy-border-radius-lg: 24px;
+    --privy-border-radius-full: 9999px;
   }
 
   .dark {
@@ -97,12 +106,88 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  *,
+  :after,
+  :before {
+    box-sizing: border-box;
+    border: 0 solid #9f9f9f;
+    --tw-border-spacing-x: 0;
+    --tw-border-spacing-y: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-pan-x: ;
+    --tw-pan-y: ;
+    --tw-pinch-zoom: ;
+    --tw-scroll-snap-strictness: proximity;
+    --tw-gradient-from-position: ;
+    --tw-gradient-via-position: ;
+    --tw-gradient-to-position: ;
+    --tw-ordinal: ;
+    --tw-slashed-zero: ;
+    --tw-numeric-figure: ;
+    --tw-numeric-spacing: ;
+    --tw-numeric-fraction: ;
+    --tw-ring-inset: ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgba(59, 130, 246, 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    --tw-blur: ;
+    --tw-brightness: ;
+    --tw-contrast: ;
+    --tw-grayscale: ;
+    --tw-hue-rotate: ;
+    --tw-invert: ;
+    --tw-saturate: ;
+    --tw-sepia: ;
+    --tw-drop-shadow: ;
+    --tw-backdrop-blur: ;
+    --tw-backdrop-brightness: ;
+    --tw-backdrop-contrast: ;
+    --tw-backdrop-grayscale: ;
+    --tw-backdrop-hue-rotate: ;
+    --tw-backdrop-invert: ;
+    --tw-backdrop-opacity: ;
+    --tw-backdrop-saturate: ;
+    --tw-backdrop-sepia: ;
+    --tw-contain-size: ;
+    --tw-contain-layout: ;
+    --tw-contain-paint: ;
+    --tw-contain-style: ;
+  }
+
+  :after,
+  :before {
+    --tw-content: "";
+  }
+
+  :host,
+  html {
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+    font-family:
+      var(--font-switzer), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+      "Segoe UI Symbol", "Noto Color Emoji";
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    margin: 0;
+    line-height: inherit;
     font-family: var(--font-switzer), "DM Sans", ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
@@ -114,11 +199,282 @@
   h5,
   h6 {
     font-family: var(--font-basier-circle), "DM Sans", sans-serif;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  b,
+  strong {
+    font-weight: bolder;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family:
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      Liberation Mono,
+      Courier New,
+      monospace;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    font-size: 1em;
+  }
+
+  small {
+    font-size: 80%;
+  }
+
+  sub,
+  sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+
+  sub {
+    bottom: -0.25em;
+  }
+
+  sup {
+    top: -0.5em;
+  }
+
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    font-size: 100%;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  button,
+  select {
+    text-transform: none;
+  }
+
+  button,
+  input:where([type="button"]),
+  input:where([type="reset"]),
+  input:where([type="submit"]) {
+    -webkit-appearance: button;
+    background-color: transparent;
+    background-image: none;
+  }
+
+  :-moz-focusring {
+    outline: auto;
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+  progress {
+    vertical-align: baseline;
+  }
+
+  ::-webkit-inner-spin-button,
+  ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  [type="search"] {
+    -webkit-appearance: textfield;
+    outline-offset: -2px;
+  }
+
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  ::-webkit-file-upload-button {
+    -webkit-appearance: button;
+    font: inherit;
+  }
+
+  summary {
+    display: list-item;
+  }
+
+  blockquote,
+  dd,
+  dl,
+  figure,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  hr,
+  p,
+  pre {
+    margin: 0;
+  }
+
+  fieldset {
+    margin: 0;
+  }
+
+  fieldset,
+  legend {
+    padding: 0;
+  }
+
+  menu,
+  ol,
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  dialog {
+    padding: 0;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  input::-moz-placeholder,
+  textarea::-moz-placeholder {
+    opacity: 1;
+    color: #585858;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
+    color: #585858;
+  }
+
+  [role="button"],
+  button {
+    cursor: pointer;
+  }
+
+  :disabled {
+    cursor: default;
+  }
+
+  audio,
+  canvas,
+  embed,
+  iframe,
+  img,
+  object,
+  svg,
+  video {
+    display: block;
+    vertical-align: middle;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  [hidden] {
+    display: none;
+  }
+
+  ::backdrop {
+    --tw-border-spacing-x: 0;
+    --tw-border-spacing-y: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-pan-x: ;
+    --tw-pan-y: ;
+    --tw-pinch-zoom: ;
+    --tw-scroll-snap-strictness: proximity;
+    --tw-gradient-from-position: ;
+    --tw-gradient-via-position: ;
+    --tw-gradient-to-position: ;
+    --tw-ordinal: ;
+    --tw-slashed-zero: ;
+    --tw-numeric-figure: ;
+    --tw-numeric-spacing: ;
+    --tw-numeric-fraction: ;
+    --tw-ring-inset: ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgba(59, 130, 246, 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    --tw-blur: ;
+    --tw-brightness: ;
+    --tw-contrast: ;
+    --tw-grayscale: ;
+    --tw-hue-rotate: ;
+    --tw-invert: ;
+    --tw-saturate: ;
+    --tw-sepia: ;
+    --tw-drop-shadow: ;
+    --tw-backdrop-blur: ;
+    --tw-backdrop-brightness: ;
+    --tw-backdrop-contrast: ;
+    --tw-backdrop-grayscale: ;
+    --tw-backdrop-hue-rotate: ;
+    --tw-backdrop-invert: ;
+    --tw-backdrop-opacity: ;
+    --tw-backdrop-saturate: ;
+    --tw-backdrop-sepia: ;
+    --tw-contain-size: ;
+    --tw-contain-layout: ;
+    --tw-contain-paint: ;
+    --tw-contain-style: ;
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* CUSTOM ANIMATIONS & UTILITIES                                              */
+/* CUSTOM ANIMATIONS                                                          */
 /* -------------------------------------------------------------------------- */
 
 .LoadingSpinner_spinner__LNG7U {
@@ -135,7 +491,85 @@
   }
 }
 
-/* Bento Grid Utilities (Custom) */
+/* Text reveal animation for the hero text */
+.reveal-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--foreground)) 50%,
+    hsl(var(--muted-foreground)) 100%
+  );
+  background-size: 200% 100%;
+  animation: reveal 1s ease-out forwards;
+}
+
+@keyframes reveal {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes flash {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-flash {
+  animation: flash 1s ease-in-out infinite;
+}
+
+@keyframes shake {
+  10% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  40% {
+    transform: translate3d(3px, 0, 0);
+  }
+  50% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  60% {
+    transform: translate3d(3px, 0, 0);
+  }
+  70% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* -------------------------------------------------------------------------- */
+/* BENTO GRID UTILITIES                                                       */
+/* -------------------------------------------------------------------------- */
+
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -171,36 +605,9 @@
   border-color: var(--border);
 }
 
-/* Text reveal animation for the hero text */
-.reveal-text {
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-image: linear-gradient(
-    90deg,
-    hsl(var(--foreground)) 0%,
-    hsl(var(--foreground)) 50%,
-    hsl(var(--muted-foreground)) 100%
-  );
-  background-size: 200% 100%;
-  animation: reveal 1s ease-out forwards;
-}
-
-@keyframes reveal {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: 0 0;
-  }
-}
-
 /* -------------------------------------------------------------------------- */
-/* FONT FACES (Placeholder - ensure these files exist in public/fonts if needed) */
+/* FONT FACES                                                                 */
 /* -------------------------------------------------------------------------- */
-
-/* Note: Paths point to Next.js style _next/static structure in original CSS. 
-   Ensure you have these fonts in your public folder or use Google Fonts equivalents. */
 
 @font-face {
   font-family: "Switzer";
@@ -212,7 +619,7 @@
 
 @font-face {
   font-family: "Basier Circle";
-  src: local("Arial"); /* Fallback */
+  src: local("Arial");
   font-weight: 400;
   font-display: swap;
 }
@@ -256,6 +663,25 @@
   font-weight: 500;
 }
 
+.heading-4 {
+  font-size: clamp(1.4238rem, 1.2167rem + 0.9205vw, 1.9531rem);
+  line-height: 1.1;
+  letter-spacing: -0.02048em;
+}
+
+.heading-5 {
+  font-size: clamp(1.2656rem, 1.1495rem + 0.5163vw, 1.5625rem);
+  line-height: 1.14;
+  letter-spacing: -0.0164em;
+}
+
+.heading-6 {
+  font-size: clamp(1.125rem, 1.0761rem + 0.2174vw, 1.25rem);
+  line-height: 1.2;
+  letter-spacing: -0.0131em;
+}
+
+/* Rainbow Highlights */
 .bg-rainbow-highlights {
   background: linear-gradient(
     var(--angle, 170deg),
@@ -274,4 +700,52 @@
 
 .bg-rainbow-gradient {
   background-image: linear-gradient(90deg, #26c0ff, #e600c2 20%, #ff494e 40%, #ffa13e 60%, #ffc837 80%, #00cc3d);
+}
+
+/* Prosemirror / Content Styling */
+.prose {
+  --tw-prose-body: #1b1b1b;
+  --tw-prose-headings: #1b1b1b;
+  --tw-prose-links: #2563eb;
+  --tw-prose-bold: inherit;
+  --tw-prose-counters: #797979;
+  --tw-prose-bullets: #797979;
+  --tw-prose-hr: #c7c7c7;
+  --tw-prose-kbd: #111827;
+  --tw-prose-pre-code: #202020;
+  --tw-prose-pre-bg: #f7f7f7;
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 65ch;
+}
+
+.dark .prose {
+  --tw-prose-body: #c7c7c7;
+  --tw-prose-headings: #f7f7f7;
+  --tw-prose-links: #93c5fd;
+  --tw-prose-bold: #eee;
+  --tw-prose-counters: #9f9f9f;
+  --tw-prose-bullets: #9f9f9f;
+  --tw-prose-hr: #484848;
+  --tw-prose-kbd: #fff;
+  --tw-prose-pre-code: #c7c7c7;
+  --tw-prose-pre-bg: #141414;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 0.625rem;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
 }
