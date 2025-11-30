@@ -6,102 +6,87 @@ interface AirportBoardProps {
   className?: string;
 }
 
-// The sequence of characters for the mechanical flipping effect.
-// Order matters here to create the "sequential" feel.
-const FLIP_SEQUENCE = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,'-&?!/()";
+// A mix of characters to cycle through for the "flipping" effect
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-., ";
 
 export const AirportBoard = ({ text, className = "" }: AirportBoardProps) => {
-  // We keep track of the currently displayed string array
-  const [displayChars, setDisplayChars] = useState<string[]>([]);
+  const [renderedChars, setRenderedChars] = useState<string[]>([]);
+  const requestRef = useRef<number>();
+  const lastUpdateRef = useRef<number>(0);
 
-  // Refs to manage the animation loop and targets without triggering re-renders
-  const targetTextRef = useRef(text);
-  const currentCharsRef = useRef<string[]>([]);
-  const frameRef = useRef<number>(0);
-
-  // Initialize state on mount
-  useEffect(() => {
-    // Pad initial state with spaces to match length
-    const initial = Array(text.length).fill(" ");
-    setDisplayChars(initial);
-    currentCharsRef.current = initial;
-  }, []);
-
-  // Update target when prop changes
-  useEffect(() => {
-    targetTextRef.current = text;
-
-    // Adjust current array length if text length changes
-    if (currentCharsRef.current.length !== text.length) {
-      const newChars = [...currentCharsRef.current];
-      if (newChars.length < text.length) {
-        // Pad with spaces if growing
-        while (newChars.length < text.length) newChars.push(" ");
-      } else {
-        // Trim if shrinking
-        newChars.length = text.length;
-      }
-      currentCharsRef.current = newChars;
-      setDisplayChars(newChars);
-    }
-  }, [text]);
+  // We use a ref for state that updates rapidly to avoid closure staleness in the animation loop
+  const stateRef = useRef({
+    currentIndex: 0,
+    currentCycles: 0,
+    charsArray: [] as string[],
+    targetText: text,
+  });
 
   useEffect(() => {
-    const animate = () => {
-      let changed = false;
-      const target = targetTextRef.current;
-      const current = currentCharsRef.current;
-      const next = [...current];
+    // Initialize/Reset animation state when text changes
+    const initialArray = Array(text.length).fill(" "); // Start with blank spaces
 
-      for (let i = 0; i < target.length; i++) {
-        const charTarget = target[i];
-        const charCurrent = current[i];
-
-        // If this character is already correct, skip it
-        if (charCurrent === charTarget) continue;
-
-        // If we need to change this character
-        changed = true;
-
-        // Find current index in our sequence
-        const currentIndex = FLIP_SEQUENCE.indexOf(charCurrent);
-        const targetIndex = FLIP_SEQUENCE.indexOf(charTarget);
-
-        // If current char isn't in our sequence (unexpected), snap to space or target
-        if (currentIndex === -1) {
-          next[i] = FLIP_SEQUENCE[0];
-          continue;
-        }
-
-        // Calculate next character in sequence
-        // We simply move to the next char in the list.
-        // If we are at the end, we loop back to start.
-        const nextIndex = (currentIndex + 1) % FLIP_SEQUENCE.length;
-        next[i] = FLIP_SEQUENCE[nextIndex];
-      }
-
-      if (changed) {
-        currentCharsRef.current = next;
-        setDisplayChars(next);
-        // Slower timeout for that "mechanical" tick feel (approx 60ms)
-        setTimeout(() => {
-          frameRef.current = requestAnimationFrame(animate);
-        }, 50);
-      }
+    stateRef.current = {
+      currentIndex: 0,
+      currentCycles: 0,
+      charsArray: initialArray,
+      targetText: text,
     };
 
-    // Start animation
-    frameRef.current = requestAnimationFrame(animate);
+    setRenderedChars(initialArray);
+
+    // Start the animation loop
+    requestRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [text]); // Re-trigger animation loop when text goal changes
+  }, [text]);
+
+  const animate = (time: number) => {
+    // Control speed: Update every ~20ms for "super fast" flipping
+    if (time - lastUpdateRef.current < 20) {
+      requestRef.current = requestAnimationFrame(animate);
+      return;
+    }
+    lastUpdateRef.current = time;
+
+    const state = stateRef.current;
+
+    // Stop if we've resolved the entire string
+    if (state.currentIndex >= state.targetText.length) {
+      return;
+    }
+
+    // "Stay longer" logic: Flip the current character X times before locking it
+    // 5 flips * 20ms = ~100ms dwell time per character
+    const FLIPS_BEFORE_LOCK = 5;
+
+    if (state.currentCycles < FLIPS_BEFORE_LOCK) {
+      // Phase 1: Cycle through random characters at the current index
+      state.charsArray[state.currentIndex] = CHARS[Math.floor(Math.random() * CHARS.length)];
+      state.currentCycles++;
+    } else {
+      // Phase 2: Lock the correct character and move to the next index
+      state.charsArray[state.currentIndex] = state.targetText[state.currentIndex];
+      state.currentIndex++;
+      state.currentCycles = 0; // Reset cycle counter for the next character
+    }
+
+    // Trigger re-render with new state
+    setRenderedChars([...state.charsArray]);
+
+    // Continue loop
+    requestRef.current = requestAnimationFrame(animate);
+  };
 
   return (
-    <div className={cn("split-flap-board", className)} aria-label={text}>
-      {displayChars.map((char, index) => (
-        <span key={index} className="split-flap-char font-mono text-white" data-char={char}>
+    <div className={cn("inline-flex flex-wrap justify-center gap-[2px]", className)} aria-label={text}>
+      {renderedChars.map((char, i) => (
+        <span
+          key={i}
+          className="inline-flex items-center justify-center min-w-[0.6em] px-1 bg-black/90 text-white rounded-[2px] shadow-sm overflow-hidden"
+        >
           {char === " " ? "\u00A0" : char}
         </span>
       ))}
