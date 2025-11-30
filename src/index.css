@@ -2,9 +2,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -12,119 +9,61 @@
 
 @layer base {
   :root {
-    --background: 60 4% 95%;
+    --background: 0 0% 98%; /* Slightly off-white for the canvas feel */
     --foreground: 24 9% 10%;
-    --card: 60 9% 97%;
+    --card: 0 0% 100%;
     --card-foreground: 24 9% 10%;
-    --popover: 20 5% 90%;
+    --popover: 0 0% 100%;
     --popover-foreground: 24 9% 10%;
 
-    /* Teal adventure accent */
+    /* Teal adventure accent - kept from original */
     --primary: 38 92.126% 50.1961%;
     --primary-foreground: 47 100% 96%;
     --primary-glow: 174 62% 67%;
 
     /* Neutral grays */
-    --secondary: 24 5% 44%;
-    --secondary-foreground: 60 9% 97%;
-    --muted: 23 5% 82%;
-    --muted-foreground: 24 9% 10%;
-    --accent: 47 100% 96%;
-    --accent-foreground: 43 96.4126% 56.2745%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 5% 26%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 5% 26%;
 
-    /* Dark navy footer */
-    --footer: 220 40% 15%;
-    --footer-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 38 92.126% 50.1961%;
+    --radius: 1.5rem; /* Larger radius for the bento cards */
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
-    --border: 23 5% 82%;
-    --input: 23 5% 82%;
-    --ring: 37 92% 50%;
-    --radius: 1rem;
+    /* Shadows matching Portrait.so style (softer, diffused) */
+    --shadow-elegant: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
 
-    /* Travel-specific gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(174 62% 47% / 0.9), hsl(220 40% 15% / 0.7));
-    --gradient-overlay: linear-gradient(180deg, transparent 0%, hsl(220 40% 15% / 0.6) 100%);
-
-    /* Shadows */
-    --shadow-elegant: 0 10px 40px -10px hsl(220 40% 15% / 0.1);
-    --shadow-card: 0 4px 20px hsl(220 40% 15% / 0.08);
-
-    /* Animation */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --chart-1: 45 96% 64%;
-    --chart-2: 47 95% 53%;
-    --chart-3: 43 96% 56%;
-    --chart-4: 37 92% 50%;
-    --chart-5: 24 5% 44%;
-    --sidebar: 60 9% 97%;
-    --sidebar-foreground: 24 9% 10%;
-    --sidebar-primary: 37 92% 50%;
-    --sidebar-primary-foreground: 47 100% 96%;
-    --sidebar-accent: 24 5% 44%;
-    --sidebar-accent-foreground: 60 9% 97%;
-    --sidebar-border: 23 5% 82%;
-    --sidebar-ring: 37 92% 50%;
-    --font-sans:
-      "Source Sans Pro", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-    --font-serif: "Source Serif Pro", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-    --font-mono:
-      "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
-      monospace;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
+    --font-sans: "DM Sans", system-ui, sans-serif;
+    --font-serif: "Playfair Display", serif;
   }
+
   .dark {
-    --background: 24 9% 10%;
-    --foreground: 60 9% 97%;
-    --card: 12 6% 15%;
-    --card-foreground: 60 9% 97%;
-    --popover: 30 6% 25%;
-    --popover-foreground: 60 9% 97%;
-    --primary: 43 96% 56%;
-    --primary-foreground: 20 91% 14%;
-    --secondary: 24 5% 44%;
-    --secondary-foreground: 60 9% 97%;
-    --muted: 24 5% 44%;
-    --muted-foreground: 60 9% 97%;
-    --accent: 25 83% 14%;
-    --accent-foreground: 47 95% 53%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
-    --border: 33 5% 32%;
-    --input: 33 5% 32%;
-    --ring: 43 96% 56%;
-    --chart-1: 45 96% 64%;
-    --chart-2: 48 96% 76%;
-    --chart-3: 43 96% 56%;
-    --chart-4: 37 92% 50%;
-    --chart-5: 33 5% 32%;
-    --sidebar: 12 6% 15%;
-    --sidebar-foreground: 60 9% 97%;
-    --sidebar-primary: 43 96% 56%;
-    --sidebar-primary-foreground: 20 91% 14%;
-    --sidebar-accent: 47 95% 53%;
-    --sidebar-accent-foreground: 25 83% 14%;
-    --sidebar-border: 33 5% 32%;
-    --sidebar-ring: 43 96% 56%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 38 92.126% 50.1961%;
+    --primary-foreground: 47 100% 96%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 38 92.126% 50.1961%;
   }
 }
 
@@ -132,14 +71,82 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family:
-      "DM Sans",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Bento Grid Utilities */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+  }
+}
+
+.bento-card {
+  @apply bg-card rounded-[var(--radius)] overflow-hidden transition-all duration-300 border border-border/40;
+  box-shadow: var(--shadow-card);
+}
+
+.bento-card:hover {
+  transform: translateY(-2px) scale-[1.005];
+  box-shadow: var(--shadow-elegant);
+  border-color: var(--border);
+}
+
+/* Text reveal animation for the hero text */
+.reveal-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--foreground)) 50%,
+    hsl(var(--muted-foreground)) 100%
+  );
+  background-size: 200% 100%;
+  animation: reveal 1s ease-out forwards;
+}
+
+@keyframes reveal {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
   }
 }
