@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Plane } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +11,7 @@ import { format, differenceInDays } from "date-fns";
 import type { Destination } from "@/types";
 
 const Home = () => {
+  const [textColor, setTextColor] = useState("text-white");
   // Fetch destinations for day counter
   const { data: destinations } = useQuery({
     queryKey: ["destinations"],
@@ -58,6 +61,23 @@ const Home = () => {
     },
   });
 
+  // Fetch latest blog posts
+  const { data: featuredPosts } = useQuery({
+    queryKey: ["latestBlogPosts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*, destinations(*)")
+        .eq("status", "published")
+        .order("published_at", {
+          ascending: false,
+        })
+        .limit(2);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch unique country count (minus start country)
   const { data: countryCount } = useQuery({
     queryKey: ["countryCount"],
@@ -85,6 +105,81 @@ const Home = () => {
     },
   });
 
+  // Analyze image brightness and adjust text color
+  useEffect(() => {
+    if (!heroPhoto) {
+      setTextColor("text-white");
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+
+    // Check if it's a video or image
+    const isVideo = heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path;
+    const mediaUrl =
+      isVideo && heroPhoto.animated_path
+        ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl
+        : supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
+
+    if (isVideo) {
+      // For video, we default to white text as it's hard to analyze video brightness client-side efficiently
+      // without loading the video into a canvas. A dark overlay is usually sufficient.
+      setTextColor("text-white");
+      return;
+    }
+
+    img.src = mediaUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Sample center area of image (more relevant for text overlay)
+        const sampleSize = 200;
+        const x = (canvas.width - sampleSize) / 2;
+        const y = (canvas.height - sampleSize) / 2;
+
+        // Ensure coordinates are within bounds
+        const safeX = Math.max(0, Math.min(x, canvas.width - 1));
+        const safeY = Math.max(0, Math.min(y, canvas.height - 1));
+        const safeWidth = Math.min(sampleSize, canvas.width - safeX);
+        const safeHeight = Math.min(sampleSize, canvas.height - safeY);
+
+        if (safeWidth <= 0 || safeHeight <= 0) return;
+
+        const imageData = ctx.getImageData(safeX, safeY, safeWidth, safeHeight);
+        const data = imageData.data;
+        let totalBrightness = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // Calculate perceived brightness using luminance formula
+          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+          totalBrightness += brightness;
+        }
+
+        const avgBrightness = totalBrightness / (data.length / 4);
+
+        // If average brightness > 128 (midpoint), image is light, use darker text
+        // Use softer colors: light gray for dark images, dark gray for light images
+        // Adjusted threshold slightly higher to favor white text on mid-tones
+        setTextColor(avgBrightness > 160 ? "text-slate-800" : "text-slate-100");
+      } catch (error) {
+        console.error("Error analyzing image:", error);
+        setTextColor("text-white");
+      }
+    };
+    img.onerror = () => {
+      setTextColor("text-white");
+    };
+  }, [heroPhoto]);
+
   // Calculate total days of adventure from first to last destination
   const calculateDaysOfAdventure = () => {
     if (!destinations || destinations.length === 0) return 0;
@@ -107,13 +202,13 @@ const Home = () => {
       <Navigation />
       <BottomNav />
 
-      {/* Hero Dashboard Section */}
-      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image or Video */}
         {heroPhoto ? (
           <>
             {heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path ? (
-              <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-20">
+              <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
                 <source
                   src={
                     heroPhoto.animated_path
@@ -125,130 +220,133 @@ const Home = () => {
               </video>
             ) : (
               <div
-                className="absolute inset-0 bg-cover bg-center opacity-20"
+                className="absolute inset-0 bg-cover bg-center"
                 style={{
                   backgroundImage: `url(${supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl})`,
                 }}
               />
             )}
+            {/* Conditional overlay based on text color to ensure readability */}
+            <div className={`absolute inset-0 ${textColor === "text-slate-800" ? "bg-white/20" : "bg-black/30"}`} />
           </>
-        ) : null}
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
+        )}
 
-        {/* Hero Content */}
-        <div className="relative z-10 container mx-auto px-6 text-center text-white">
-          <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
-            {familyName}
+        {/* Content */}
+        <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
+          <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in">
+            <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
+              {daysOfAdventure} days of adventure
+            </span>
+          </div>
+
+          <h1
+            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in drop-shadow-md"
+            style={{
+              animationDelay: "0.1s",
+            }}
+          >
+            {tagline.split(". ").map((part, i) => (
+              <span key={i}>
+                {part}
+                {i < tagline.split(". ").length - 1 ? "." : ""}
+                {i < tagline.split(". ").length - 1 && <br />}
+              </span>
+            ))}
           </h1>
-          <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-8 animate-fade-in opacity-90" style={{ animationDelay: "0.1s" }}>
-            {tagline}
+
+          <p
+            className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90 drop-shadow-sm"
+            style={{
+              animationDelay: "0.2s",
+            }}
+          >
+            Join {familyName} as we explore continents, chase sunsets, and learn about the world together.
           </p>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto mt-12 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-              <div className="text-3xl md:text-4xl font-bold text-amber-400">{daysOfAdventure}</div>
-              <div className="text-sm text-white/80 mt-2">Days</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-              <div className="text-3xl md:text-4xl font-bold text-amber-400">{countryCount || 0}</div>
-              <div className="text-sm text-white/80 mt-2">Countries</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-              <div className="text-3xl md:text-4xl font-bold text-amber-400">{photoCount}</div>
-              <div className="text-sm text-white/80 mt-2">Photos</div>
-            </div>
+          <div
+            className="flex gap-4 justify-center animate-fade-in"
+            style={{
+              animationDelay: "0.3s",
+            }}
+          >
+            <Link to="/blog">
+              <Button size="lg" className="gap-2 shadow-elegant hover:shadow-xl transition-all">
+                Read journal
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link to="/map">
+              <Button size="lg" className="gap-2 shadow-elegant hover:shadow-xl transition-all">
+                View map
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Airport Departures Board Section */}
-      <section className="py-16 bg-slate-950">
+      {/* Featured Stories Section */}
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-6">
-          <div className="bg-black rounded-2xl shadow-2xl overflow-hidden border-4 border-slate-700">
-            {/* Board Header */}
-            <div className="bg-slate-900 border-b-4 border-slate-700 px-8 py-6 flex items-center gap-4">
-              <div className="bg-amber-400 p-3 rounded-lg">
-                <Plane className="w-8 h-8 text-black" />
-              </div>
-              <h2 className="font-display text-4xl font-bold text-amber-400 tracking-wider" style={{ fontFamily: "'Courier New', monospace" }}>
-                DEPARTURES
-              </h2>
-            </div>
+          <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-left">Latest stories</h2>
 
-            {/* Board Content */}
-            <div className="p-8">
-              {/* Column Headers */}
-              <div className="grid grid-cols-12 gap-4 mb-4 pb-4 border-b border-slate-800">
-                <div className="col-span-3 text-slate-500 font-bold text-sm tracking-widest" style={{ fontFamily: "'Courier New', monospace" }}>
-                  DATE
-                </div>
-                <div className="col-span-4 text-slate-500 font-bold text-sm tracking-widest" style={{ fontFamily: "'Courier New', monospace" }}>
-                  DESTINATION
-                </div>
-                <div className="col-span-2 text-slate-500 font-bold text-sm tracking-widest" style={{ fontFamily: "'Courier New', monospace" }}>
-                  COUNTRY
-                </div>
-                <div className="col-span-3 text-slate-500 font-bold text-sm tracking-widest" style={{ fontFamily: "'Courier New', monospace" }}>
-                  STATUS
-                </div>
-              </div>
-
-              {/* Destination Rows */}
-              <div className="space-y-2">
-                {destinations && destinations.length > 0 ? (
-                  destinations.map((dest, index) => {
-                    const isPast = dest.departure_date ? new Date(dest.departure_date) < new Date() : false;
-                    const isCurrent = dest.is_current;
-                    const status = isCurrent ? "VISITING" : isPast ? "DEPARTED" : "SCHEDULED";
-                    
-                    return (
-                      <div
-                        key={dest.id}
-                        className="grid grid-cols-12 gap-4 py-3 hover:bg-slate-900/50 transition-colors rounded-lg px-2 animate-fade-in"
-                        style={{ animationDelay: `${index * 0.05}s` }}
-                      >
-                        <div className="col-span-3 text-slate-400 font-mono text-lg tracking-wider">
-                          {format(new Date(dest.arrival_date), "dd MMM yyyy").toUpperCase()}
-                        </div>
-                        <div className="col-span-4 text-amber-400 font-mono text-xl font-bold tracking-wider">
-                          {dest.name.toUpperCase()}
-                        </div>
-                        <div className="col-span-2 text-slate-300 font-mono text-lg tracking-wider">
-                          {dest.country.toUpperCase()}
-                        </div>
-                        <div className="col-span-3 flex items-center gap-2">
-                          <span
-                            className={`font-mono text-lg tracking-wider ${
-                              isCurrent
-                                ? "text-green-400 animate-pulse"
-                                : isPast
-                                  ? "text-slate-500"
-                                  : "text-blue-400"
-                            }`}
-                          >
-                            {status}
-                          </span>
-                        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {featuredPosts && featuredPosts.length > 0 ? (
+              featuredPosts.map((post) => (
+                <Link key={post.id} to={`/blog/${post.slug}`}>
+                  <div className="group relative overflow-hidden rounded-2xl shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer">
+                    <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-footer/20">
+                      {post.cover_image_url && (
+                        <img src={post.cover_image_url} alt={post.title} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-overlay" />
+                    <div className="absolute bottom-0 left-0 right-0 p-8">
+                      <div className="flex items-center gap-2 text-sm text-primary-foreground/80 mb-2">
+                        {post.published_at && <span>{format(new Date(post.published_at), "d MMMM yyyy")}</span>}
+                        {post.destinations && (
+                          <>
+                            <span>•</span>
+                            <span>{post.destinations.name}</span>
+                          </>
+                        )}
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center text-slate-500 py-12 font-mono">
-                    NO DESTINATIONS SCHEDULED
+                      <h3 className="text-2xl font-bold text-primary-foreground mb-3 group-hover:text-primary transition-colors">
+                        {post.title}
+                      </h3>
+                      <span className="text-primary font-medium flex items-center gap-2">
+                        Read Full Story
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </div>
                   </div>
-                )}
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-2 text-center text-muted-foreground py-12">
+                No featured stories yet. Check back soon!
               </div>
-            </div>
+            )}
           </div>
+        </div>
+      </section>
 
-          {/* View Map Button */}
-          <div className="text-center mt-8">
+      {/* Map Preview Section */}
+      <section className="py-24 bg-muted">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl font-display font-bold text-foreground">Where we've been</h2>
             <Link to="/map">
-              <Button size="lg" className="gap-2">
-                View Full Journey Map
+              <Button variant="outline" className="gap-2">
+                Full Screen map
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
+          </div>
+
+          <div className="aspect-[16/9] bg-secondary rounded-2xl shadow-card overflow-hidden">
+            <MapEmbed className="w-full h-full" />
           </div>
         </div>
       </section>
@@ -336,8 +434,10 @@ const Home = () => {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Journey Stats</h4>
+              <h4 className="font-semibold mb-4">Follow Us</h4>
               <p className="text-footer-foreground/70">
+                Journey stats:
+                <br />
                 {daysOfAdventure} days traveled
                 <br />
                 {countryCount || 0} countries visited
@@ -348,7 +448,7 @@ const Home = () => {
           </div>
 
           <div className="border-t border-footer-foreground/20 mt-8 pt-8 text-center text-footer-foreground/60 text-sm">
-            © 2025 {familyName}. All rights reserved.
+            © 2025 Pia, Mila, Liesbet and Raphaël. All rights reserved.
           </div>
         </div>
       </footer>
