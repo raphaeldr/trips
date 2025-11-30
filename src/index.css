@@ -14,6 +14,26 @@
 All colors MUST be HSL.
 */
 
+@layer components {
+  .airport-board {
+    display: inline-block;
+    animation: flicker 0.15s infinite alternate;
+    text-shadow: 0 0 20px currentColor;
+    letter-spacing: 0.05em;
+  }
+
+  @keyframes flicker {
+    0%, 100% {
+      opacity: 1;
+      filter: brightness(1);
+    }
+    50% {
+      opacity: 0.95;
+      filter: brightness(1.1);
+    }
+  }
+}
+
 @layer base {
   :root {
     --background: 60 4% 95%;

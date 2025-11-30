@@ -180,22 +180,19 @@ const Home = () => {
     };
   }, [heroPhoto]);
 
-  // Calculate total days of adventure from first to last destination
+  // Calculate total days of adventure from first destination to today
   const calculateDaysOfAdventure = () => {
     if (!destinations || destinations.length === 0) return 0;
 
     const firstDate = new Date(destinations[0].arrival_date);
-    const lastDest = destinations[destinations.length - 1];
-    const lastDate = lastDest.departure_date ? new Date(lastDest.departure_date) : new Date();
+    const today = new Date();
 
-    // Calculate days from first arrival to last departure
-    // Added +1 to match the logic in Map.tsx (inclusive day count)
-    const daysOfAdventure = Math.ceil(differenceInDays(lastDate, firstDate)) + 1;
+    // Calculate days from first arrival to today (inclusive)
+    const daysOfAdventure = Math.ceil(differenceInDays(today, firstDate)) + 1;
     return daysOfAdventure;
   };
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "Pia, Mila, Liesbet and Raphaël";
-  const tagline = tripSettings?.tagline || "Six Months. One World. Infinite Memories.";
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
@@ -247,13 +244,9 @@ const Home = () => {
               animationDelay: "0.1s",
             }}
           >
-            {tagline.split(". ").map((part, i) => (
-              <span key={i}>
-                {part}
-                {i < tagline.split(". ").length - 1 ? "." : ""}
-                {i < tagline.split(". ").length - 1 && <br />}
-              </span>
-            ))}
+            <span className="inline-block airport-board">
+              {daysOfAdventure} days of adventures
+            </span>
           </h1>
 
           <p
