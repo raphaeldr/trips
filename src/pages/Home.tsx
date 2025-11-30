@@ -41,6 +41,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from("photos")
         .select("*")
+        .not("mime_type", "ilike", "video/%") // Filter out videos on the server side
         .order("created_at", {
           ascending: false,
         })
