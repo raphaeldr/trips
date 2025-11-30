@@ -239,14 +239,24 @@ const Home = () => {
           </div>
 
           <h1
-            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in drop-shadow-md"
+            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in"
             style={{
               animationDelay: "0.1s",
             }}
           >
-            <span className="inline-block airport-board">
-              {daysOfAdventure} days of adventures
-            </span>
+            <div className="split-flap-board">
+              {`${daysOfAdventure} days of adventures`.split('').map((char, i) => (
+                <span 
+                  key={i} 
+                  className="split-flap-char"
+                  style={{
+                    animationDelay: `${i * 0.03}s`
+                  }}
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </span>
+              ))}
+            </div>
           </h1>
 
           <p
