@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInDays } from "date-fns";
 import type { Destination } from "@/types";
-import { AirportBoard } from "@/components/ui/AirportText";
+import { AirportText } from "@/components/ui/AirportText";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
@@ -233,12 +233,6 @@ const Home = () => {
 
         {/* Content */}
         <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
-          <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in">
-            <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
-              {daysOfAdventure} days of adventure
-            </span>
-          </div>
-
           <div
             className="mb-6 animate-fade-in"
             style={{
@@ -246,8 +240,8 @@ const Home = () => {
             }}
           >
             <div className="flex justify-center">
-              <AirportBoard
-                text={`${daysOfAdventure} days of adventures`}
+              <AirportBoard 
+                text={`${daysOfAdventure} days of adventures`} 
                 className="text-4xl md:text-6xl lg:text-8xl font-bold tracking-tight"
               />
             </div>
@@ -353,103 +347,4 @@ const Home = () => {
         <div className="container mx-auto px-6">
           <h2 className="text-4xl font-display font-bold text-foreground mb-12 text-left">Latest snapshots</h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {latestPhotos?.map((photo) => {
-              const publicUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-              const isVideo = photo.mime_type?.startsWith("video/");
-
-              return (
-                <Link key={photo.id} to="/gallery">
-                  <div className="aspect-square rounded-xl overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer hover:scale-105 group relative">
-                    {isVideo ? (
-                      <div className="relative w-full h-full">
-                        <video
-                          src={`${publicUrl}#t=0.1`}
-                          className="w-full h-full object-cover"
-                          preload="metadata"
-                          muted
-                          playsInline
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
-                          <div className="bg-black/30 backdrop-blur-sm p-3 rounded-full border border-white/20">
-                            <Play className="w-6 h-6 text-white fill-white" />
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <img
-                        src={publicUrl}
-                        alt={photo.title || photo.ai_caption || "Travel photo"}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="text-center mt-12">
-            <Link to="/gallery">
-              <Button size="lg" variant="outline" className="gap-2">
-                View full gallery
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-footer text-footer-foreground py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-display text-2xl font-bold mb-4">Our trip</h3>
-              <p className="text-footer-foreground/70">
-                Documenting our 6-month journey around the globe. Exploring cultures, tasting foods, and creating
-                memories.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Links</h4>
-              <div className="flex flex-col gap-2">
-                <Link to="/" className="text-footer-foreground/70 hover:text-primary transition-colors">
-                  Home
-                </Link>
-                <Link to="/map" className="text-footer-foreground/70 hover:text-primary transition-colors">
-                  Live Map
-                </Link>
-                <Link to="/gallery" className="text-footer-foreground/70 hover:text-primary transition-colors">
-                  Photo Gallery
-                </Link>
-                <Link to="/blog" className="text-footer-foreground/70 hover:text-primary transition-colors">
-                  Blog
-                </Link>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Follow Us</h4>
-              <p className="text-footer-foreground/70">
-                Journey stats:
-                <br />
-                {daysOfAdventure} days traveled
-                <br />
-                {countryCount || 0} countries visited
-                <br />
-                {photoCount} photos captured
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-footer-foreground/20 mt-8 pt-8 text-center text-footer-foreground/60 text-sm">
-            © 2025 Pia, Mila, Liesbet and Raphaël. All rights reserved.
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-};
-export default Home;
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4
