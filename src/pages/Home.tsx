@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInDays } from "date-fns";
 import type { Destination } from "@/types";
+import { AirportText } from "@/components/ui/AirportText";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
@@ -239,14 +240,12 @@ const Home = () => {
           </div>
 
           <h1
-            className="font-display text-6xl md:text-8xl font-bold mb-6 animate-fade-in drop-shadow-md"
+            className="font-mono text-4xl md:text-6xl lg:text-8xl font-bold mb-6 animate-fade-in tracking-tight"
             style={{
               animationDelay: "0.1s",
             }}
           >
-            <span className="inline-block airport-board">
-              {daysOfAdventure} days of adventures
-            </span>
+            <AirportText text={`${daysOfAdventure} days of adventures`} />
           </h1>
 
           <p
