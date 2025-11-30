@@ -3,8 +3,8 @@ import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Map as MapIcon, Calendar, Camera, BookOpen, Globe, Play } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, Map as MapIcon, Calendar, Camera, BookOpen, Globe, Play, Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays, format } from "date-fns";
@@ -14,6 +14,8 @@ import { AirportBoard } from "@/components/ui/AirportText";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
+  const navigate = useNavigate();
+
   // Fetch destinations for day counter & map
   const { data: destinations } = useQuery({
     queryKey: ["destinations"],
@@ -219,6 +221,79 @@ const Home = () => {
       <Navigation />
 
       <main className="pt-24 md:pt-28 pb-12">
+        {/* Hero Section with New Input Style */}
+        <section className="relative h-[80vh] flex items-center justify-center overflow-hidden mb-12 rounded-b-3xl md:rounded-b-[3rem]">
+          {/* Background Image or Video */}
+          {heroPhoto ? (
+            <>
+              {isVideo ? (
+                <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
+                  <source src={heroMediaUrl} type="video/mp4" />
+                </video>
+              ) : (
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${heroMediaUrl})` }}
+                />
+              )}
+              <div className={`absolute inset-0 ${textColor === "text-slate-800" ? "bg-white/20" : "bg-black/30"}`} />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-footer/20" />
+          )}
+
+          {/* Content */}
+          <div className={`relative z-10 container mx-auto px-6 text-center ${textColor}`}>
+            <div className="inline-block mb-6 px-6 py-2 bg-primary/90 rounded-full backdrop-blur-sm animate-fade-in shadow-sm">
+              <span className="text-sm font-semibold text-primary-foreground tracking-wider uppercase">
+                {daysOfAdventure} days of adventure
+              </span>
+            </div>
+
+            <div className="mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              <div className="flex justify-center">
+                <AirportBoard
+                  text={`${daysOfAdventure} days of adventures`}
+                  className="text-4xl md:text-6xl lg:text-8xl font-bold tracking-tight drop-shadow-md"
+                />
+              </div>
+            </div>
+
+            <p
+              className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 animate-fade-in opacity-90 drop-shadow-sm font-medium"
+              style={{ animationDelay: "0.2s" }}
+            >
+              Join {familyName} as we explore continents, chase sunsets, and learn about the world together.
+            </p>
+
+            {/* New Search/Explore Input Component */}
+            <div className="animate-fade-in w-full max-w-md mx-auto" style={{ animationDelay: "0.3s" }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  navigate("/blog");
+                }}
+                className="relative flex items-center w-full bg-white rounded-full shadow-2xl p-1.5 transition-transform hover:scale-[1.01]"
+              >
+                <div className="flex items-center pl-5 flex-1">
+                  <span className="text-muted-foreground/60 font-medium mr-1 select-none text-lg">journal/</span>
+                  <input
+                    type="text"
+                    placeholder="search..."
+                    className="w-full bg-transparent border-none outline-none text-gray-900 placeholder:text-muted-foreground/40 h-10 font-medium text-lg"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="rounded-full px-8 h-12 bg-white text-gray-900 hover:bg-gray-50 border-2 border-transparent bg-clip-padding relative gradient-border-button shadow-sm hover:shadow-md transition-all font-bold text-base"
+                >
+                  Explore
+                </Button>
+              </form>
+            </div>
+          </div>
+        </section>
+
         {/* Bento Grid Layout */}
         <div className="bento-grid">
           {/* 1. Header / Intro Block */}
@@ -243,7 +318,7 @@ const Home = () => {
             </p>
           </div>
 
-          {/* 2. Hero Media Block */}
+          {/* 2. Hero Media Block (Secondary) */}
           <div className="bento-card col-span-1 md:col-span-1 lg:col-span-2 lg:row-span-2 relative min-h-[300px] lg:min-h-[400px]">
             {heroLoading ? (
               <Skeleton className="w-full h-full" />
@@ -310,9 +385,10 @@ const Home = () => {
             className="bento-card col-span-1 md:col-span-2 lg:col-span-2 lg:row-span-1 relative min-h-[240px] group cursor-pointer"
           >
             <div className="absolute inset-0 pointer-events-none">
-              <MapEmbed className="w-full h-full group-hover:grayscale-0 transition-all duration-500" />
+              <MapEmbed className="w-full h-full grayscale-[0.3] group-hover:grayscale-0 transition-all duration-500" />
             </div>
-            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end bg-gradient-to-t from-background/60 to-transparent">
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 p-6 w-full flex justify-between items-end">
               <div>
                 <h3 className="text-xl font-bold mb-1">Live Journey Map</h3>
                 <p className="text-sm text-muted-foreground">
