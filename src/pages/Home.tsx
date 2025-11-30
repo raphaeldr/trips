@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInDays } from "date-fns";
 import type { Destination } from "@/types";
-import { AirportBoard } from "@/components/ui/AirportBoard";
+import { AirportBoard } from "@/components/ui/AirportText";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
