@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar, Camera, Globe, Plane, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GalleryTeaser } from "@/components/GalleryTeaser";
+import { WeatherWidget, PackingStatusWidget, CurrentLocationCard } from "@/components/DashboardWidgets";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
@@ -57,46 +56,6 @@ const Home = () => {
     },
   });
 
-  // Analyze image brightness and adjust text color
-  useEffect(() => {
-    if (!heroPhoto) {
-      setTextColor("text-white");
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-
-    const isVideo = heroPhoto.mime_type?.startsWith("video/") || heroPhoto.animated_path;
-    const mediaUrl =
-      isVideo && heroPhoto.animated_path
-        ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path).data.publicUrl
-        : supabase.storage.from("photos").getPublicUrl(heroPhoto.storage_path).data.publicUrl;
-
-    if (isVideo) {
-      setTextColor("text-white");
-      return;
-    }
-
-    img.src = mediaUrl;
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        
-        // Simple brightness check (sample center)
-        const imageData = ctx.getImageData(0, 0, 1, 1).data;
-        const brightness = (imageData[0] * 299 + imageData[1] * 587 + imageData[2] * 114) / 1000;
-        setTextColor(brightness > 125 ? "text-slate-900" : "text-white");
-      } catch (e) {
-        setTextColor("text-white");
-      }
-    };
-  }, [heroPhoto]);
-
   // Calculate stats
   const calculateDaysOfAdventure = () => {
     if (!destinations || destinations.length === 0) return 0;
@@ -107,9 +66,16 @@ const Home = () => {
 
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "The Wanderers";
+  
+  // Logic to find current destination
   const currentDestination = destinations?.find((d) => d.is_current) || destinations?.[destinations.length - 1];
   
-  // Calculate total KM (mocked for now, normally would sum distances between coordinates)
+  // Calculate days at current location
+  const daysAtCurrent = currentDestination 
+    ? Math.max(1, differenceInDays(new Date(), new Date(currentDestination.arrival_date)))
+    : 0;
+
+  // Calculate total KM (mocked for now)
   const totalKm = (countryCount || 0) * 1245 + 340; 
 
   const heroMediaUrl = heroPhoto
@@ -117,6 +83,24 @@ const Home = () => {
     : null;
 
   const isVideo = heroPhoto?.mime_type?.startsWith("video/") || heroPhoto?.animated_path;
+
+  // Mock weather condition based on country name for demo purposes
+  const getWeatherCondition = (country?: string) => {
+    if (!country) return "Sunny";
+    const coldCountries = ["Iceland", "Norway", "Canada", "Switzerland", "New Zealand"];
+    const rainyCountries = ["UK", "Ireland", "Scotland"];
+    
+    if (coldCountries.some(c => country.includes(c))) return "Snowy";
+    if (rainyCountries.some(c => country.includes(c))) return "Rainy";
+    return "Sunny";
+  };
+
+  const getWeatherTemp = (country?: string) => {
+    const condition = getWeatherCondition(country);
+    if (condition === "Snowy") return -2;
+    if (condition === "Rainy") return 12;
+    return 28;
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-12">
@@ -127,7 +111,7 @@ const Home = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[180px]">
           
           {/* 1. Header / Hero Block (Large) */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-3xl overflow-hidden shadow-2xl group border-4 border-white dark:border-border">
+          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-[2rem] overflow-hidden shadow-2xl group border-4 border-white dark:border-zinc-800">
             {heroLoading ? (
               <Skeleton className="w-full h-full" />
             ) : heroMediaUrl ? (
@@ -141,10 +125,10 @@ const Home = () => {
                     <img
                       src={heroMediaUrl}
                       alt="Hero"
-                      className="w-full h-full object-cover transition-transform duration-[20s] ease-linear scale-100 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-[30s] ease-linear scale-100 group-hover:scale-110"
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
                 </div>
               </>
             ) : (
@@ -153,92 +137,116 @@ const Home = () => {
               </div>
             )}
 
-            <div className="absolute inset-0 z-10 flex flex-col justify-between p-8">
-              <div className="flex justify-between items-start">
-                <div className="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase border border-white/30 flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                  Live Update
+            <div className="absolute inset-0 z-10 flex flex-col justify-end p-8 md:p-10">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-semibold tracking-wider uppercase mb-4 border border-white/20">
+                  <Globe className="w-3 h-3" />
+                  Global Expedition
                 </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* 1b. Where We Are Widget - Right below hero */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1">
-            <div className="bg-card rounded-3xl p-6 h-full flex flex-col justify-center border border-border/50">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                Where We Are
-              </h3>
-              <div className="flex items-center gap-3">
-                <MapPin className="w-8 h-8 text-primary flex-shrink-0" />
-                <div>
-                  <div className="text-2xl font-bold font-display text-foreground">
-                    {currentDestination?.name || "Unknown"}
-                  </div>
-                  <div className="text-lg text-muted-foreground">
-                    {currentDestination?.country || "Earth"}
-                  </div>
-                </div>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 tracking-tight leading-[1.1]">
+                  {familyName} <br />
+                  <span className="text-white/70">World Tour</span>
+                </h1>
+                <p className="text-white/80 text-lg max-w-md font-light leading-relaxed">
+                  Documenting our 6-month journey around the globe, one adventure at a time.
+                </p>
               </div>
             </div>
           </div>
 
           {/* 2. Days Counter (Small) */}
           <div className="col-span-1 row-span-1">
-            <div className="bg-card rounded-3xl p-6 h-full flex flex-col justify-center items-center text-center shadow-card border border-border/50 hover:border-primary/50 transition-colors">
-              <Calendar className="w-8 h-8 text-primary mb-2 opacity-80" />
-              <span className="text-5xl font-display font-bold text-foreground tabular-nums">
+            <div className="bg-zinc-50 dark:bg-zinc-900 rounded-[2rem] p-6 h-full flex flex-col justify-center items-center text-center border border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+              <Calendar className="w-6 h-6 text-zinc-400 mb-3" />
+              <span className="text-5xl font-display font-bold text-foreground tabular-nums tracking-tight">
                 {daysOfAdventure}
               </span>
-              <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mt-1">Days Traveling</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">Days Traveling</span>
             </div>
           </div>
 
           {/* 3. Distance Tracker (Small) */}
           <div className="col-span-1 row-span-1">
-            <div className="bg-slate-900 text-white rounded-3xl p-6 h-full flex flex-col justify-center items-center text-center shadow-card relative overflow-hidden">
-              <div className="absolute inset-0 opacity-10 bg-[url('[https://www.transparenttextures.com/patterns/cubes.png](https://www.transparenttextures.com/patterns/cubes.png)')]"></div>
-              <Plane className="w-8 h-8 text-blue-400 mb-2" />
-              <span className="text-4xl font-display font-bold tabular-nums">
+            <div className="bg-slate-950 text-white rounded-[2rem] p-6 h-full flex flex-col justify-center items-center text-center relative overflow-hidden group">
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] group-hover:[background-size:20px_20px] transition-all duration-500"></div>
+              <Plane className="w-6 h-6 text-blue-400 mb-3 relative z-10" />
+              <span className="text-4xl font-display font-bold tabular-nums relative z-10">
                 {totalKm.toLocaleString()}
               </span>
-              <span className="text-xs text-blue-200/70 uppercase tracking-widest font-semibold mt-1">KM Traveled</span>
+              <span className="text-[10px] text-blue-200/60 uppercase tracking-widest font-bold mt-1 relative z-10">KM Traveled</span>
             </div>
           </div>
 
-          {/* 4. Map Entry (Large) */}
+          {/* 4. Weather Widget (Tall) */}
+          <div className="col-span-1 row-span-2 rounded-[2rem] overflow-hidden">
+            <WeatherWidget 
+              location={currentDestination?.name || "Local"} 
+              condition={getWeatherCondition(currentDestination?.country)}
+              temp={getWeatherTemp(currentDestination?.country)}
+            />
+          </div>
 
-          {/* 6. Map Entry (Large Square) */}
-          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 group cursor-pointer relative rounded-3xl overflow-hidden border border-border shadow-card">
-            <div className="absolute inset-0 pointer-events-none transition-all duration-700 group-hover:scale-105">
+          {/* 5. Current Location Card (Wide) */}
+          <div className="col-span-1 md:col-span-2 row-span-1 rounded-[2rem] overflow-hidden">
+            <CurrentLocationCard 
+              name={currentDestination?.name || "Unknown"}
+              country={currentDestination?.country || "In Transit"}
+              arrivalDate={currentDestination?.arrival_date || new Date().toISOString()}
+              daysHere={daysAtCurrent}
+            />
+          </div>
+
+          {/* 6. Packing Status (Wide) */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1 rounded-[2rem] overflow-hidden">
+            <PackingStatusWidget status="over" percentage={110} />
+          </div>
+
+          {/* 7. Map Entry (Large Square) */}
+          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-[2rem] overflow-hidden border border-border/50 shadow-sm bg-muted/30">
+            <div className="absolute inset-0">
               <MapEmbed className="w-full h-full" />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
+            
             <div className="absolute bottom-0 left-0 p-8 w-full">
               <div className="flex justify-between items-end">
                 <div>
-                  <div className="bg-primary/20 text-primary w-fit px-3 py-1 rounded-full text-xs font-bold mb-3 flex items-center gap-2">
+                  <div className="bg-blue-500 text-white w-fit px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3 flex items-center gap-1.5 shadow-lg shadow-blue-500/20">
                     <Globe className="w-3 h-3" />
-                    INTERACTIVE MAP
+                    Live Tracker
                   </div>
-                  <h3 className="text-3xl font-display font-bold">Track Our Route</h3>
-                  <p className="text-muted-foreground mt-1 max-w-sm">
-                    Follow the path from {destinations?.[0]?.country || "Home"} to {currentDestination?.country}.
+                  <h3 className="text-2xl font-display font-bold text-white drop-shadow-md">Interactive Route</h3>
+                  <p className="text-white/90 mt-1 max-w-sm text-sm drop-shadow-md font-medium">
+                    View our full path from start to finish.
                   </p>
                 </div>
-                <div className="bg-foreground text-background p-4 rounded-full group-hover:rotate-45 transition-transform duration-300">
-                  <ArrowRight className="w-6 h-6" />
+                <div className="bg-white/20 backdrop-blur-md border border-white/30 text-white p-4 rounded-full shadow-xl">
+                  <ArrowRight className="w-5 h-5" />
                 </div>
               </div>
             </div>
           </Link>
 
-          {/* 7. Gallery Teaser (Tall) */}
-          <GalleryTeaser />
+          {/* 8. Gallery Teaser (Wide - Expanded) */}
+          <Link to="/gallery" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 bg-orange-50 dark:bg-orange-950/20 rounded-[2rem] p-8 flex flex-col justify-between group hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-100 dark:border-orange-900/50">
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-white dark:bg-orange-900 rounded-2xl flex items-center justify-center shadow-sm group-hover:rotate-12 transition-transform duration-300 text-orange-500">
+                <Camera className="w-6 h-6" />
+              </div>
+              <h3 className="text-3xl font-display font-bold leading-tight text-orange-950 dark:text-orange-100">
+                Visual<br/>Diary
+              </h3>
+            </div>
+            <div className="flex justify-between items-end">
+              <div className="flex -space-x-3">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-orange-200 dark:bg-orange-800" />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2 bg-white/50 dark:bg-black/20 px-4 py-2 rounded-full backdrop-blur-sm">
+                View All Photos <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </div>
+          </Link>
 
         </div>
       </main>
