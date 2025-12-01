@@ -44,8 +44,8 @@ export const AirportBoard = ({ text, className = "" }: AirportBoardProps) => {
   }, [text]);
 
   const animate = (time: number) => {
-    // Control speed: Update every ~20ms for "super fast" flipping
-    if (time - lastUpdateRef.current < 20) {
+    // Control speed: Update every ~30ms for a satisfying clicky mechanical feel
+    if (time - lastUpdateRef.current < 30) {
       requestRef.current = requestAnimationFrame(animate);
       return;
     }
@@ -59,8 +59,8 @@ export const AirportBoard = ({ text, className = "" }: AirportBoardProps) => {
     }
 
     // "Stay longer" logic: Flip the current character X times before locking it
-    // 5 flips * 20ms = ~100ms dwell time per character
-    const FLIPS_BEFORE_LOCK = 5;
+    // 3 flips * 30ms = ~90ms dwell time per character
+    const FLIPS_BEFORE_LOCK = 3;
 
     if (state.currentCycles < FLIPS_BEFORE_LOCK) {
       // Phase 1: Cycle through random characters at the current index
@@ -81,11 +81,11 @@ export const AirportBoard = ({ text, className = "" }: AirportBoardProps) => {
   };
 
   return (
-    <div className={cn("inline-flex flex-wrap justify-center gap-[2px]", className)} aria-label={text}>
+    <div className={cn("inline-flex flex-wrap gap-[1px] md:gap-[2px]", className)} aria-label={text}>
       {renderedChars.map((char, i) => (
         <span
           key={i}
-          className="inline-flex items-center justify-center min-w-[0.6em] px-1 bg-black/90 text-white rounded-[2px] shadow-sm overflow-hidden"
+          className="inline-flex items-center justify-center min-w-[0.5em] md:min-w-[0.6em] px-[1px] md:px-1 bg-black/80 text-white rounded-[2px] shadow-sm overflow-hidden backdrop-blur-sm border border-white/10"
         >
           {char === " " ? "\u00A0" : char}
         </span>
