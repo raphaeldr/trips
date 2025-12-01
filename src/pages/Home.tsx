@@ -9,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AiLocationFact } from "@/components/DashboardWidgets";
 import { GalleryTeaser } from "@/components/GalleryTeaser";
 
 const Home = () => {
@@ -211,10 +210,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 4. AI Fact (Tall) */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1">
-            <AiLocationFact location={currentDestination?.country || "Japan"} />
-          </div>
+          {/* 4. Map Entry (Large) */}
 
           {/* 6. Map Entry (Large Square) */}
           <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 group cursor-pointer relative rounded-3xl overflow-hidden border border-border shadow-card">
