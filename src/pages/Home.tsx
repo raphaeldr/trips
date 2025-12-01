@@ -66,17 +66,17 @@ const Home = () => {
 
   const daysOfAdventure = calculateDaysOfAdventure();
   const familyName = tripSettings?.family_name || "The Wanderers";
-  
+
   // Logic to find current destination
   const currentDestination = destinations?.find((d) => d.is_current) || destinations?.[destinations.length - 1];
-  
+
   // Calculate days at current location
-  const daysAtCurrent = currentDestination 
+  const daysAtCurrent = currentDestination
     ? Math.max(1, differenceInDays(new Date(), new Date(currentDestination.arrival_date)))
     : 0;
 
   // Calculate total KM (mocked for now)
-  const totalKm = (countryCount || 0) * 1245 + 340; 
+  const totalKm = (countryCount || 0) * 1245 + 340;
 
   const heroMediaUrl = heroPhoto
     ? supabase.storage.from("photos").getPublicUrl(heroPhoto.animated_path || heroPhoto.storage_path).data.publicUrl
@@ -89,9 +89,9 @@ const Home = () => {
     if (!country) return "Sunny";
     const coldCountries = ["Iceland", "Norway", "Canada", "Switzerland", "New Zealand"];
     const rainyCountries = ["UK", "Ireland", "Scotland"];
-    
-    if (coldCountries.some(c => country.includes(c))) return "Snowy";
-    if (rainyCountries.some(c => country.includes(c))) return "Rainy";
+
+    if (coldCountries.some((c) => country.includes(c))) return "Snowy";
+    if (rainyCountries.some((c) => country.includes(c))) return "Rainy";
     return "Sunny";
   };
 
@@ -109,7 +109,6 @@ const Home = () => {
       <main className="pt-24 md:pt-28 container mx-auto px-4 sm:px-6">
         {/* Dynamic Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[180px]">
-          
           {/* 1. Header / Hero Block (Large) */}
           <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-[2rem] overflow-hidden shadow-2xl group border-4 border-white dark:border-zinc-800">
             {heroLoading ? (
@@ -161,7 +160,9 @@ const Home = () => {
               <span className="text-5xl font-display font-bold text-foreground tabular-nums tracking-tight">
                 {daysOfAdventure}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">Days Traveling</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">
+                Days Traveling
+              </span>
             </div>
           </div>
 
@@ -173,14 +174,16 @@ const Home = () => {
               <span className="text-4xl font-display font-bold tabular-nums relative z-10">
                 {totalKm.toLocaleString()}
               </span>
-              <span className="text-[10px] text-blue-200/60 uppercase tracking-widest font-bold mt-1 relative z-10">KM Traveled</span>
+              <span className="text-[10px] text-blue-200/60 uppercase tracking-widest font-bold mt-1 relative z-10">
+                KM Traveled
+              </span>
             </div>
           </div>
 
           {/* 4. Weather Widget (Tall) */}
           <div className="col-span-1 row-span-2 rounded-[2rem] overflow-hidden">
-            <WeatherWidget 
-              location={currentDestination?.name || "Local"} 
+            <WeatherWidget
+              location={currentDestination?.name || "Local"}
               condition={getWeatherCondition(currentDestination?.country)}
               temp={getWeatherTemp(currentDestination?.country)}
             />
@@ -188,7 +191,7 @@ const Home = () => {
 
           {/* 5. Current Location Card (Wide) */}
           <div className="col-span-1 md:col-span-2 row-span-1 rounded-[2rem] overflow-hidden">
-            <CurrentLocationCard 
+            <CurrentLocationCard
               name={currentDestination?.name || "Unknown"}
               country={currentDestination?.country || "In Transit"}
               arrivalDate={currentDestination?.arrival_date || new Date().toISOString()}
@@ -202,11 +205,14 @@ const Home = () => {
           </div>
 
           {/* 7. Map Entry (Large Square) */}
-          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-[2rem] overflow-hidden border border-border/50 shadow-sm bg-muted/30">
+          <Link
+            to="/map"
+            className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-[2rem] overflow-hidden border border-border/50 shadow-sm bg-muted/30"
+          >
             <div className="absolute inset-0">
               <MapEmbed className="w-full h-full" />
             </div>
-            
+
             <div className="absolute bottom-0 left-0 p-8 w-full">
               <div className="flex justify-between items-end">
                 <div>
@@ -227,19 +233,27 @@ const Home = () => {
           </Link>
 
           {/* 8. Gallery Teaser (Wide - Expanded) */}
-          <Link to="/gallery" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 bg-orange-50 dark:bg-orange-950/20 rounded-[2rem] p-8 flex flex-col justify-between group hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-100 dark:border-orange-900/50">
+          <Link
+            to="/gallery"
+            className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 bg-orange-50 dark:bg-orange-950/20 rounded-[2rem] p-8 flex flex-col justify-between group hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-100 dark:border-orange-900/50"
+          >
             <div className="space-y-4">
               <div className="w-12 h-12 bg-white dark:bg-orange-900 rounded-2xl flex items-center justify-center shadow-sm group-hover:rotate-12 transition-transform duration-300 text-orange-500">
                 <Camera className="w-6 h-6" />
               </div>
               <h3 className="text-3xl font-display font-bold leading-tight text-orange-950 dark:text-orange-100">
-                Visual<br/>Diary
+                Visual
+                <br />
+                Diary
               </h3>
             </div>
             <div className="flex justify-between items-end">
               <div className="flex -space-x-3">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-orange-200 dark:bg-orange-800" />
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-orange-200 dark:bg-orange-800"
+                  />
                 ))}
               </div>
               <span className="text-sm font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2 bg-white/50 dark:bg-black/20 px-4 py-2 rounded-full backdrop-blur-sm">
@@ -247,7 +261,6 @@ const Home = () => {
               </span>
             </div>
           </Link>
-
         </div>
       </main>
 
