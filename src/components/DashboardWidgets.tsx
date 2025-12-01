@@ -1,18 +1,11 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { MapPin, Thermometer, Wind, Luggage, Info, Sparkles } from "lucide-react";
+import { Luggage, Info, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Types ---
-interface WeatherWidgetProps {
-  location: string;
-  temp?: number;
-  condition?: string;
-}
-
 interface PackingStatusProps {
   status: "under" | "perfect" | "over";
   percentage: number;
@@ -24,26 +17,6 @@ interface AiFactProps {
 }
 
 // --- Components ---
-
-export const WeatherWidget = ({ location, temp = 24, condition = "Sunny" }: WeatherWidgetProps) => {
-  return (
-    <Card className="h-full bg-gradient-to-br from-blue-400 to-blue-600 text-white border-none overflow-hidden relative group">
-      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-        <Wind className="w-24 h-24" />
-      </div>
-      <div className="p-6 flex flex-col justify-between h-full relative z-10">
-        <div className="flex items-center gap-2 opacity-80 text-sm font-medium uppercase tracking-wider">
-          <MapPin className="w-4 h-4" />
-          {location} Weather
-        </div>
-        <div>
-          <div className="text-5xl font-display font-bold mb-1">{temp}°C</div>
-          <div className="text-lg opacity-90 font-medium">{condition}</div>
-        </div>
-      </div>
-    </Card>
-  );
-};
 
 export const PackingStatusWidget = ({ status, percentage }: PackingStatusProps) => {
   const getStatusColor = () => {
@@ -141,32 +114,6 @@ export const AiLocationFact = ({ location }: { location: string }) => {
             {location}
           </Badge>
         </div>
-      </div>
-    </Card>
-  );
-};
-
-export const MoodBoard = ({ keywords }: { keywords: string[] }) => {
-  return (
-    <Card className="h-full p-6 bg-card flex flex-col">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-        Current Vibe
-      </h3>
-      <div className="flex flex-wrap gap-2 content-start">
-        {keywords.map((word, i) => (
-          <Badge 
-            key={i} 
-            variant="secondary" 
-            className={`
-              px-3 py-1.5 text-sm cursor-default transition-all duration-300 hover:scale-110 hover:-rotate-2
-              ${['Sushi', 'Japan'].includes(word) ? 'bg-red-100 text-red-700' : ''}
-              ${['Ice', 'Snow', 'Glaciers'].includes(word) ? 'bg-blue-100 text-blue-700' : ''}
-              ${['Nature', 'Hiking', 'Capybaras'].includes(word) ? 'bg-green-100 text-green-700' : ''}
-            `}
-          >
-            #{word}
-          </Badge>
-        ))}
       </div>
     </Card>
   );
