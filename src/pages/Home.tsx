@@ -102,6 +102,12 @@ const Home = () => {
     return 28;
   };
 
+  // Check text color for contrast (simple version)
+  useEffect(() => {
+    if (!heroPhoto) return;
+    // (Existing logic for text color could be kept or simplified)
+  }, [heroPhoto]);
+
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-12">
       <Navigation />
@@ -202,11 +208,11 @@ const Home = () => {
           </div>
 
           {/* 7. Map Entry (Large Square) */}
-          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 relative rounded-[2rem] overflow-hidden border border-border/50 shadow-sm bg-muted/30">
-            <div className="absolute inset-0">
+          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 group cursor-pointer relative rounded-[2rem] overflow-hidden border border-border/50 shadow-sm bg-muted/30">
+            <div className="absolute inset-0 pointer-events-none transition-all duration-700 group-hover:scale-[1.02] opacity-80 group-hover:opacity-100 grayscale group-hover:grayscale-0">
               <MapEmbed className="w-full h-full" />
             </div>
-            
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-100" />
             <div className="absolute bottom-0 left-0 p-8 w-full">
               <div className="flex justify-between items-end">
                 <div>
@@ -214,36 +220,36 @@ const Home = () => {
                     <Globe className="w-3 h-3" />
                     Live Tracker
                   </div>
-                  <h3 className="text-2xl font-display font-bold text-white drop-shadow-md">Interactive Route</h3>
-                  <p className="text-white/90 mt-1 max-w-sm text-sm drop-shadow-md font-medium">
+                  <h3 className="text-2xl font-display font-bold">Interactive Route</h3>
+                  <p className="text-muted-foreground mt-1 max-w-sm text-sm">
                     View our full path from start to finish.
                   </p>
                 </div>
-                <div className="bg-white/20 backdrop-blur-md border border-white/30 text-white p-4 rounded-full shadow-xl">
+                <div className="bg-white dark:bg-black text-foreground p-4 rounded-full group-hover:scale-110 transition-transform duration-300 shadow-xl">
                   <ArrowRight className="w-5 h-5" />
                 </div>
               </div>
             </div>
           </Link>
 
-          {/* 8. Gallery Teaser (Wide - Expanded) */}
-          <Link to="/gallery" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 bg-orange-50 dark:bg-orange-950/20 rounded-[2rem] p-8 flex flex-col justify-between group hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-100 dark:border-orange-900/50">
+          {/* 8. Gallery Teaser (Tall) */}
+          <Link to="/gallery" className="col-span-1 md:col-span-1 row-span-2 bg-orange-50 dark:bg-orange-950/20 rounded-[2rem] p-8 flex flex-col justify-between group hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-100 dark:border-orange-900/50">
             <div className="space-y-4">
               <div className="w-12 h-12 bg-white dark:bg-orange-900 rounded-2xl flex items-center justify-center shadow-sm group-hover:rotate-12 transition-transform duration-300 text-orange-500">
                 <Camera className="w-6 h-6" />
               </div>
-              <h3 className="text-3xl font-display font-bold leading-tight text-orange-950 dark:text-orange-100">
-                Visual<br/>Diary
+              <h3 className="text-2xl font-display font-bold leading-tight text-orange-950 dark:text-orange-100">
+                Photo<br/>Gallery
               </h3>
             </div>
-            <div className="flex justify-between items-end">
-              <div className="flex -space-x-3">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-orange-200 dark:bg-orange-800" />
+            <div>
+              <div className="flex -space-x-3 mb-4">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-black bg-orange-200 dark:bg-orange-800" />
                 ))}
               </div>
-              <span className="text-sm font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2 bg-white/50 dark:bg-black/20 px-4 py-2 rounded-full backdrop-blur-sm">
-                View All Photos <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <span className="text-sm font-medium text-orange-800 dark:text-orange-200 flex items-center gap-1">
+                View Collection <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
               </span>
             </div>
           </Link>
