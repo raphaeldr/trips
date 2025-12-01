@@ -6,64 +6,62 @@ export const Navigation = () => {
   const { isAdmin } = useAdminAuth();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border md:block hidden">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+    <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-full shadow-lg md:block hidden transition-all hover:bg-white/80 dark:hover:bg-black/80">
+      <div className="px-6 py-3 flex items-center justify-between">
+        <NavLink
+          to="/"
+          className="flex items-center gap-2 text-lg font-bold text-foreground hover:text-primary transition-colors font-display"
+        >
+          World Tour
+        </NavLink>
+
+        <div className="flex items-center gap-1">
           <NavLink
             to="/"
-            className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors"
+            end
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
+            activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
           >
-            <span className="font-display text-2xl">Our trip</span>
+            <Home className="w-4 h-4" />
+            <span>Home</span>
           </NavLink>
 
-          <div className="flex items-center gap-8">
-            <NavLink
-              to="/"
-              end
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              activeClassName="text-primary"
-            >
-              <Home className="w-4 h-4" />
-              <span>Home</span>
-            </NavLink>
+          <NavLink
+            to="/map"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
+            activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
+          >
+            <Map className="w-4 h-4" />
+            <span>Map</span>
+          </NavLink>
 
-            <NavLink
-              to="/map"
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              activeClassName="text-primary"
-            >
-              <Map className="w-4 h-4" />
-              <span>Map</span>
-            </NavLink>
+          <NavLink
+            to="/gallery"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
+            activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
+          >
+            <Image className="w-4 h-4" />
+            <span>Gallery</span>
+          </NavLink>
 
-            <NavLink
-              to="/gallery"
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              activeClassName="text-primary"
-            >
-              <Image className="w-4 h-4" />
-              <span>Gallery</span>
-            </NavLink>
+          <NavLink
+            to="/blog"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
+            activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Journal</span>
+          </NavLink>
 
+          {isAdmin && (
             <NavLink
-              to="/blog"
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              activeClassName="text-primary"
+              to="/admin"
+              className="flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-all ml-2"
+              activeClassName="text-primary bg-primary/10"
             >
-              <BookOpen className="w-4 h-4" />
-              <span>Blog</span>
+              <Lock className="w-4 h-4" />
             </NavLink>
-
-            {isAdmin && (
-              <NavLink
-                to="/admin"
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                activeClassName="text-primary"
-              >
-                <Lock className="w-4 h-4" />
-              </NavLink>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </nav>
