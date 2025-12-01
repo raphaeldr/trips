@@ -9,7 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PackingStatusWidget, AiLocationFact } from "@/components/DashboardWidgets";
+import { AiLocationFact } from "@/components/DashboardWidgets";
+import { GalleryTeaser } from "@/components/GalleryTeaser";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
@@ -165,9 +166,6 @@ const Home = () => {
               </div>
 
               <div>
-                <h2 className="text-white/80 text-lg font-medium mb-2 tracking-wide font-display">
-                  Currently Exploring
-                </h2>
                 <div className="mb-4">
                   <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg">
                     {currentDestination?.name || "Unknown"}
@@ -224,17 +222,12 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 6. Packing Status (Wide) */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1">
-            <PackingStatusWidget status="over" percentage={110} />
-          </div>
-
-          {/* 7. AI Fact (Tall) */}
+          {/* 5. AI Fact (Tall) */}
           <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1">
             <AiLocationFact location={currentDestination?.country || "Japan"} />
           </div>
 
-          {/* 8. Map Entry (Large Square) */}
+          {/* 6. Map Entry (Large Square) */}
           <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 group cursor-pointer relative rounded-3xl overflow-hidden border border-border shadow-card">
             <div className="absolute inset-0 pointer-events-none transition-all duration-700 group-hover:scale-105">
               <MapEmbed className="w-full h-full" />
@@ -259,31 +252,8 @@ const Home = () => {
             </div>
           </Link>
 
-          {/* 9. Gallery Teaser (Tall) */}
-          <Link to="/gallery" className="col-span-1 md:col-span-1 row-span-2 bg-zinc-100 dark:bg-zinc-900 rounded-3xl p-8 flex flex-col justify-between group hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors">
-            <div className="space-y-4">
-              <div className="w-12 h-12 bg-white dark:bg-black rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300">
-                <Camera className="w-6 h-6 text-foreground" />
-              </div>
-              <h3 className="text-2xl font-bold leading-tight">
-                Visual<br/>Diary
-              </h3>
-            </div>
-            <div>
-              <div className="flex -space-x-4 mb-4">
-                {[1,2,3].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted overflow-hidden">
-                     {/* Placeholders for avatars/thumbnails */}
-                     <div className="w-full h-full bg-gradient-to-tr from-primary/40 to-blue-400/40" />
-                  </div>
-                ))}
-                <div className="w-10 h-10 rounded-full border-2 border-background bg-black text-white flex items-center justify-center text-xs font-bold">
-                  +2k
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">View all photos →</p>
-            </div>
-          </Link>
+          {/* 7. Gallery Teaser (Tall) */}
+          <GalleryTeaser />
 
         </div>
       </main>
