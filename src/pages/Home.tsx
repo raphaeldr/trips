@@ -165,13 +165,22 @@ const Home = () => {
                 </div>
               </div>
 
-              <div>
-                <div className="mb-4">
-                  <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg">
+            </div>
+          </div>
+
+          {/* 1b. Where We Are Widget - Right below hero */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1">
+            <div className="bg-card rounded-3xl p-6 h-full flex flex-col justify-center border border-border/50">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                Where We Are
+              </h3>
+              <div className="flex items-center gap-3">
+                <MapPin className="w-8 h-8 text-primary flex-shrink-0" />
+                <div>
+                  <div className="text-2xl font-bold font-display text-foreground">
                     {currentDestination?.name || "Unknown"}
-                  </h1>
-                  <div className="text-2xl text-white/90 font-light mt-2 flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="text-lg text-muted-foreground">
                     {currentDestination?.country || "Earth"}
                   </div>
                 </div>
@@ -202,27 +211,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 4. Where We Are Widget */}
-          <div className="col-span-1 md:col-span-2 row-span-1">
-            <div className="bg-card rounded-3xl p-6 h-full flex flex-col justify-center border border-border/50">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                Where We Are
-              </h3>
-              <div className="flex items-center gap-3">
-                <MapPin className="w-8 h-8 text-primary flex-shrink-0" />
-                <div>
-                  <div className="text-2xl font-bold font-display text-foreground">
-                    {currentDestination?.name || "Unknown"}
-                  </div>
-                  <div className="text-lg text-muted-foreground">
-                    {currentDestination?.country || "Earth"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 5. AI Fact (Tall) */}
+          {/* 4. AI Fact (Tall) */}
           <div className="col-span-1 md:col-span-2 lg:col-span-2 row-span-1">
             <AiLocationFact location={currentDestination?.country || "Japan"} />
           </div>
