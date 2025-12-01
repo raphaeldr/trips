@@ -186,7 +186,7 @@ const Home = () => {
             />
           </div>
 
-          {/* 5. Current Location Card (Wide) */}
+          {/* 5. Current Location Card (Wide - Replaces MoodBoard) */}
           <div className="col-span-1 md:col-span-2 row-span-1 rounded-[2rem] overflow-hidden">
             <CurrentLocationCard 
               name={currentDestination?.name || "Unknown"}
