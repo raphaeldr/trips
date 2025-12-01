@@ -9,17 +9,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AirportBoard } from "@/components/ui/AirportText";
-import { WeatherWidget, PackingStatusWidget, AiLocationFact, MoodBoard } from "@/components/DashboardWidgets";
+import { PackingStatusWidget, AiLocationFact } from "@/components/DashboardWidgets";
 
 const Home = () => {
   const [textColor, setTextColor] = useState("text-white");
-  
-  // Hardcoded keywords based on user request for "Vibe"
-  const tripKeywords = [
-    "Sushi Hunt", "Capybaras", "Seals", "Glacier Hiking", 
-    "Overpacking", "Snow", "Biking", "Beach Days"
-  ];
 
   // Fetch destinations for day counter & map
   const { data: destinations } = useQuery({
@@ -176,10 +169,9 @@ const Home = () => {
                   Currently Exploring
                 </h2>
                 <div className="mb-4">
-                  <AirportBoard 
-                    text={currentDestination?.name || "UNKNOWN"} 
-                    className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg"
-                  />
+                  <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg">
+                    {currentDestination?.name || "Unknown"}
+                  </h1>
                   <div className="text-2xl text-white/90 font-light mt-2 flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" />
                     {currentDestination?.country || "Earth"}
@@ -212,18 +204,24 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 4. Weather Widget (Tall) */}
-          <div className="col-span-1 row-span-2">
-            <WeatherWidget 
-              location={currentDestination?.name || "Local"} 
-              condition={["Snow", "Glaciers"].some(k => tripKeywords.includes(k)) ? "Snowy" : "Sunny"}
-              temp={["Snow", "Glaciers"].some(k => tripKeywords.includes(k)) ? -2 : 28}
-            />
-          </div>
-
-          {/* 5. Mood / Keywords (Wide) */}
+          {/* 4. Where We Are Widget */}
           <div className="col-span-1 md:col-span-2 row-span-1">
-            <MoodBoard keywords={tripKeywords} />
+            <div className="bg-card rounded-3xl p-6 h-full flex flex-col justify-center border border-border/50">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                Where We Are
+              </h3>
+              <div className="flex items-center gap-3">
+                <MapPin className="w-8 h-8 text-primary flex-shrink-0" />
+                <div>
+                  <div className="text-2xl font-bold font-display text-foreground">
+                    {currentDestination?.name || "Unknown"}
+                  </div>
+                  <div className="text-lg text-muted-foreground">
+                    {currentDestination?.country || "Earth"}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 6. Packing Status (Wide) */}
