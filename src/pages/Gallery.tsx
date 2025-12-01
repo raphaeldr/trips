@@ -1,12 +1,17 @@
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageIcon, Video } from "lucide-react";
 
 const Gallery = () => {
+  const [filter, setFilter] = useState("all");
+
   const { data: destinations } = useQuery({
     queryKey: ["destinations"],
     queryFn: async () => {
@@ -29,114 +34,137 @@ const Gallery = () => {
       const { data, error } = await supabase
         .from("photos")
         .select("*")
-        // Removed filter for videos so they show up in gallery
         .order("taken_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  // Group photos by Country -> Destination
-  const photosByCountry = useMemo(() => {
-    if (!destinations || !photos) return [];
+  // Filter photos based on tab
+  const filteredPhotos = useMemo(() => {
+    if (!photos) return [];
+    if (filter === "all") return photos;
+    if (filter === "videos") return photos.filter(p => p.mime_type?.startsWith("video/") || p.animated_path);
+    return photos;
+  }, [photos, filter]);
 
-    // Create a map to group destinations by country
-    const countryMap = new Map();
-
-    destinations.forEach((destination) => {
-      const destPhotos = photos.filter((p) => p.destination_id === destination.id);
-
-      if (destPhotos.length > 0) {
-        if (!countryMap.has(destination.country)) {
-          countryMap.set(destination.country, []);
-        }
-        countryMap.get(destination.country).push({
-          destination,
-          photos: destPhotos,
-        });
-      }
+  // Use a simple masonry-like approach by splitting into columns
+  // Note: For a real masonry layout, a library like react-masonry-css is better, but we can fake it with flex columns
+  const columns = useMemo(() => {
+    const cols: any[][] = [[], [], []];
+    filteredPhotos.forEach((photo, i) => {
+      cols[i % 3].push(photo);
     });
-
-    // Convert map to array for rendering
-    return Array.from(countryMap.entries()).map(([country, destinationGroups]) => ({
-      country,
-      destinationGroups,
-    }));
-  }, [destinations, photos]);
+    return cols;
+  }, [filteredPhotos]);
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Navigation />
       <BottomNav />
-      <div className="pt-24 container mx-auto px-6 py-12">
-        <div className="mb-12 text-center md:text-left">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">Photo Gallery</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            A visual collection of our journey across {photosByCountry.length} countries and {photos?.length || 0}{" "}
-            moments captured in time.
-          </p>
+      
+      <div className="pt-24 container mx-auto px-4 sm:px-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">Memories</h1>
+            <p className="text-muted-foreground">
+              {photos?.length || 0} moments across {destinations?.length || 0} locations.
+            </p>
+          </div>
+
+          <Tabs defaultValue="all" className="w-full md:w-auto" onValueChange={setFilter}>
+            <TabsList className="grid w-full grid-cols-2 md:w-[200px]">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="videos" className="flex gap-2">
+                <Video className="w-3 h-3" /> Videos
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        <div className="space-y-16">
-          {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <Skeleton key={i} className="aspect-square rounded-xl" />
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[...Array(9)].map((_, i) => (
+              <Skeleton key={i} className={`rounded-xl ${i % 2 === 0 ? 'aspect-square' : 'aspect-[3/4]'}`} />
+            ))}
+          </div>
+        ) : filteredPhotos.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Column 1 */}
+            <div className="flex flex-col gap-6">
+              {columns[0].map((photo) => (
+                <div key={photo.id} className="break-inside-avoid">
+                  <PhotoCard
+                    id={photo.id}
+                    storagePath={photo.storage_path}
+                    title={photo.title}
+                    description={photo.description}
+                    latitude={photo.latitude}
+                    longitude={photo.longitude}
+                    takenAt={photo.taken_at}
+                    cameraMake={photo.camera_make}
+                    cameraModel={photo.camera_model}
+                    isHero={photo.is_hero}
+                    mimeType={photo.mime_type}
+                    onHeroToggle={refetch}
+                  />
+                </div>
               ))}
             </div>
-          ) : photosByCountry.length > 0 ? (
-            photosByCountry.map(({ country, destinationGroups }) => (
-              <div key={country} className="animate-in fade-in-50 duration-500">
-                {/* Country Heading */}
-                <div className="flex items-center gap-4 mb-8">
-                  <h2 className="text-3xl font-display font-bold text-foreground">{country}</h2>
-                  <div className="h-px bg-border flex-1" />
+            
+            {/* Column 2 */}
+            <div className="flex flex-col gap-6">
+              {columns[1].map((photo) => (
+                <div key={photo.id} className="break-inside-avoid">
+                  <PhotoCard
+                    id={photo.id}
+                    storagePath={photo.storage_path}
+                    title={photo.title}
+                    description={photo.description}
+                    latitude={photo.latitude}
+                    longitude={photo.longitude}
+                    takenAt={photo.taken_at}
+                    cameraMake={photo.camera_make}
+                    cameraModel={photo.camera_model}
+                    isHero={photo.is_hero}
+                    mimeType={photo.mime_type}
+                    onHeroToggle={refetch}
+                  />
                 </div>
-
-                <div className="space-y-10">
-                  {destinationGroups.map(({ destination, photos }) => (
-                    <div key={destination.id}>
-                      <div className="mb-4 ml-1">
-                        <h3 className="text-lg font-medium text-muted-foreground flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                          {destination.name}
-                        </h3>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                        {photos.map((photo) => (
-                          <PhotoCard
-                            key={photo.id}
-                            id={photo.id}
-                            storagePath={photo.storage_path}
-                            title={photo.title}
-                            description={photo.description}
-                            latitude={photo.latitude}
-                            longitude={photo.longitude}
-                            takenAt={photo.taken_at}
-                            cameraMake={photo.camera_make}
-                            cameraModel={photo.camera_model}
-                            isHero={photo.is_hero}
-                            mimeType={photo.mime_type}
-                            onHeroToggle={refetch}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
-              <p className="text-muted-foreground text-lg">
-                No photos uploaded yet.
-                <br />
-                <span className="text-sm">Visit the admin panel to start your gallery.</span>
-              </p>
+              ))}
             </div>
-          )}
-        </div>
+
+            {/* Column 3 (Hidden on mobile/small screens if you want, but sticking to responsive grid above) */}
+            <div className="flex flex-col gap-6 md:hidden lg:flex">
+              {columns[2].map((photo) => (
+                <div key={photo.id} className="break-inside-avoid">
+                  <PhotoCard
+                    id={photo.id}
+                    storagePath={photo.storage_path}
+                    title={photo.title}
+                    description={photo.description}
+                    latitude={photo.latitude}
+                    longitude={photo.longitude}
+                    takenAt={photo.taken_at}
+                    cameraMake={photo.camera_make}
+                    cameraModel={photo.camera_model}
+                    isHero={photo.is_hero}
+                    mimeType={photo.mime_type}
+                    onHeroToggle={refetch}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-border rounded-3xl bg-muted/20">
+            <ImageIcon className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">No photos yet</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mt-1">
+              Upload photos in the Admin panel to fill your gallery with memories.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
