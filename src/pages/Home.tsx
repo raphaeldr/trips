@@ -200,20 +200,19 @@ const Home = () => {
 
           {/* 3. Distance Tracker (Small) */}
           <div className="col-span-1 row-span-1">
-            <div className="bg-slate-900 text-white rounded-3xl p-6 h-full flex flex-col justify-center items-center text-center shadow-card relative overflow-hidden">
-              <div className="absolute inset-0 opacity-10 bg-[url('[https://www.transparenttextures.com/patterns/cubes.png](https://www.transparenttextures.com/patterns/cubes.png)')]"></div>
-              <Plane className="w-8 h-8 text-blue-400 mb-2" />
+            <div className="bg-secondary text-secondary-foreground rounded-3xl p-6 h-full flex flex-col justify-center items-center text-center shadow-card relative overflow-hidden">
+              <Plane className="w-8 h-8 text-primary mb-2" />
               <span className="text-4xl font-display font-bold tabular-nums">
                 {totalKm.toLocaleString()}
               </span>
-              <span className="text-xs text-blue-200/70 uppercase tracking-widest font-semibold mt-1">KM Traveled</span>
+              <span className="text-xs opacity-80 uppercase tracking-widest font-semibold mt-1">KM Traveled</span>
             </div>
           </div>
 
           {/* 4. Map Entry (Large) */}
 
           {/* 6. Map Entry (Large Square) */}
-          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 group cursor-pointer relative rounded-3xl overflow-hidden border border-border shadow-card">
+          <Link to="/map" className="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 group cursor-pointer relative rounded-3xl overflow-hidden border-2 border-primary/20 shadow-card">
             <div className="absolute inset-0 pointer-events-none transition-all duration-700 group-hover:scale-105">
               <MapEmbed className="w-full h-full" />
             </div>
@@ -221,16 +220,16 @@ const Home = () => {
             <div className="absolute bottom-0 left-0 p-8 w-full">
               <div className="flex justify-between items-end">
                 <div>
-                  <div className="bg-primary/20 text-primary w-fit px-3 py-1 rounded-full text-xs font-bold mb-3 flex items-center gap-2">
+                  <div className="bg-accent/20 text-accent-foreground w-fit px-3 py-1 rounded-full text-xs font-bold mb-3 flex items-center gap-2">
                     <Globe className="w-3 h-3" />
                     INTERACTIVE MAP
                   </div>
-                  <h3 className="text-3xl font-display font-bold">Track Our Route</h3>
+                  <h3 className="text-3xl font-display font-bold text-foreground">Track Our Route</h3>
                   <p className="text-muted-foreground mt-1 max-w-sm">
                     Follow the path from {destinations?.[0]?.country || "Home"} to {currentDestination?.country}.
                   </p>
                 </div>
-                <div className="bg-foreground text-background p-4 rounded-full group-hover:rotate-45 transition-transform duration-300">
+                <div className="bg-primary text-primary-foreground p-4 rounded-full group-hover:rotate-45 transition-transform duration-300">
                   <ArrowRight className="w-6 h-6" />
                 </div>
               </div>
