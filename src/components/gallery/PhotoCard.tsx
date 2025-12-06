@@ -90,12 +90,12 @@ export const PhotoCard = ({
                 }`}
                 onLoadedData={() => setImageLoaded(true)}
                 onLoadedMetadata={() => setImageLoaded(true)} // Added fallback trigger
-                preload="auto" // Changed to auto for better frame loading
+                preload="metadata" // Changed to metadata to load just enough for the first frame
                 muted
                 playsInline
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
-                <div className="bg-white/30 backdrop-blur-md p-3 rounded-full border border-white/40 shadow-lg group-hover:scale-110 transition-transform">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors">
+                <div className="bg-white/30 backdrop-blur-md p-3 rounded-full border border-white/40 shadow-lg transition-transform">
                   <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                 </div>
               </div>
@@ -105,7 +105,7 @@ export const PhotoCard = ({
               src={publicUrl}
               alt={title || "Travel photo"}
               className={`w-full h-full object-cover transition-opacity duration-700 ${
-                imageLoaded ? "opacity-100" : "opacity-0"
+                imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-100"
               }`}
               onLoad={() => setImageLoaded(true)}
               loading="lazy"
