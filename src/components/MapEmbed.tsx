@@ -249,7 +249,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       filter: ["get", "isCurrent"],
       paint: {
         "circle-radius": 10,
-        "circle-color": "#ef4444",
+        "circle-color": "#22c55e", // Changed from #ef4444 to Green (#22c55e)
         "circle-stroke-width": 2,
         "circle-stroke-color": "#ffffff",
       },
@@ -275,7 +275,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
             <div style="padding: 8px;">
               <h3 style="font-weight: bold; margin-bottom: 4px; color: #0f766e;">${props.name}</h3>
               <p style="margin-bottom: 4px; font-size: 14px; color: #666;">${props.country}</p>
-              ${props.isCurrent ? '<span style="display: inline-block; background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
+              ${props.isCurrent ? '<span style="display: inline-block; background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px;">Current Location</span>' : ""}
             </div>
         `;
       popup.setLngLat(coords).setHTML(html).addTo(map);
