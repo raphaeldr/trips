@@ -5,7 +5,7 @@ import { TripProgressWidget } from "@/components/DashboardWidgets";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { Calendar, Navigation as NavIcon, Camera, BookOpen, Map as MapIcon, ArrowUpRight } from "lucide-react";
+import { Calendar, Navigation as NavIcon, Camera, BookOpen, Map as MapIcon, ArrowUpRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
