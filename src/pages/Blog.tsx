@@ -3,7 +3,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { MapPin, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useMemo } from "react";
 
@@ -22,6 +22,7 @@ interface BlogPost {
   excerpt: string | null;
   cover_image_url: string | null;
   published_at: string | null;
+  created_at: string;
   destination_id: string | null;
   destinations: {
     name: string;
@@ -55,13 +56,15 @@ const Blog = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select(`
+        .select(
+          `
           *,
           destinations (
             name,
             country
           )
-        `)
+        `,
+        )
         .eq("status", "published")
         .order("published_at", { ascending: false });
 
@@ -106,9 +109,7 @@ const Blog = () => {
       });
 
       destinationsList.sort(
-        (a, b) =>
-          new Date(b.destination.arrival_date).getTime() -
-          new Date(a.destination.arrival_date).getTime()
+        (a, b) => new Date(b.destination.arrival_date).getTime() - new Date(a.destination.arrival_date).getTime(),
       );
 
       result.push({ country, destinations: destinationsList });
@@ -129,25 +130,56 @@ const Blog = () => {
   }, [posts]);
 
   const PostCard = ({ post }: { post: BlogPost }) => (
-    <Link to={`/blog/${post.slug}`}>
-      <div className="bg-card rounded-2xl shadow-card hover:shadow-elegant transition-all duration-300 overflow-hidden group cursor-pointer">
-        {post.cover_image_url && (
-          <img
-            src={post.cover_image_url}
-            alt={post.title}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        )}
-        <div className="p-6">
-          <h2 className="text-xl font-display font-bold text-foreground mb-3 group-hover:text-primary transition-colors line-clamp-2">
+    <Link to={`/blog/${post.slug}`} className="block h-full group">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-hidden h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+        {/* Image Section - 1:1 Aspect Ratio */}
+        <div className="relative aspect-square overflow-hidden bg-muted">
+          {post.cover_image_url ? (
+            <img
+              src={post.cover_image_url}
+              alt={post.title}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
+              <ImageIcon className="w-12 h-12 opacity-20" />
+            </div>
+          )}
+
+          {/* Location Badge - Top Left Overlay */}
+          {post.destinations && (
+            <div className="absolute top-4 left-4 z-10">
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-black/60 text-white backdrop-blur-md shadow-sm border border-white/10">
+                <MapPin className="w-3 h-3 mr-1.5" />
+                {post.destinations.name}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Content Section */}
+        <div className="p-6 flex flex-col flex-1">
+          {/* Date */}
+          <div className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">
+            {post.published_at
+              ? format(new Date(post.published_at), "MMMM d, yyyy")
+              : format(new Date(post.created_at), "MMMM d, yyyy")}
+          </div>
+
+          {/* Title */}
+          <h2 className="text-xl font-display font-bold text-foreground mb-3 leading-tight group-hover:text-primary transition-colors line-clamp-2">
             {post.title}
           </h2>
+
+          {/* Excerpt */}
           {post.excerpt && (
-            <p className="text-foreground/80 mb-4 line-clamp-2 text-sm">{post.excerpt}</p>
+            <p className="text-muted-foreground mb-6 line-clamp-3 text-sm flex-1 leading-relaxed">{post.excerpt}</p>
           )}
-          <div className="flex items-center gap-2 text-primary font-medium text-sm">
-            Read More
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+
+          {/* Read More */}
+          <div className="mt-auto flex items-center gap-2 text-primary font-semibold text-sm">
+            Read Story
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
         </div>
       </div>
@@ -159,12 +191,10 @@ const Blog = () => {
       <Navigation />
       <BottomNav />
       <div className="pt-24 container mx-auto px-4 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">
-            Travel journal
-          </h1>
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">Travel journal</h1>
           {posts && (
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-lg">
               {posts.length} {posts.length === 1 ? "story" : "stories"} from our adventures.
             </p>
           )}
@@ -172,18 +202,26 @@ const Blog = () => {
 
         {isLoading ? (
           <div className="max-w-4xl mx-auto space-y-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card rounded-2xl shadow-card p-8 animate-pulse">
-                <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
-                <div className="h-8 bg-muted rounded w-3/4 mb-4"></div>
-                <div className="h-20 bg-muted rounded"></div>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-2xl shadow-card p-0 overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-muted"></div>
+                  <div className="p-6 space-y-4">
+                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                    <div className="h-8 bg-muted rounded w-3/4"></div>
+                    <div className="h-20 bg-muted rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : posts && posts.length > 0 ? (
-          <div className="space-y-12">
+          <div className="space-y-16">
             {groupedPosts.map((countryGroup) => (
-              <div key={countryGroup.country} className="space-y-8">
+              <div
+                key={countryGroup.country}
+                className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700"
+              >
                 {/* Country Header */}
                 <div className="border-b border-border pb-4">
                   <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
@@ -196,7 +234,9 @@ const Blog = () => {
                   <div key={destination.id} className="space-y-6">
                     {/* Destination Header */}
                     <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-primary" />
+                      <div className="p-2 bg-primary/10 rounded-full">
+                        <MapPin className="w-5 h-5 text-primary" />
+                      </div>
                       <div>
                         <h3 className="text-xl md:text-2xl font-display font-semibold text-foreground">
                           {destination.name}
@@ -209,8 +249,8 @@ const Blog = () => {
                       </div>
                     </div>
 
-                    {/* Posts Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Posts Grid - Max 3 columns */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                       {posts.map((post) => (
                         <PostCard key={post.id} post={post} />
                       ))}
@@ -224,14 +264,10 @@ const Blog = () => {
             {unassignedPosts.length > 0 && (
               <div className="space-y-6">
                 <div className="border-b border-border pb-4">
-                  <h2 className="text-3xl md:text-4xl font-display font-bold text-muted-foreground">
-                    Uncategorized
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Stories not assigned to a destination
-                  </p>
+                  <h2 className="text-3xl md:text-4xl font-display font-bold text-muted-foreground">Uncategorized</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Stories not assigned to a destination</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {unassignedPosts.map((post) => (
                     <PostCard key={post.id} post={post} />
                   ))}
@@ -240,10 +276,13 @@ const Blog = () => {
             )}
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto text-center py-16">
-            <h2 className="text-2xl font-bold text-foreground mb-4">No posts yet</h2>
-            <p className="text-muted-foreground">
-              Check back soon for travel stories and adventures!
+          <div className="max-w-4xl mx-auto text-center py-24">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+              <ImageIcon className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-4">No stories yet</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Check back soon for travel stories and adventures from our journey!
             </p>
           </div>
         )}
