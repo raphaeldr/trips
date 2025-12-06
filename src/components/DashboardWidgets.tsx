@@ -1,123 +1,74 @@
-import { Music, Mail, MessageSquare, ArrowUpRight, Play, Pause } from "lucide-react";
+import { Calendar, Globe, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
-// --- Playlist Widget ---
-export const PlaylistWidget = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const currentSong = {
-    title: "Midnight City",
-    artist: "M83",
-    cover: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop",
-  };
-
+export const TripProgressWidget = ({ days, km, destinations }: { days: number; km: number; destinations: any[] }) => {
   return (
-    <Card className="h-full bg-white border-border p-6 flex flex-col justify-between relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-      {/* Subtle light gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 opacity-100" />
-
-      {/* Animated background pulse */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl -mr-16 -mt-16 animate-pulse" />
-
-      <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider text-xs">
-          <Music className="w-3 h-3" />
-          On Repeat
+    <Card className="h-full bg-white border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
+      {/* Top Section: Key Stats Split */}
+      <div className="grid grid-cols-2 divide-x divide-border border-b border-border bg-gray-50/50">
+        <div className="p-6 flex flex-col justify-center items-center text-center gap-2 group/stat hover:bg-white transition-colors">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+            <Calendar className="w-3 h-3 text-primary" />
+            Days
+          </div>
+          <span className="text-3xl sm:text-4xl font-display font-bold text-foreground tabular-nums tracking-tight group-hover/stat:text-primary transition-colors">
+            {days}
+          </span>
         </div>
-        <div className="flex gap-1">
-          <span className="w-1 h-3 bg-primary/40 rounded-full animate-[bounce_1s_infinite]" />
-          <span className="w-1 h-4 bg-primary/70 rounded-full animate-[bounce_1.2s_infinite]" />
-          <span className="w-1 h-2 bg-primary/30 rounded-full animate-[bounce_0.8s_infinite]" />
+        <div className="p-6 flex flex-col justify-center items-center text-center gap-2 group/stat hover:bg-white transition-colors">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+            <Globe className="w-3 h-3 text-primary" />
+            Distance
+          </div>
+          <span className="text-3xl sm:text-4xl font-display font-bold text-foreground tabular-nums tracking-tight group-hover/stat:text-primary transition-colors">
+            {(km / 1000).toFixed(1)}k
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mt-4 relative z-10">
-        <img
-          src={currentSong.cover}
-          alt="Album Art"
-          className={`w-12 h-12 rounded-md object-cover shadow-md ${isPlaying ? "animate-[spin_4s_linear_infinite]" : ""}`}
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold truncate text-foreground">{currentSong.title}</p>
-          <p className="text-xs text-muted-foreground truncate">{currentSong.artist}</p>
+      {/* Bottom Section: Timeline History */}
+      <div className="flex-1 p-6 flex flex-col min-h-0 bg-white relative">
+        <div className="flex items-center justify-between mb-4 z-10 shrink-0">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+            <MapPin className="w-3 h-3 text-primary" />
+            Full History
+          </div>
+          <Badge variant="secondary" className="text-xs font-normal">
+            {destinations?.length || 0} Stops
+          </Badge>
         </div>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="rounded-full h-8 w-8 bg-white shadow-sm border border-gray-100 hover:bg-gray-50 text-foreground"
-          onClick={() => setIsPlaying(!isPlaying)}
-        >
-          {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
-        </Button>
+
+        {/* Top Fade for Scroll */}
+        <div className="absolute top-[80px] left-0 w-full h-8 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
+
+        <ScrollArea className="flex-1 -mx-4 px-4 bento-scroll h-full">
+          <div className="space-y-0 relative z-0 pb-2">
+            {/* Vertical Line */}
+            <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
+
+            {destinations?.map((dest, i) => (
+              <div key={dest.id} className="relative pl-8 py-3 group/item cursor-default">
+                <div
+                  className={`absolute left-4 top-[18px] w-1.5 h-1.5 rounded-full ring-4 ring-white ${i === 0 ? "bg-primary scale-125" : "bg-gray-300 group-hover/item:bg-primary/50"} transition-all duration-300 z-10`}
+                />
+                <div className="flex flex-col">
+                  <span
+                    className={`text-sm font-medium leading-none ${i === 0 ? "text-foreground" : "text-muted-foreground group-hover/item:text-foreground"} transition-colors`}
+                  >
+                    {dest.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground/60 font-medium mt-1">{dest.country}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+
+        {/* Bottom Fade for Scroll */}
+        <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
       </div>
     </Card>
   );
 };
-
-// --- Contact Widget ---
-export const ContactWidget = () => {
-  return (
-    <Card className="h-full bg-white border-border p-6 flex flex-col justify-center gap-4 relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-      <div className="relative z-10">
-        <h3 className="text-xl font-bold font-display text-foreground mb-1">Get in Touch</h3>
-        <p className="text-sm text-muted-foreground mb-4">Have a recommendation or just want to say hi?</p>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="flex-1 border-border hover:bg-secondary hover:text-primary gap-2 bg-white"
-          >
-            <Mail className="w-4 h-4" />
-            Email
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1 border-border hover:bg-secondary hover:text-primary gap-2 bg-white"
-          >
-            <MessageSquare className="w-4 h-4" />
-            Comment
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// --- Stat Box ---
-interface StatBoxProps {
-  label: string;
-  value: string | number;
-  subtext?: string;
-  icon?: React.ElementType;
-  className?: string;
-}
-
-export const StatBox = ({ label, value, subtext, icon: Icon, className }: StatBoxProps) => (
-  <Card
-    className={`h-full bg-white border-border p-6 flex flex-col justify-between relative overflow-hidden group hover:shadow-lg transition-all duration-300 ${className}`}
-  >
-    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500 text-foreground">
-      {Icon && <Icon className="w-16 h-16" />}
-    </div>
-
-    <div className="text-muted-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-      {Icon && <Icon className="w-3 h-3 text-primary" />}
-      {label}
-    </div>
-
-    <div className="mt-2">
-      <div className="text-4xl font-display font-bold text-foreground tracking-tight flex items-baseline gap-1">
-        {value}
-        {subtext && <span className="text-sm text-muted-foreground font-normal ml-1">{subtext}</span>}
-      </div>
-    </div>
-
-    <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary hover:text-white hover:border-primary cursor-pointer bg-white">
-      <ArrowUpRight className="w-4 h-4" />
-    </div>
-  </Card>
-);
