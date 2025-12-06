@@ -16,13 +16,15 @@ const BlogPost = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select(`
+        .select(
+          `
           *,
           destinations (
             name,
             country
           )
-        `)
+        `,
+        )
         .eq("slug", slug)
         .eq("status", "published")
         .single();
@@ -57,13 +59,11 @@ const BlogPost = () => {
         <BottomNav />
         <div className="pt-20 container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-display font-bold text-foreground mb-4">
-              Post Not Found
-            </h1>
+            <h1 className="text-4xl font-display font-bold text-foreground mb-4">Post Not Found</h1>
             <Link to="/blog">
               <Button>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Blog
+                Back to journal
               </Button>
             </Link>
           </div>
@@ -81,7 +81,7 @@ const BlogPost = () => {
           <Link to="/blog">
             <Button variant="ghost" className="mb-8">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Blog
+              Back to journal
             </Button>
           </Link>
 
@@ -103,22 +103,18 @@ const BlogPost = () => {
             {post.destinations && (
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>{post.destinations.name}, {post.destinations.country}</span>
+                <span>
+                  {post.destinations.name}, {post.destinations.country}
+                </span>
               </div>
             )}
           </div>
 
-          <h1 className="text-5xl font-display font-bold text-foreground mb-6">
-            {post.title}
-          </h1>
+          <h1 className="text-5xl font-display font-bold text-foreground mb-6">{post.title}</h1>
 
-          {post.excerpt && (
-            <p className="text-xl text-muted-foreground mb-8 italic">
-              {post.excerpt}
-            </p>
-          )}
+          {post.excerpt && <p className="text-xl text-muted-foreground mb-8 italic">{post.excerpt}</p>}
 
-          <div 
+          <div
             className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/90 prose-a:text-primary prose-strong:text-foreground prose-img:rounded-lg prose-img:shadow-card"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content as string) }}
           />
