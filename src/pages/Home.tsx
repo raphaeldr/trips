@@ -230,16 +230,11 @@ const Home = () => {
                       />
                     ) : isPhotoVideo ? (
                       <video
-                        src={mediaUrl}
+                        src={`${mediaUrl}#t=0.5`}
                         muted
                         playsInline
-                        preload="metadata"
+                        preload="auto"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        onLoadedMetadata={(e) => {
-                          // Seek to first frame to show as poster
-                          const video = e.currentTarget;
-                          video.currentTime = 0.1;
-                        }}
                       />
                     ) : (
                       <img
