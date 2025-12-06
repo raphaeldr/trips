@@ -85,11 +85,12 @@ export const PhotoCard = ({
             <div className="relative w-full h-full">
               <video
                 src={`${publicUrl}#t=0.1`}
-                className={`w-full h-full object-cover transition-all duration-700 ${
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
                   imageLoaded ? "opacity-100" : "opacity-0"
                 }`}
                 onLoadedData={() => setImageLoaded(true)}
-                preload="metadata"
+                onLoadedMetadata={() => setImageLoaded(true)} // Added fallback trigger
+                preload="auto" // Changed to auto for better frame loading
                 muted
                 playsInline
               />
@@ -103,9 +104,9 @@ export const PhotoCard = ({
             <img
               src={publicUrl}
               alt={title || "Travel photo"}
-              className={`w-full h-full object-cover transition-transform duration-700 ${
-                imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-110"
-              } group-hover:scale-105`}
+              className={`w-full h-full object-cover transition-opacity duration-700 ${
+                imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
               onLoad={() => setImageLoaded(true)}
               loading="lazy"
             />
