@@ -193,8 +193,8 @@ const Home = () => {
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-border rounded-3xl p-6 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4 relative z-10">
+          <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-border rounded-3xl p-4 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3 relative z-10">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
                 Camera Roll
@@ -204,7 +204,7 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 relative z-10">
+            <div className="grid grid-cols-4 gap-2 relative z-10">
               {recentPhotos?.map((photo) => {
                 const url = supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path || photo.storage_path)
                   .data.publicUrl;
