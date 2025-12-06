@@ -87,9 +87,9 @@ const Home = () => {
 
       <main className="container mx-auto px-4 pt-20 md:pt-28">
         {/* BENTO GRID LAYOUT */}
-        <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[180px] gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[200px] gap-4">
           {/* 1. LOCATION STATUS (Large) */}
-          <div className="col-span-1 md:col-span-2 min-h-[280px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
+          <div className="col-span-1 md:col-span-2 min-h-[320px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
             {/* Background Image/Video with Map Fallback */}
             <div className="absolute inset-0">
               {bgMediaUrl ? (
@@ -161,8 +161,8 @@ const Home = () => {
           </div>
 
           {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-3">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
                 Latest Stories
@@ -171,22 +171,24 @@ const Home = () => {
                 View All
               </Link>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 flex-1">
               {recentPosts?.slice(0, 3).map((post) => (
                 <Link
                   key={post.id}
                   to={`/blog/${post.slug}`}
-                  className="group flex items-baseline gap-3 py-1.5 hover:bg-secondary/40 -mx-2 px-2 rounded-lg transition-colors"
+                  className="group hover:bg-secondary/40 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
                 >
-                  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
-                    {format(new Date(post.published_at || new Date()), "d MMM")}
-                  </span>
-                  <span className="text-xs text-primary shrink-0">
-                    {post.destinations?.name || post.destinations?.country}
-                  </span>
-                  <span className="font-medium text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-0.5">
+                    <span className="tabular-nums">
+                      {format(new Date(post.published_at || new Date()), "d MMM")}
+                    </span>
+                    <span className="text-primary">
+                      {post.destinations?.name || post.destinations?.country}
+                    </span>
+                  </div>
+                  <p className="font-medium text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">
                     {post.title}
-                  </span>
+                  </p>
                 </Link>
               ))}
               {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
@@ -194,8 +196,8 @@ const Home = () => {
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-6 md:p-8 flex flex-col justify-between relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4 md:mb-5 relative z-10">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
                 Camera Roll
@@ -205,7 +207,7 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 md:gap-5 relative z-10">
+            <div className="grid grid-cols-4 gap-3 flex-1">
               {recentPhotos?.map((photo) => {
                 const isPhotoVideo = photo.mime_type?.startsWith("video/");
                 const thumbnailUrl = photo.thumbnail_path
@@ -218,7 +220,6 @@ const Home = () => {
                     key={photo.id}
                     className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
                   >
-                    {/* Always show thumbnail/poster for videos, or image for photos */}
                     <img
                       src={thumbnailUrl || mediaUrl}
                       alt=""
