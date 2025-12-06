@@ -102,7 +102,7 @@ const Home = () => {
           {/* 1. LOCATION STATUS (Large) */}
           <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-white shadow-xl hover:shadow-2xl transition-all duration-500">
             {/* Background Image with Map Fallback */}
-            <div className="absolute inset-0 transition-all duration-700 group-hover:scale-105">
+            <div className="absolute inset-0">
               {bgImageUrl ? (
                 <img
                   src={bgImageUrl}
@@ -230,11 +230,11 @@ const Home = () => {
           </div>
 
           {/* 4. GLOBE (Bottom) */}
-          <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-gray-50 relative group shadow-sm hover:shadow-lg transition-all">
+          <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-gray-50 relative shadow-sm hover:shadow-lg transition-all">
             <div className="absolute top-6 left-6 z-10 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-gray-200 shadow-sm">
               Interactive Route
             </div>
-            <MapEmbed className="w-full h-full opacity-90 transition-opacity group-hover:opacity-100 mix-blend-multiply" />
+            <MapEmbed className="w-full h-full" />
             <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
           </div>
 
