@@ -32,7 +32,7 @@ const Home = () => {
       if (!currentDestination?.id) return null;
       const { data, error } = await supabase
         .from("photos")
-        .select("storage_path")
+        .select("storage_path, thumbnail_path, mime_type")
         .eq("destination_id", currentDestination.id)
         .order("is_hero", { ascending: false })
         .limit(1)
@@ -73,8 +73,12 @@ const Home = () => {
 
   // --- Calculations ---
 
-  const bgImageUrl = locationImage
+  const isVideo = locationImage?.mime_type?.startsWith("video/");
+  const bgMediaUrl = locationImage
     ? supabase.storage.from("photos").getPublicUrl(locationImage.storage_path).data.publicUrl
+    : null;
+  const bgThumbnailUrl = locationImage?.thumbnail_path
+    ? supabase.storage.from("photos").getPublicUrl(locationImage.thumbnail_path).data.publicUrl
     : null;
 
   return (
@@ -86,15 +90,36 @@ const Home = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[180px] gap-4">
           {/* 1. LOCATION STATUS (Large) */}
           <div className="col-span-1 md:col-span-2 min-h-[280px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
-            {/* Background Image with Map Fallback */}
+            {/* Background Image/Video with Map Fallback */}
             <div className="absolute inset-0">
-              {bgImageUrl ? (
-                <img
-                  src={bgImageUrl}
-                  alt={currentDestination?.name || "Current Location"}
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                />
+              {bgMediaUrl ? (
+                isVideo ? (
+                  <>
+                    {/* Show thumbnail on mobile, video on desktop */}
+                    <img
+                      src={bgThumbnailUrl || bgMediaUrl}
+                      alt={currentDestination?.name || "Current Location"}
+                      className="w-full h-full object-cover md:hidden"
+                      loading="eager"
+                    />
+                    <video
+                      src={bgMediaUrl}
+                      poster={bgThumbnailUrl || undefined}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full object-cover hidden md:block"
+                    />
+                  </>
+                ) : (
+                  <img
+                    src={bgMediaUrl}
+                    alt={currentDestination?.name || "Current Location"}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                  />
+                )
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
               )}
@@ -191,19 +216,31 @@ const Home = () => {
 
             <div className="grid grid-cols-4 gap-3 md:gap-4 relative z-10">
               {recentPhotos?.map((photo) => {
-                const url = supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path || photo.storage_path)
-                  .data.publicUrl;
+                const isPhotoVideo = photo.mime_type?.startsWith("video/");
+                const thumbnailUrl = photo.thumbnail_path
+                  ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
+                  : null;
+                const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+                
                 return (
                   <div
                     key={photo.id}
                     className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
                   >
+                    {/* Always show thumbnail/poster for videos, or image for photos */}
                     <img
-                      src={url}
+                      src={thumbnailUrl || mediaUrl}
                       alt=""
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
                     />
+                    {isPhotoVideo && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
+                          <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   </div>
                 );
