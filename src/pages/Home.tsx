@@ -203,7 +203,7 @@ const Home = () => {
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 pb-6 md:pb-8 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
