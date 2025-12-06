@@ -30,10 +30,12 @@ const Blog = () => {
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
       <BottomNav />
-      <div className="pt-20 container mx-auto px-6 py-12">
-        <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-8">
-          Travel journal
-        </h1>
+      <div className="pt-24 container mx-auto px-4 sm:px-6">
+        <div className="mb-8">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">
+            Travel journal
+          </h1>
+        </div>
 
         {isLoading ? (
           <div className="max-w-4xl mx-auto space-y-8">
