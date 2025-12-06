@@ -41,6 +41,8 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
+    let resizeObserver: ResizeObserver | null = null;
+
     try {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
@@ -55,19 +57,28 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       });
       mapRef.current = map;
 
+      // Safe resize helper - guards against canvas being undefined
+      const safeResize = () => {
+        try {
+          if (map && map.getCanvas() && mapContainer.current) {
+            map.resize();
+          }
+        } catch (e) {
+          // Ignore resize errors - map may be in an invalid state
+        }
+      };
+
       // 1. CRITICAL FIX: Watch for container resizing (fixes blank screen on mobile/load)
-      const resizeObserver = new ResizeObserver(() => {
-        if (map) map.resize();
+      resizeObserver = new ResizeObserver(() => {
+        safeResize();
       });
       resizeObserver.observe(mapContainer.current);
 
       // Force a resize check shortly after mount
-      setTimeout(() => {
-        map.resize();
-      }, 100);
+      setTimeout(safeResize, 100);
 
       map.on("load", () => {
-        map.resize();
+        safeResize();
 
         // Setup fog/atmosphere
         const spaceFog = MAP_CONFIG.spaceFog;
@@ -93,6 +104,9 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
     }
 
     return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
