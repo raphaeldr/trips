@@ -249,7 +249,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
       filter: ["get", "isCurrent"],
       paint: {
         "circle-radius": 10,
-        "circle-color": "#22c55e", // Changed from #ef4444 to Green (#22c55e)
+        "circle-color": "#22c55e", // Use green-500 (#22c55e) instead of red-500 (#ef4444)
         "circle-stroke-width": 2,
         "circle-stroke-color": "#ffffff",
       },
