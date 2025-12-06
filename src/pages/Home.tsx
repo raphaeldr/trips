@@ -83,9 +83,9 @@ const Home = () => {
 
       <main className="container mx-auto px-4 pt-20 md:pt-28">
         {/* BENTO GRID LAYOUT */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[180px] gap-4">
           {/* 1. LOCATION STATUS (Large) */}
-          <div className="col-span-1 md:col-span-2 min-h-[280px] md:min-h-[380px] relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
+          <div className="col-span-1 md:col-span-2 min-h-[280px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
             {/* Background Image with Map Fallback */}
             <div className="absolute inset-0">
               {bgImageUrl ? (
@@ -136,7 +136,7 @@ const Home = () => {
           </div>
 
           {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
@@ -178,7 +178,7 @@ const Home = () => {
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
@@ -216,7 +216,7 @@ const Home = () => {
           </div>
 
           {/* 4. GLOBE (Bottom) */}
-          <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-[380px] rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
+          <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
             <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-card/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-border shadow-sm">
               Interactive Route
             </div>
@@ -225,7 +225,7 @@ const Home = () => {
           </div>
 
           {/* 5. COMBINED STATS & HISTORY (Bottom) */}
-          <div className="col-span-1 md:col-span-2 min-h-[250px] md:min-h-[380px]">
+          <div className="col-span-1 md:col-span-2 min-h-[250px] md:min-h-0 md:row-span-2">
             <TripProgressWidget destinations={destinations || []} />
           </div>
         </div>
