@@ -168,66 +168,10 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 2. PHOTO GALLERY BY COUNTRY (Large - spans both rows) */}
+          {/* 2. RIGHT COLUMN - Stories + Camera Roll */}
           <div className="col-span-1 md:col-span-2 md:row-span-3 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-                <Camera className="w-3 h-3 text-primary" />
-                Camera Roll
-              </div>
-              <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
-                See All
-              </Link>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin">
-              {photosByCountry && Object.entries(photosByCountry).map(([country, photos]) => (
-                <div key={country}>
-                  <h3 className="text-sm font-bold text-foreground mb-2">{country}</h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {photos?.slice(0, 6).map((photo) => {
-                      const isPhotoVideo = photo.mime_type?.startsWith("video/");
-                      const thumbnailUrl = photo.thumbnail_path
-                        ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
-                        : null;
-                      const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-                      
-                      return (
-                        <div
-                          key={photo.id}
-                          className="aspect-square rounded-lg overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
-                        >
-                          <img
-                            src={thumbnailUrl || mediaUrl}
-                            alt=""
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            loading="lazy"
-                          />
-                          {isPhotoVideo && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-6 h-6 bg-black/50 rounded-full flex items-center justify-center">
-                                <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
-                              </div>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              {!galleryPhotos?.length && (
-                <div className="grid grid-cols-3 gap-2">
-                  {Array(6).fill(0).map((_, i) => (
-                    <Skeleton key={i} className="aspect-square rounded-lg bg-secondary" />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Latest Stories - Minimal List */}
-            <div className="mt-4 pt-4 border-t border-border">
+            {/* Latest Stories - Top */}
+            <div className="mb-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                   <BookOpen className="w-3 h-3 text-primary" />
@@ -253,6 +197,65 @@ const Home = () => {
                   </Link>
                 ))}
                 {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
+              </div>
+            </div>
+
+            {/* Camera Roll - Bottom */}
+            <div className="flex-1 border-t border-border pt-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <Camera className="w-3 h-3 text-primary" />
+                  Camera Roll
+                </div>
+                <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
+                  See All
+                </Link>
+              </div>
+
+              <div className="space-y-4">
+                {photosByCountry && Object.entries(photosByCountry).slice(0, 3).map(([country, photos]) => (
+                  <div key={country}>
+                    <h3 className="text-sm font-bold text-foreground mb-2">{country}</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      {photos?.slice(0, 3).map((photo) => {
+                        const isPhotoVideo = photo.mime_type?.startsWith("video/");
+                        const thumbnailUrl = photo.thumbnail_path
+                          ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
+                          : null;
+                        const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+                        
+                        return (
+                          <div
+                            key={photo.id}
+                            className="aspect-square rounded-lg overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
+                          >
+                            <img
+                              src={thumbnailUrl || mediaUrl}
+                              alt=""
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              loading="lazy"
+                            />
+                            {isPhotoVideo && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-6 h-6 bg-black/50 rounded-full flex items-center justify-center">
+                                  <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
+                                </div>
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {!galleryPhotos?.length && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {Array(6).fill(0).map((_, i) => (
+                      <Skeleton key={i} className="aspect-square rounded-lg bg-secondary" />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
