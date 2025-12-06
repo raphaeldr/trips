@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
-import { useMemo } from "react";
 
 interface Destination {
   id: string;
@@ -30,24 +29,7 @@ interface BlogPost {
   } | null;
 }
 
-interface CountryGroup {
-  country: string;
-  posts: BlogPost[];
-}
-
 const Blog = () => {
-  const { data: destinations } = useQuery({
-    queryKey: ["destinations"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("destinations")
-        .select("*")
-        .order("arrival_date", { ascending: false });
-      if (error) throw error;
-      return data as Destination[];
-    },
-  });
-
   const { data: posts, isLoading } = useQuery({
     queryKey: ["blogPosts"],
     queryFn: async () => {
@@ -69,38 +51,6 @@ const Blog = () => {
       return data as BlogPost[];
     },
   });
-
-  // Group posts by Country only to ensure grid layout fills properly
-  const groupedPosts = useMemo(() => {
-    if (!posts?.length) return [];
-
-    const countryGroups = new Map<string, BlogPost[]>();
-
-    posts.forEach((post) => {
-      // Use destination country or 'Uncategorized' if no destination linked
-      const country = post.destinations?.country || "Uncategorized";
-
-      if (!countryGroups.has(country)) {
-        countryGroups.set(country, []);
-      }
-      countryGroups.get(country)!.push(post);
-    });
-
-    // Convert Map to Array
-    const result: CountryGroup[] = Array.from(countryGroups.entries()).map(([country, posts]) => ({
-      country,
-      posts,
-    }));
-
-    // Sort countries by the date of the most recent post in that group
-    result.sort((a, b) => {
-      const dateA = new Date(a.posts[0].published_at || a.posts[0].created_at).getTime();
-      const dateB = new Date(b.posts[0].published_at || b.posts[0].created_at).getTime();
-      return dateB - dateA;
-    });
-
-    return result;
-  }, [posts]);
 
   const PostCard = ({ post }: { post: BlogPost }) => (
     <Link to={`/blog/${post.slug}`} className="block h-full group">
@@ -128,8 +78,8 @@ const Blog = () => {
             {post.destinations && <span className="text-muted-foreground">•</span>}
             <span className="text-muted-foreground">
               {post.published_at
-                ? format(new Date(post.published_at), "MMMM d, yyyy")
-                : format(new Date(post.created_at), "MMMM d, yyyy")}
+                ? format(new Date(post.published_at), "d MMMM yyyy")
+                : format(new Date(post.created_at), "d MMMM yyyy")}
             </span>
           </div>
 
@@ -145,7 +95,7 @@ const Blog = () => {
 
           {/* Read More */}
           <div className="mt-auto flex items-center gap-2 text-primary font-semibold text-sm">
-            Read Story
+            Read story
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
         </div>
@@ -183,21 +133,9 @@ const Blog = () => {
             </div>
           </div>
         ) : posts && posts.length > 0 ? (
-          <div className="space-y-16">
-            {groupedPosts.map((group) => (
-              <div key={group.country} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Country Header */}
-                <div className="border-b border-border pb-4">
-                  <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">{group.country}</h2>
-                </div>
-
-                {/* Posts Grid - Grouped by Country for better flow */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                  {group.posts.map((post) => (
-                    <PostCard key={post.id} post={post} />
-                  ))}
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
             ))}
           </div>
         ) : (
