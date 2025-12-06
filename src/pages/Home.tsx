@@ -180,12 +180,8 @@ const Home = () => {
                   className="group hover:bg-secondary/40 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-0.5">
-                    <span className="tabular-nums">
-                      {format(new Date(post.published_at || new Date()), "d MMM")}
-                    </span>
-                    <span className="text-primary">
-                      {post.destinations?.name || post.destinations?.country}
-                    </span>
+                    <span className="tabular-nums">{format(new Date(post.published_at || new Date()), "d MMM")}</span>
+                    <span className="text-primary">{post.destinations?.name || post.destinations?.country}</span>
                   </div>
                   <p className="font-medium text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">
                     {post.title}
@@ -215,11 +211,11 @@ const Home = () => {
                   ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
                   : null;
                 const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-                
+
                 return (
                   <div
                     key={photo.id}
-                    className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
+                    className="aspect-square overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md rounded-none"
                   >
                     {/* Always show thumbnail/poster for videos, or use video element to capture first frame */}
                     {thumbnailUrl ? (
@@ -256,7 +252,7 @@ const Home = () => {
               {(!recentPhotos || recentPhotos.length < 4) &&
                 Array(4 - (recentPhotos?.length || 0))
                   .fill(0)
-                  .map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl bg-secondary" />)}
+                  .map((_, i) => <Skeleton key={i} className="aspect-square rounded-none bg-secondary" />)}
             </div>
           </div>
 
