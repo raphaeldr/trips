@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { VideoThumbnail } from "@/components/VideoThumbnail";
 
 interface PhotoCardProps {
   id: string;
@@ -83,19 +84,10 @@ export const PhotoCard = ({
         <div className="relative aspect-square w-full overflow-hidden bg-muted">
           {isVideo ? (
             <div className="relative w-full h-full">
-              <video
-                src={`${publicUrl}#t=0.1`}
-                className={`w-full h-full object-cover transition-opacity duration-500 ${
-                  imageLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                onLoadedData={() => setImageLoaded(true)}
-                onLoadedMetadata={() => setImageLoaded(true)}
-                preload="auto"
-                muted
-                playsInline
-              />
+              {/* Use VideoThumbnail to generate a static image instead of a live video element */}
+              <VideoThumbnail src={publicUrl} className="w-full h-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors">
-                <div className="bg-white/30 backdrop-blur-md p-3 rounded-full border border-white/40 shadow-lg transition-transform">
+                <div className="bg-white/30 backdrop-blur-md p-3 rounded-full border border-white/40 shadow-lg">
                   <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                 </div>
               </div>
