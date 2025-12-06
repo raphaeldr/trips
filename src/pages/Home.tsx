@@ -162,7 +162,7 @@ const Home = () => {
 
           {/* 2. LATEST STORIES (Prominent - Top Right) */}
           <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
                 Latest Stories
@@ -171,31 +171,22 @@ const Home = () => {
                 View All
               </Link>
             </div>
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4">
-              {recentPosts?.slice(0, 2).map((post) => (
+            <div className="flex flex-col gap-2">
+              {recentPosts?.slice(0, 3).map((post) => (
                 <Link
                   key={post.id}
                   to={`/blog/${post.slug}`}
-                  className="group flex gap-3 md:gap-4 items-center bg-secondary/30 p-2.5 md:p-3 rounded-xl hover:bg-secondary/60 transition-colors"
+                  className="group flex items-baseline gap-3 py-1.5 hover:bg-secondary/40 -mx-2 px-2 rounded-lg transition-colors"
                 >
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-muted shrink-0 overflow-hidden shadow-sm">
-                    {post.cover_image_url && (
-                      <img
-                        src={post.cover_image_url}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                        loading="lazy"
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-foreground text-sm md:text-base truncate group-hover:text-primary transition-colors">
-                      {post.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(post.published_at || new Date()), "MMM d")} • {post.destinations?.country}
-                    </p>
-                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                    {format(new Date(post.published_at || new Date()), "d MMM")}
+                  </span>
+                  <span className="text-xs text-primary shrink-0">
+                    {post.destinations?.name || post.destinations?.country}
+                  </span>
+                  <span className="font-medium text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                    {post.title}
+                  </span>
                 </Link>
               ))}
               {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
@@ -203,8 +194,8 @@ const Home = () => {
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 pb-6 md:pb-8 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-6 md:p-8 flex flex-col justify-between relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4 md:mb-5 relative z-10">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
                 Camera Roll
@@ -214,7 +205,7 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 md:gap-4 relative z-10">
+            <div className="grid grid-cols-4 gap-4 md:gap-5 relative z-10">
               {recentPhotos?.map((photo) => {
                 const isPhotoVideo = photo.mime_type?.startsWith("video/");
                 const thumbnailUrl = photo.thumbnail_path

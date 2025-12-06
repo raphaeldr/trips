@@ -10,7 +10,7 @@
 @layer base {
   :root {
     /* Sleek Light Theme */
-    --background: 210 40% 98%; /* Very subtle cool off-white */
+    --background: 210 20% 95%; /* Slightly warmer, subtly darker off-white */
     --foreground: 222.2 84% 4.9%; /* Deep dark blue-gray for text */
 
     /* Pure white cards for crispness */
