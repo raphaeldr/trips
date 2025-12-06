@@ -26,6 +26,28 @@ const Home = () => {
     },
   });
 
+  // Calculate current destination immediately so we can fetch its image
+  const currentDestination = destinations?.find((d) => d.is_current) || destinations?.[0];
+
+  // Fetch background image for the current location
+  const { data: locationImage } = useQuery({
+    queryKey: ["locationImage", currentDestination?.id],
+    queryFn: async () => {
+      if (!currentDestination?.id) return null;
+      const { data, error } = await supabase
+        .from("photos")
+        .select("storage_path")
+        .eq("destination_id", currentDestination.id)
+        .order("is_hero", { ascending: false }) // Prefer hero images if available, otherwise any
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentDestination?.id,
+  });
+
   const { data: countryCount } = useQuery({
     queryKey: ["countryCount"],
     queryFn: async () => {
@@ -65,17 +87,17 @@ const Home = () => {
 
   // --- Calculations ---
 
-  // Current location is the first one in the list (since we ordered desc by arrival) that is marked current
-  // OR just the latest arrival if none marked current.
-  // Note: Your original map logic ordered asc, so be careful. Let's filter for is_current first.
-  const currentDestination = destinations?.find((d) => d.is_current) || destinations?.[0];
-
   // Start date for days calc (Assuming first trip was the last in the array if sorted desc)
   const firstTripDate = destinations?.[destinations.length - 1]?.arrival_date;
   const daysTravellling = firstTripDate ? differenceInDays(new Date(), new Date(firstTripDate)) + 1 : 0;
 
   // Approx km (mock logic)
   const totalKm = (countryCount || 0) * 1245 + 340;
+
+  // Prepare background image URL
+  const bgImageUrl = locationImage
+    ? supabase.storage.from("photos").getPublicUrl(locationImage.storage_path).data.publicUrl
+    : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 md:pb-8 selection:bg-primary selection:text-black">
@@ -86,11 +108,21 @@ const Home = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 auto-rows-[180px] gap-4">
           {/* 1. LOCATION STATUS (Large) */}
           <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 relative group overflow-hidden rounded-3xl border border-white/10 bg-card shadow-2xl">
-            {/* Background Map Effect */}
-            <div className="absolute inset-0 opacity-20 grayscale transition-all duration-700 group-hover:opacity-40 group-hover:grayscale-0 group-hover:scale-105">
-              <MapEmbed className="w-full h-full pointer-events-none" />
+            {/* Background Image with Map Fallback */}
+            <div className="absolute inset-0 transition-all duration-700 group-hover:scale-105">
+              {bgImageUrl ? (
+                <img
+                  src={bgImageUrl}
+                  alt={currentDestination?.name || "Current Location"}
+                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                />
+              ) : (
+                <div className="w-full h-full opacity-40 grayscale group-hover:grayscale-0 transition-all">
+                  <MapEmbed className="w-full h-full pointer-events-none" />
+                </div>
+              )}
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
 
             <div className="absolute inset-0 p-8 flex flex-col justify-end">
               <div className="space-y-1 mb-6">
