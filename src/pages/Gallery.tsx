@@ -6,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImageIcon, Video, MapPin } from "lucide-react";
-import { format } from "date-fns";
+import { ImageIcon, Video } from "lucide-react";
 
 interface Photo {
   id: string;
@@ -32,12 +31,10 @@ interface Destination {
   departure_date: string | null;
 }
 
-interface GroupedPhotos {
+// Updated interface for flattened structure
+interface CountryGroup {
   country: string;
-  destinations: {
-    destination: Destination;
-    photos: Photo[];
-  }[];
+  photos: (Photo & { destinationName?: string; country?: string })[];
 }
 
 const Gallery = () => {
@@ -76,65 +73,58 @@ const Gallery = () => {
     return photos;
   }, [photos, filter]);
 
-  // Group photos by country and destination
+  // Group photos by country only (Flattened)
   const groupedPhotos = useMemo(() => {
     if (!filteredPhotos.length || !destinations) return [];
 
     const destinationMap = new Map(destinations.map((d) => [d.id, d]));
-    const countryGroups = new Map<string, Map<string, Photo[]>>();
+    const countryGroups = new Map<string, (Photo & { destinationName?: string; country?: string })[]>();
 
-    // Group photos by destination
     filteredPhotos.forEach((photo) => {
-      if (!photo.destination_id) return;
-      const destination = destinationMap.get(photo.destination_id);
-      if (!destination) return;
+      let country = "Uncategorized";
+      let destinationName = "";
 
-      if (!countryGroups.has(destination.country)) {
-        countryGroups.set(destination.country, new Map());
-      }
-      const countryMap = countryGroups.get(destination.country)!;
-
-      if (!countryMap.has(destination.id)) {
-        countryMap.set(destination.id, []);
-      }
-      countryMap.get(destination.id)!.push(photo);
-    });
-
-    // Convert to array structure, sorted by most recent destination per country
-    const result: GroupedPhotos[] = [];
-
-    countryGroups.forEach((destinationsMap, country) => {
-      const destinationsList: { destination: Destination; photos: Photo[] }[] = [];
-
-      destinationsMap.forEach((photos, destId) => {
-        const destination = destinationMap.get(destId);
+      if (photo.destination_id) {
+        const destination = destinationMap.get(photo.destination_id);
         if (destination) {
-          destinationsList.push({ destination, photos });
+          country = destination.country;
+          destinationName = destination.name;
         }
+      }
+
+      if (!countryGroups.has(country)) {
+        countryGroups.set(country, []);
+      }
+
+      countryGroups.get(country)!.push({
+        ...photo,
+        destinationName,
+        country, // Pass country for the card
       });
-
-      // Sort destinations by arrival date (most recent first)
-      destinationsList.sort(
-        (a, b) => new Date(b.destination.arrival_date).getTime() - new Date(a.destination.arrival_date).getTime(),
-      );
-
-      result.push({ country, destinations: destinationsList });
     });
 
-    // Sort countries by most recent destination arrival date
+    const result: CountryGroup[] = Array.from(countryGroups.entries()).map(([country, groupPhotos]) => ({
+      country,
+      photos: groupPhotos,
+    }));
+
+    // Sort countries by the date of the most recent photo
     result.sort((a, b) => {
-      const aDate = new Date(a.destinations[0]?.destination.arrival_date || 0);
-      const bDate = new Date(b.destinations[0]?.destination.arrival_date || 0);
-      return bDate.getTime() - aDate.getTime();
+      const dateA = new Date(a.photos[0]?.taken_at || 0).getTime();
+      const dateB = new Date(b.photos[0]?.taken_at || 0).getTime();
+      return dateB - dateA;
     });
 
     return result;
   }, [filteredPhotos, destinations]);
 
-  // Get photos without destination
-  const unassignedPhotos = useMemo(() => {
-    return filteredPhotos.filter((p) => !p.destination_id);
-  }, [filteredPhotos]);
+  // Dynamic Grid Class based on number of photos
+  const getGridClass = (count: number) => {
+    if (count <= 1) return "grid-cols-1";
+    if (count === 2) return "grid-cols-1 md:grid-cols-2";
+    if (count <= 6) return "grid-cols-2 md:grid-cols-3";
+    return "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -161,72 +151,27 @@ const Gallery = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
             {[...Array(9)].map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="aspect-square rounded-sm" />
+                <Skeleton className="aspect-square rounded-none" />
                 <Skeleton className="h-4 w-2/3" />
                 <Skeleton className="h-3 w-1/3" />
               </div>
             ))}
           </div>
-        ) : filteredPhotos.length > 0 ? (
-          <div className="space-y-12">
-            {groupedPhotos.map((countryGroup) => (
-              <div key={countryGroup.country} className="space-y-8">
+        ) : groupedPhotos.length > 0 ? (
+          <div className="space-y-16">
+            {groupedPhotos.map((group) => (
+              <div key={group.country} className="space-y-6">
                 {/* Country Header */}
                 <div className="border-b border-border pb-4">
-                  <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-                    {countryGroup.country}
-                  </h2>
+                  <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">{group.country}</h2>
                 </div>
 
-                {/* Destinations within country */}
-                {countryGroup.destinations.map(({ destination, photos }) => (
-                  <div key={destination.id} className="space-y-6">
-                    {/* Destination Header */}
-                    <div className="flex items-center gap-3 opacity-60">
-                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <div className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                        {destination.name}
-                      </div>
-                    </div>
-
-                    {/* Photos Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                      {photos.map((photo) => (
-                        <PhotoCard
-                          key={photo.id}
-                          id={photo.id}
-                          storagePath={photo.storage_path}
-                          title={photo.title}
-                          description={photo.description}
-                          latitude={photo.latitude}
-                          longitude={photo.longitude}
-                          takenAt={photo.taken_at}
-                          cameraMake={photo.camera_make}
-                          cameraModel={photo.camera_model}
-                          isHero={photo.is_hero}
-                          mimeType={photo.mime_type}
-                          onHeroToggle={refetch}
-                          destinationName={destination.name}
-                          country={destination.country}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-
-            {/* Unassigned photos section */}
-            {unassignedPhotos.length > 0 && (
-              <div className="space-y-6">
-                <div className="border-b border-border pb-4">
-                  <h2 className="text-3xl md:text-4xl font-display font-bold text-muted-foreground">Uncategorized</h2>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                  {unassignedPhotos.map((photo) => (
+                {/* Dynamic Photos Grid */}
+                <div className={`grid gap-x-1 gap-y-8 ${getGridClass(group.photos.length)}`}>
+                  {group.photos.map((photo) => (
                     <PhotoCard
                       key={photo.id}
                       id={photo.id}
@@ -241,12 +186,13 @@ const Gallery = () => {
                       isHero={photo.is_hero}
                       mimeType={photo.mime_type}
                       onHeroToggle={refetch}
-                      destinationName="Unassigned"
+                      destinationName={photo.destinationName || "Unassigned"}
+                      country={group.country !== "Uncategorized" ? group.country : undefined}
                     />
                   ))}
                 </div>
               </div>
-            )}
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-border rounded-3xl bg-muted/20">
