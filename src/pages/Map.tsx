@@ -204,7 +204,7 @@ const Map = () => {
         {/* Sidebar / Overlay List */}
         <div className="w-full md:w-96 bg-background/95 backdrop-blur shadow-xl z-20 flex flex-col border-r border-border h-[40vh] md:h-full order-2 md:order-1">
           <div className="p-6 border-b border-border">
-            <h1 className="text-2xl font-display font-bold text-foreground">Our Journey</h1>
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground">Our Journey</h1>
             <p className="text-muted-foreground text-sm">
               {destinations?.length} destinations • {totalDays} days of adventure
             </p>

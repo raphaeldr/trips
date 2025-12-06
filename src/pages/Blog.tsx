@@ -31,7 +31,7 @@ const Blog = () => {
       <Navigation />
       <BottomNav />
       <div className="pt-20 container mx-auto px-6 py-12">
-        <h1 className="text-4xl font-display font-bold text-foreground mb-8">
+        <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-8">
           Travel journal
         </h1>
 
