@@ -2,6 +2,7 @@ import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
 import { TripProgressWidget } from "@/components/DashboardWidgets";
+import { VideoThumbnail } from "@/components/VideoThumbnail";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -229,11 +230,8 @@ const Home = () => {
                         loading="lazy"
                       />
                     ) : isPhotoVideo ? (
-                      <video
-                        src={`${mediaUrl}#t=0.5`}
-                        muted
-                        playsInline
-                        preload="auto"
+                      <VideoThumbnail
+                        src={mediaUrl}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (
