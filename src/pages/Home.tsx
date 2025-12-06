@@ -1,15 +1,13 @@
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
-import { ContactWidget, PlaylistWidget, StatBox } from "@/components/DashboardWidgets";
+import { TripProgressWidget } from "@/components/DashboardWidgets";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays, format } from "date-fns";
-import { Calendar, Globe, MapPin, Navigation as NavIcon, Camera, BookOpen } from "lucide-react";
+import { Calendar, Navigation as NavIcon, Camera, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 
 const Home = () => {
   // --- Data Fetching ---
@@ -118,7 +116,7 @@ const Home = () => {
               )}
             </div>
 
-            {/* Gradient Overlay for Text Readability - Key for light theme + image */}
+            {/* Gradient Overlay for Text Readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
             <div className="absolute inset-0 p-8 flex flex-col justify-end">
@@ -153,75 +151,8 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 2. STATS: Days (Small) */}
-          <div className="col-span-1 row-span-1">
-            <StatBox label="Days on Road" value={daysTravellling} icon={Calendar} />
-          </div>
-
-          {/* 3. DESTINATIONS LIST (Tall) */}
-          <div className="col-span-1 row-span-1 md:row-span-2 bg-white border border-border rounded-3xl p-6 flex flex-col overflow-hidden relative shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4 z-10">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-                <MapPin className="w-3 h-3 text-primary" />
-                History
-              </div>
-              <Badge variant="secondary" className="text-xs font-normal">
-                {destinations?.length || 0} Stops
-              </Badge>
-            </div>
-
-            <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white to-transparent pointer-events-none z-0" />
-
-            <ScrollArea className="flex-1 -mx-4 px-4 bento-scroll">
-              <div className="space-y-1 relative z-0 py-2">
-                {/* Timeline line */}
-                <div className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
-
-                {destinations?.map((dest, i) => (
-                  <div key={dest.id} className="relative pl-8 py-2 group cursor-default">
-                    <div
-                      className={`absolute left-4 top-3.5 w-1.5 h-1.5 rounded-full ring-4 ring-white ${i === 0 ? "bg-primary" : "bg-gray-300 group-hover:bg-primary/50"} transition-colors`}
-                    />
-                    <p
-                      className={`text-sm font-medium ${i === 0 ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"} transition-colors`}
-                    >
-                      {dest.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">{dest.country}</p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
-          </div>
-
-          {/* 4. STATS: Distance (Small) */}
-          <div className="col-span-1 row-span-1">
-            <StatBox label="Distance" value={`${(totalKm / 1000).toFixed(1)}k`} subtext="km" icon={Globe} />
-          </div>
-
-          {/* 5. GLOBE (Wide) */}
-          <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-gray-50 relative group shadow-sm hover:shadow-lg transition-all">
-            <div className="absolute top-6 left-6 z-10 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-gray-200 shadow-sm">
-              Interactive Route
-            </div>
-            <MapEmbed className="w-full h-full opacity-90 transition-opacity group-hover:opacity-100 mix-blend-multiply" />
-            <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
-          </div>
-
-          {/* 6. PLAYLIST (Small) */}
-          <div className="col-span-1 row-span-1">
-            <PlaylistWidget />
-          </div>
-
-          {/* 7. CONTACT (Small) */}
-          <div className="col-span-1 row-span-1">
-            <ContactWidget />
-          </div>
-
-          {/* 8. LATEST STORIES (Wide Row) */}
-          <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-1 bg-white border border-border rounded-3xl p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
+          {/* 2. LATEST STORIES (Prominent - Top Right) */}
+          <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-border rounded-3xl p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
@@ -261,7 +192,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 9. LATEST MEDIA (Wide Row) */}
+          {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
           <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-border rounded-3xl p-6 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-4 relative z-10">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
@@ -296,6 +227,20 @@ const Home = () => {
                   .fill(0)
                   .map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg bg-secondary" />)}
             </div>
+          </div>
+
+          {/* 4. GLOBE (Bottom) */}
+          <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-gray-50 relative group shadow-sm hover:shadow-lg transition-all">
+            <div className="absolute top-6 left-6 z-10 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-gray-200 shadow-sm">
+              Interactive Route
+            </div>
+            <MapEmbed className="w-full h-full opacity-90 transition-opacity group-hover:opacity-100 mix-blend-multiply" />
+            <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
+          </div>
+
+          {/* 5. COMBINED STATS & HISTORY (Bottom) */}
+          <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2">
+            <TripProgressWidget days={daysTravellling} km={totalKm} destinations={destinations || []} />
           </div>
         </div>
       </main>
