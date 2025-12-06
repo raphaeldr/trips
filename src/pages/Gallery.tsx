@@ -55,13 +55,14 @@ const Gallery = () => {
     },
   });
 
-  const { data: photos, isLoading, refetch } = useQuery({
+  const {
+    data: photos,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["photos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("photos")
-        .select("*")
-        .order("taken_at", { ascending: false });
+      const { data, error } = await supabase.from("photos").select("*").order("taken_at", { ascending: false });
       if (error) throw error;
       return data as Photo[];
     },
@@ -71,8 +72,7 @@ const Gallery = () => {
   const filteredPhotos = useMemo(() => {
     if (!photos) return [];
     if (filter === "all") return photos;
-    if (filter === "videos")
-      return photos.filter((p) => p.mime_type?.startsWith("video/"));
+    if (filter === "videos") return photos.filter((p) => p.mime_type?.startsWith("video/"));
     return photos;
   }, [photos, filter]);
 
@@ -115,9 +115,7 @@ const Gallery = () => {
 
       // Sort destinations by arrival date (most recent first)
       destinationsList.sort(
-        (a, b) =>
-          new Date(b.destination.arrival_date).getTime() -
-          new Date(a.destination.arrival_date).getTime()
+        (a, b) => new Date(b.destination.arrival_date).getTime() - new Date(a.destination.arrival_date).getTime(),
       );
 
       result.push({ country, destinations: destinationsList });
@@ -146,20 +144,13 @@ const Gallery = () => {
       <div className="pt-24 container mx-auto px-4 sm:px-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">
-              Camera roll
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2">Camera roll</h1>
             <p className="text-muted-foreground">
-              {photos?.length || 0} moments across {destinations?.length || 0}{" "}
-              locations.
+              {photos?.length || 0} moments across {destinations?.length || 0} locations.
             </p>
           </div>
 
-          <Tabs
-            defaultValue="all"
-            className="w-full md:w-auto"
-            onValueChange={setFilter}
-          >
+          <Tabs defaultValue="all" className="w-full md:w-auto" onValueChange={setFilter}>
             <TabsList className="grid w-full grid-cols-2 md:w-[200px]">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="videos" className="flex gap-2">
@@ -170,12 +161,13 @@ const Gallery = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
             {[...Array(9)].map((_, i) => (
-              <Skeleton
-                key={i}
-                className={`rounded-xl ${i % 2 === 0 ? "aspect-square" : "aspect-[3/4]"}`}
-              />
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-square rounded-sm" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
             ))}
           </div>
         ) : filteredPhotos.length > 0 ? (
@@ -191,24 +183,17 @@ const Gallery = () => {
 
                 {/* Destinations within country */}
                 {countryGroup.destinations.map(({ destination, photos }) => (
-                  <div key={destination.id} className="space-y-4">
+                  <div key={destination.id} className="space-y-6">
                     {/* Destination Header */}
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-primary" />
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-display font-semibold text-foreground">
-                          {destination.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(destination.arrival_date), "d MMMM yyyy")}
-                          {destination.departure_date &&
-                            ` — ${format(new Date(destination.departure_date), "d MMMM yyyy")}`}
-                        </p>
+                    <div className="flex items-center gap-3 opacity-60">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <div className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+                        {destination.name}
                       </div>
                     </div>
 
                     {/* Photos Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
                       {photos.map((photo) => (
                         <PhotoCard
                           key={photo.id}
@@ -224,6 +209,8 @@ const Gallery = () => {
                           isHero={photo.is_hero}
                           mimeType={photo.mime_type}
                           onHeroToggle={refetch}
+                          destinationName={destination.name}
+                          country={destination.country}
                         />
                       ))}
                     </div>
@@ -234,16 +221,11 @@ const Gallery = () => {
 
             {/* Unassigned photos section */}
             {unassignedPhotos.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="border-b border-border pb-4">
-                  <h2 className="text-3xl md:text-4xl font-display font-bold text-muted-foreground">
-                    Uncategorized
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Photos not assigned to a destination
-                  </p>
+                  <h2 className="text-3xl md:text-4xl font-display font-bold text-muted-foreground">Uncategorized</h2>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
                   {unassignedPhotos.map((photo) => (
                     <PhotoCard
                       key={photo.id}
@@ -259,6 +241,7 @@ const Gallery = () => {
                       isHero={photo.is_hero}
                       mimeType={photo.mime_type}
                       onHeroToggle={refetch}
+                      destinationName="Unassigned"
                     />
                   ))}
                 </div>
@@ -270,8 +253,7 @@ const Gallery = () => {
             <ImageIcon className="w-12 h-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No photos yet</h3>
             <p className="text-sm text-muted-foreground max-w-sm mt-1">
-              Upload photos in the Admin panel to fill your gallery with
-              memories.
+              Upload photos in the Admin panel to fill your gallery with memories.
             </p>
           </div>
         )}
