@@ -204,7 +204,7 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-6 relative z-10">
+            <div className="grid grid-cols-4 gap-10 relative z-10">
               {recentPhotos?.map((photo) => {
                 const url = supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path || photo.storage_path)
                   .data.publicUrl;
