@@ -5,10 +5,9 @@ import { TripProgressWidget } from "@/components/DashboardWidgets";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { Calendar, Navigation as NavIcon, Camera, BookOpen, Map as MapIcon, ArrowUpRight, MapPin } from "lucide-react";
+import { Calendar, Navigation as NavIcon, Camera, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 
 const Home = () => {
   // --- Data Fetching ---
@@ -66,7 +65,7 @@ const Home = () => {
         .select("*, destinations(name, country)")
         .eq("status", "published")
         .order("published_at", { ascending: false })
-        .limit(2); // Reduced to 2 to fit better visuals
+        .limit(3);
       if (error) throw error;
       return data;
     },
@@ -89,13 +88,14 @@ const Home = () => {
       <main className="container mx-auto px-4 pt-20 md:pt-28">
         {/* BENTO GRID LAYOUT */}
         <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[180px] gap-4">
-          {/* 1. LOCATION STATUS (Large Hero - Left) */}
-          <div className="col-span-1 md:col-span-2 min-h-[300px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-lg hover:shadow-xl transition-all duration-500">
-            {/* Background Image/Video */}
+          {/* 1. LOCATION STATUS (Large) */}
+          <div className="col-span-1 md:col-span-2 min-h-[280px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
+            {/* Background Image/Video with Map Fallback */}
             <div className="absolute inset-0">
               {bgMediaUrl ? (
                 isVideo ? (
                   <>
+                    {/* Show thumbnail on mobile, video on desktop */}
                     <img
                       src={bgThumbnailUrl || bgMediaUrl}
                       alt={currentDestination?.name || "Current Location"}
@@ -109,141 +109,125 @@ const Home = () => {
                       muted
                       loop
                       playsInline
-                      className="w-full h-full object-cover hidden md:block scale-105 group-hover:scale-100 transition-transform duration-[2s]"
+                      className="w-full h-full object-cover hidden md:block"
                     />
                   </>
                 ) : (
                   <img
                     src={bgMediaUrl}
                     alt={currentDestination?.name || "Current Location"}
-                    className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-[2s]"
+                    className="w-full h-full object-cover"
                     loading="eager"
                   />
                 )
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900" />
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
               )}
             </div>
 
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 md:opacity-60 transition-opacity" />
+            {/* Gradient Overlay for Text Readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
 
             <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
               <div className="space-y-1 mb-4 md:mb-6">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-black/30 text-white border-white/20 backdrop-blur-md uppercase tracking-wider text-[10px] px-2 py-0.5"
-                  >
-                    <span className="relative flex h-1.5 w-1.5 mr-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                    </span>
-                    Live Location
-                  </Badge>
+                <div className="flex items-center gap-2 text-white font-bold uppercase tracking-widest text-xs mb-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  Current Location
                 </div>
-                <h1 className="text-4xl md:text-5xl font-display font-bold text-white leading-tight drop-shadow-lg tracking-tight">
+                <h1 className="text-3xl md:text-5xl font-display font-bold text-white leading-tight drop-shadow-md">
                   {currentDestination?.name || "Unknown"}
                 </h1>
-                <p className="text-xl md:text-2xl text-white/90 font-light drop-shadow-md flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  {currentDestination?.country}
+                <p className="text-lg md:text-2xl text-white/90 font-light drop-shadow-sm">
+                  {currentDestination?.country}, {currentDestination?.continent}
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs md:text-sm text-white/70 border-t border-white/10 pt-4 backdrop-blur-[2px]">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-primary" />
-                  Arrived{" "}
+              <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-white/80 border-t border-white/20 pt-3 md:pt-4">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  Since{" "}
                   {currentDestination?.arrival_date ? format(new Date(currentDestination.arrival_date), "MMM d") : "-"}
                 </div>
-                <div className="w-px h-3 bg-white/20" />
-                <div className="flex items-center gap-2">
-                  <NavIcon className="w-3.5 h-3.5 text-primary" />
+                <div className="w-px h-3 md:h-4 bg-white/30" />
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <NavIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   {currentDestination?.latitude?.toFixed(2)}° N, {currentDestination?.longitude?.toFixed(2)}° E
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 2. LATEST STORIES (Enhanced Visuals - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 flex flex-col justify-center shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
+          {/* 2. LATEST STORIES (Prominent - Top Right) */}
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
-                Recent Journal
+                Latest Stories
               </div>
-              <Link to="/blog" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
-                View All <ArrowUpRight className="w-3 h-3" />
+              <Link to="/blog" className="text-xs text-primary hover:underline font-medium">
+                View All
               </Link>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 h-full">
-              {recentPosts?.map((post) => (
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4">
+              {recentPosts?.slice(0, 2).map((post) => (
                 <Link
                   key={post.id}
                   to={`/blog/${post.slug}`}
-                  className="group relative rounded-xl overflow-hidden min-h-[100px] border border-border/50"
+                  className="group flex gap-3 md:gap-4 items-center bg-secondary/30 p-2.5 md:p-3 rounded-xl hover:bg-secondary/60 transition-colors"
                 >
-                  {/* Background Image */}
-                  <div className="absolute inset-0">
-                    {post.cover_image_url ? (
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-muted shrink-0 overflow-hidden shadow-sm">
+                    {post.cover_image_url && (
                       <img
                         src={post.cover_image_url}
                         alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                        loading="lazy"
                       />
-                    ) : (
-                      <div className="w-full h-full bg-secondary" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                   </div>
-
-                  {/* Text Content */}
-                  <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                    <h4 className="font-bold text-white text-sm leading-snug line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-foreground text-sm md:text-base truncate group-hover:text-primary transition-colors">
                       {post.title}
                     </h4>
-                    <p className="text-[10px] text-white/70 font-medium">
+                    <p className="text-xs text-muted-foreground">
                       {format(new Date(post.published_at || new Date()), "MMM d")} • {post.destinations?.country}
                     </p>
                   </div>
                 </Link>
               ))}
-              {!recentPosts?.length && (
-                <div className="col-span-2 flex items-center justify-center text-muted-foreground text-sm h-full bg-secondary/20 rounded-xl border border-dashed">
-                  No stories yet.
-                </div>
-              )}
+              {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
             </div>
           </div>
 
-          {/* 3. LATEST MEDIA (Middle Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between mb-3">
+          {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 pb-6 md:pb-8 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
-                Latest Captures
+                Camera Roll
               </div>
-              <Link to="/gallery" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
-                Gallery <ArrowUpRight className="w-3 h-3" />
+              <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
+                See All
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 h-24 md:h-auto">
+            <div className="grid grid-cols-4 gap-3 md:gap-4 relative z-10">
               {recentPhotos?.map((photo) => {
                 const isPhotoVideo = photo.mime_type?.startsWith("video/");
                 const thumbnailUrl = photo.thumbnail_path
                   ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
                   : null;
                 const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-
+                
                 return (
-                  <Link
+                  <div
                     key={photo.id}
-                    to="/gallery"
-                    className="relative aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer shadow-sm border border-border/50"
+                    className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
                   >
+                    {/* Always show thumbnail/poster for videos, or image for photos */}
                     <img
                       src={thumbnailUrl || mediaUrl}
                       alt=""
@@ -252,13 +236,13 @@ const Home = () => {
                     />
                     {isPhotoVideo && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-6 h-6 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
-                          <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5" />
+                        <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
+                          <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
                         </div>
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                  </Link>
+                  </div>
                 );
               })}
               {(!recentPhotos || recentPhotos.length < 4) &&
@@ -268,23 +252,16 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 4. GLOBE (Bottom Left) */}
-          <div className="col-span-1 md:col-span-2 min-h-[250px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-slate-900 relative shadow-md group">
-            <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium text-white border border-white/10 shadow-sm flex items-center gap-2">
-              <MapIcon className="w-3 h-3 text-primary" />
-              Route Map
+          {/* 4. GLOBE (Bottom) */}
+          <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
+            <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-card/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-border shadow-sm">
+              Interactive Route
             </div>
-            <MapEmbed className="w-full h-full opacity-90 transition-opacity group-hover:opacity-100" />
-
-            {/* Interactive hint overlay */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-              <div className="bg-black/50 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-                Click to explore
-              </div>
-            </div>
+            <MapEmbed className="w-full h-full" />
+            <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
           </div>
 
-          {/* 5. HISTORY WIDGET (Bottom Right) */}
+          {/* 5. COMBINED STATS & HISTORY (Bottom) */}
           <div className="col-span-1 md:col-span-2 min-h-[250px] md:min-h-0 md:row-span-2">
             <TripProgressWidget destinations={destinations || []} />
           </div>
