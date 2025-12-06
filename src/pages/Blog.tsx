@@ -3,7 +3,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { useMemo } from "react";
 
@@ -135,36 +135,17 @@ const Blog = () => {
           <img
             src={post.cover_image_url}
             alt={post.title}
-            className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           />
         )}
-        <div className="p-8">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-            {post.published_at && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>{format(new Date(post.published_at), "d MMMM yyyy")}</span>
-              </div>
-            )}
-            {post.destinations && (
-              <>
-                <span>•</span>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {post.destinations.name}, {post.destinations.country}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-          <h2 className="text-2xl font-display font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
+        <div className="p-6">
+          <h2 className="text-xl font-display font-bold text-foreground mb-3 group-hover:text-primary transition-colors line-clamp-2">
             {post.title}
           </h2>
           {post.excerpt && (
-            <p className="text-foreground/80 mb-4 line-clamp-3">{post.excerpt}</p>
+            <p className="text-foreground/80 mb-4 line-clamp-2 text-sm">{post.excerpt}</p>
           )}
-          <div className="flex items-center gap-2 text-primary font-medium">
+          <div className="flex items-center gap-2 text-primary font-medium text-sm">
             Read More
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
@@ -229,7 +210,7 @@ const Blog = () => {
                     </div>
 
                     {/* Posts Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {posts.map((post) => (
                         <PostCard key={post.id} post={post} />
                       ))}
@@ -250,7 +231,7 @@ const Blog = () => {
                     Stories not assigned to a destination
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {unassignedPosts.map((post) => (
                     <PostCard key={post.id} post={post} />
                   ))}
