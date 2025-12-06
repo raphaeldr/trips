@@ -220,14 +220,37 @@ const Home = () => {
                     key={photo.id}
                     className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
                   >
-                    <img
-                      src={thumbnailUrl || mediaUrl}
-                      alt=""
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
-                    />
+                    {/* Always show thumbnail/poster for videos, or use video element to capture first frame */}
+                    {thumbnailUrl ? (
+                      <img
+                        src={thumbnailUrl}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    ) : isPhotoVideo ? (
+                      <video
+                        src={mediaUrl}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onLoadedMetadata={(e) => {
+                          // Seek to first frame to show as poster
+                          const video = e.currentTarget;
+                          video.currentTime = 0.1;
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={mediaUrl}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    )}
                     {isPhotoVideo && (
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
                           <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
                         </div>
