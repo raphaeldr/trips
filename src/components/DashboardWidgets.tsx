@@ -40,8 +40,6 @@ export const TripProgressWidget = ({ days, km, destinations }: { days: number; k
           </Badge>
         </div>
 
-        {/* Top Fade for Scroll */}
-        <div className="absolute top-[80px] left-0 w-full h-8 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
 
         <ScrollArea className="flex-1 -mx-4 px-4 bento-scroll h-full">
           <div className="space-y-0 relative z-0 pb-2">
