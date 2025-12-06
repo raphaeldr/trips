@@ -4,7 +4,7 @@ import { MapEmbed } from "@/components/MapEmbed";
 import { TripProgressWidget } from "@/components/DashboardWidgets";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { differenceInDays, format } from "date-fns";
+import { format } from "date-fns";
 import { Calendar, Navigation as NavIcon, Camera, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,16 +44,6 @@ const Home = () => {
     enabled: !!currentDestination?.id,
   });
 
-  const { data: countryCount } = useQuery({
-    queryKey: ["countryCount"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("destinations").select("country");
-      if (error) throw error;
-      const uniqueCountries = new Set(data.map((d) => d.country));
-      return Math.max(0, uniqueCountries.size);
-    },
-  });
-
   const { data: recentPhotos } = useQuery({
     queryKey: ["recentPhotosHome"],
     queryFn: async () => {
@@ -82,11 +72,6 @@ const Home = () => {
   });
 
   // --- Calculations ---
-
-  const firstTripDate = destinations?.[destinations.length - 1]?.arrival_date;
-  const daysTravellling = firstTripDate ? differenceInDays(new Date(), new Date(firstTripDate)) + 1 : 0;
-
-  const totalKm = (countryCount || 0) * 1245 + 340;
 
   const bgImageUrl = locationImage
     ? supabase.storage.from("photos").getPublicUrl(locationImage.storage_path).data.publicUrl
@@ -240,7 +225,7 @@ const Home = () => {
 
           {/* 5. COMBINED STATS & HISTORY (Bottom) */}
           <div className="col-span-1 md:col-span-2 row-span-1 md:row-span-2">
-            <TripProgressWidget days={daysTravellling} km={totalKm} destinations={destinations || []} />
+            <TripProgressWidget destinations={destinations || []} />
           </div>
         </div>
       </main>

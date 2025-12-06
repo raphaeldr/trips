@@ -1,32 +1,11 @@
-import { Calendar, Globe, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
-export const TripProgressWidget = ({ days, km, destinations }: { days: number; km: number; destinations: any[] }) => {
+export const TripProgressWidget = ({ destinations }: { destinations: any[] }) => {
   return (
     <Card className="h-full bg-white border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
-      {/* Top Section: Key Stats Split */}
-      <div className="grid grid-cols-2 divide-x divide-border border-b border-border bg-gray-50/50">
-        <div className="p-6 flex flex-col justify-center items-center text-center gap-2 group/stat hover:bg-white transition-colors">
-          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-            <Calendar className="w-3 h-3 text-primary" />
-            Days
-          </div>
-          <span className="text-3xl sm:text-4xl font-display font-bold text-foreground tabular-nums tracking-tight group-hover/stat:text-primary transition-colors">
-            {days}
-          </span>
-        </div>
-        <div className="p-6 flex flex-col justify-center items-center text-center gap-2 group/stat hover:bg-white transition-colors">
-          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-            <Globe className="w-3 h-3 text-primary" />
-            Distance
-          </div>
-          <span className="text-3xl sm:text-4xl font-display font-bold text-foreground tabular-nums tracking-tight group-hover/stat:text-primary transition-colors">
-            {(km / 1000).toFixed(1)}k
-          </span>
-        </div>
-      </div>
 
       {/* Bottom Section: Timeline History */}
       <div className="flex-1 p-6 flex flex-col min-h-0 bg-white relative">
