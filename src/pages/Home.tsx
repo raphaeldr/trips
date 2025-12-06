@@ -160,9 +160,9 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 2. LATEST STORIES (Visual, Immersive) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-2 flex flex-col gap-3 md:gap-4">
-            <div className="flex items-center justify-between px-1">
+          {/* 2. LATEST STORIES (Prominent - Top Right) */}
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
                 Latest Stories
@@ -171,66 +171,89 @@ const Home = () => {
                 View All
               </Link>
             </div>
-            
-            {/* Story Cards - Stacked vertically */}
-            <div className="flex-1 flex flex-col gap-3">
-              {recentPosts?.slice(0, 2).map((post, i) => (
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4">
+              {recentPosts?.slice(0, 2).map((post) => (
                 <Link
                   key={post.id}
                   to={`/blog/${post.slug}`}
-                  className="group flex-1 relative rounded-2xl overflow-hidden min-h-[140px] md:min-h-0"
+                  className="group flex gap-3 md:gap-4 items-center bg-secondary/30 p-2.5 md:p-3 rounded-xl hover:bg-secondary/60 transition-colors"
                 >
-                  {/* Background Image */}
-                  <div className="absolute inset-0">
-                    {post.cover_image_url ? (
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-muted shrink-0 overflow-hidden shadow-sm">
+                    {post.cover_image_url && (
                       <img
                         src={post.cover_image_url}
                         alt=""
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                         loading="lazy"
                       />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/40" />
                     )}
                   </div>
-                  
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 group-hover:from-black/70 transition-all" />
-                  
-                  {/* Content */}
-                  <div className="absolute inset-0 p-4 md:p-5 flex flex-col justify-end">
-                    <div className="text-white/70 text-xs font-medium mb-1.5 flex items-center gap-2">
-                      <span>{format(new Date(post.published_at || new Date()), "d MMMM yyyy")}</span>
-                      <span className="w-1 h-1 rounded-full bg-white/50" />
-                      <span>{post.destinations?.name}, {post.destinations?.country}</span>
-                    </div>
-                    <h3 className="text-white font-bold text-lg md:text-xl leading-tight drop-shadow-md group-hover:text-primary-foreground transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-foreground text-sm md:text-base truncate group-hover:text-primary transition-colors">
                       {post.title}
-                    </h3>
-                    <p className="text-white/70 text-sm mt-1 line-clamp-2 hidden md:block">
-                      {post.excerpt}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(post.published_at || new Date()), "MMM d")} • {post.destinations?.country}
                     </p>
-                  </div>
-                  
-                  {/* Hover Arrow */}
-                  <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
                   </div>
                 </Link>
               ))}
-              
-              {!recentPosts?.length && (
-                <div className="flex-1 bg-card border border-border rounded-2xl flex items-center justify-center">
-                  <p className="text-muted-foreground text-sm">No stories yet.</p>
-                </div>
-              )}
+              {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
             </div>
           </div>
 
-          {/* 3. GLOBE (Visual - Matches left column weight) */}
-          <div className="col-span-1 md:col-span-2 min-h-[280px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
+          {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 pb-6 md:pb-8 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                <Camera className="w-3 h-3 text-primary" />
+                Camera Roll
+              </div>
+              <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
+                See All
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3 md:gap-4 relative z-10">
+              {recentPhotos?.map((photo) => {
+                const isPhotoVideo = photo.mime_type?.startsWith("video/");
+                const thumbnailUrl = photo.thumbnail_path
+                  ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
+                  : null;
+                const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+                
+                return (
+                  <div
+                    key={photo.id}
+                    className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
+                  >
+                    {/* Always show thumbnail/poster for videos, or image for photos */}
+                    <img
+                      src={thumbnailUrl || mediaUrl}
+                      alt=""
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                    {isPhotoVideo && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
+                          <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                  </div>
+                );
+              })}
+              {(!recentPhotos || recentPhotos.length < 4) &&
+                Array(4 - (recentPhotos?.length || 0))
+                  .fill(0)
+                  .map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl bg-secondary" />)}
+            </div>
+          </div>
+
+          {/* 4. GLOBE (Bottom) */}
+          <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
             <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-card/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-border shadow-sm">
               Interactive Route
             </div>
@@ -238,48 +261,8 @@ const Home = () => {
             <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
           </div>
 
-          {/* 4. CAMERA ROLL (Visual Gallery Grid) */}
-          <Link 
-            to="/gallery" 
-            className="col-span-1 md:col-span-1 min-h-[180px] md:min-h-0 md:row-span-1 rounded-3xl overflow-hidden border border-border bg-card relative group shadow-sm hover:shadow-lg transition-all duration-300"
-          >
-            {/* Grid of 4 photos as background */}
-            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-              {recentPhotos?.slice(0, 4).map((photo, idx) => {
-                const thumbnailUrl = photo.thumbnail_path
-                  ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
-                  : supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-                
-                return (
-                  <div key={photo.id} className="relative overflow-hidden">
-                    <img
-                      src={thumbnailUrl}
-                      alt=""
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                );
-              })}
-              {(!recentPhotos || recentPhotos.length < 4) &&
-                Array(4 - (recentPhotos?.length || 0))
-                  .fill(0)
-                  .map((_, i) => <div key={i} className="bg-secondary" />)}
-            </div>
-            
-            {/* Overlay with label */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5 group-hover:from-black/60 transition-all" />
-            <div className="absolute inset-0 p-4 flex flex-col justify-end">
-              <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wider">
-                <Camera className="w-3 h-3" />
-                Gallery
-              </div>
-              <p className="text-white font-bold text-lg">{recentPhotos?.length || 0}+ Photos</p>
-            </div>
-          </Link>
-
-          {/* 5. JOURNEY TIMELINE (Visual Grid) */}
-          <div className="col-span-1 md:col-span-1 min-h-[250px] md:min-h-0 md:row-span-1">
+          {/* 5. COMBINED STATS & HISTORY (Bottom) */}
+          <div className="col-span-1 md:col-span-2 min-h-[250px] md:min-h-0 md:row-span-2">
             <TripProgressWidget destinations={destinations || []} />
           </div>
         </div>
