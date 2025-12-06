@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Camera, Image as ImageIcon, Play, Video } from "lucide-react";
+import { MapPin, Calendar, Camera, Image as ImageIcon, Play } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,8 +79,8 @@ export const PhotoCard = ({
 
   return (
     <>
-      <div className="group cursor-pointer flex flex-col gap-3" onClick={() => setIsOpen(true)}>
-        <div className="relative aspect-square w-full overflow-hidden rounded-sm bg-muted">
+      <div className="group cursor-pointer flex flex-col gap-2" onClick={() => setIsOpen(true)}>
+        <div className="relative aspect-square w-full overflow-hidden bg-muted">
           {isVideo ? (
             <div className="relative w-full h-full">
               <video
@@ -125,12 +125,12 @@ export const PhotoCard = ({
         </div>
 
         {/* Text Underneath */}
-        <div className="space-y-0.5">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground leading-tight">
+        <div className="space-y-0.5 px-1">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground leading-tight truncate">
             {destinationName || title || "Untitled"}
           </h3>
           {country && (
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{country}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">{country}</p>
           )}
         </div>
       </div>
