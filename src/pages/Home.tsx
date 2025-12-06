@@ -1,7 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { MapEmbed } from "@/components/MapEmbed";
-import { TripProgressWidget } from "@/components/DashboardWidgets";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -44,18 +44,26 @@ const Home = () => {
     enabled: !!currentDestination?.id,
   });
 
-  const { data: recentPhotos } = useQuery({
-    queryKey: ["recentPhotosHome"],
+  const { data: galleryPhotos } = useQuery({
+    queryKey: ["galleryPhotosHome"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("photos")
-        .select("*")
+        .select("*, destinations(name, country)")
         .order("created_at", { ascending: false })
-        .limit(4);
+        .limit(12);
       if (error) throw error;
       return data;
     },
   });
+
+  // Group photos by country
+  const photosByCountry = galleryPhotos?.reduce((acc, photo) => {
+    const country = photo.destinations?.country || "Unknown";
+    if (!acc[country]) acc[country] = [];
+    acc[country].push(photo);
+    return acc;
+  }, {} as Record<string, typeof galleryPhotos>);
 
   const { data: recentPosts } = useQuery({
     queryKey: ["recentPostsHome"],
@@ -160,51 +168,9 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-center shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-                <BookOpen className="w-3 h-3 text-primary" />
-                Latest Stories
-              </div>
-              <Link to="/blog" className="text-xs text-primary hover:underline font-medium">
-                View All
-              </Link>
-            </div>
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4">
-              {recentPosts?.slice(0, 2).map((post) => (
-                <Link
-                  key={post.id}
-                  to={`/blog/${post.slug}`}
-                  className="group flex gap-3 md:gap-4 items-center bg-secondary/30 p-2.5 md:p-3 rounded-xl hover:bg-secondary/60 transition-colors"
-                >
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-muted shrink-0 overflow-hidden shadow-sm">
-                    {post.cover_image_url && (
-                      <img
-                        src={post.cover_image_url}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                        loading="lazy"
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-foreground text-sm md:text-base truncate group-hover:text-primary transition-colors">
-                      {post.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(post.published_at || new Date()), "MMM d")} • {post.destinations?.country}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-              {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
-            </div>
-          </div>
-
-          {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 pb-6 md:pb-8 flex flex-col justify-center relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-3 md:mb-4 relative z-10">
+          {/* 2. PHOTO GALLERY BY COUNTRY (Large - spans both rows) */}
+          <div className="col-span-1 md:col-span-2 md:row-span-3 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
                 Camera Roll
@@ -214,56 +180,90 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 md:gap-4 relative z-10">
-              {recentPhotos?.map((photo) => {
-                const isPhotoVideo = photo.mime_type?.startsWith("video/");
-                const thumbnailUrl = photo.thumbnail_path
-                  ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
-                  : null;
-                const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-                
-                return (
-                  <div
-                    key={photo.id}
-                    className="aspect-square rounded-xl overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
-                  >
-                    {/* Always show thumbnail/poster for videos, or image for photos */}
-                    <img
-                      src={thumbnailUrl || mediaUrl}
-                      alt=""
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                    {isPhotoVideo && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
-                          <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
+            <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin">
+              {photosByCountry && Object.entries(photosByCountry).map(([country, photos]) => (
+                <div key={country}>
+                  <h3 className="text-sm font-bold text-foreground mb-2">{country}</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {photos?.slice(0, 6).map((photo) => {
+                      const isPhotoVideo = photo.mime_type?.startsWith("video/");
+                      const thumbnailUrl = photo.thumbnail_path
+                        ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
+                        : null;
+                      const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+                      
+                      return (
+                        <div
+                          key={photo.id}
+                          className="aspect-square rounded-lg overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
+                        >
+                          <img
+                            src={thumbnailUrl || mediaUrl}
+                            alt=""
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                          {isPhotoVideo && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-6 h-6 bg-black/50 rounded-full flex items-center justify-center">
+                                <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
+                              </div>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                         </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      );
+                    })}
                   </div>
-                );
-              })}
-              {(!recentPhotos || recentPhotos.length < 4) &&
-                Array(4 - (recentPhotos?.length || 0))
-                  .fill(0)
-                  .map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl bg-secondary" />)}
+                </div>
+              ))}
+              {!galleryPhotos?.length && (
+                <div className="grid grid-cols-3 gap-2">
+                  {Array(6).fill(0).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square rounded-lg bg-secondary" />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Latest Stories - Minimal List */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <BookOpen className="w-3 h-3 text-primary" />
+                  Latest Stories
+                </div>
+                <Link to="/blog" className="text-xs text-primary hover:underline font-medium">
+                  View All
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {recentPosts?.slice(0, 3).map((post) => (
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.slug}`}
+                    className="group flex items-center justify-between py-1.5 hover:bg-secondary/30 -mx-2 px-2 rounded-lg transition-colors"
+                  >
+                    <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate flex-1 mr-3">
+                      {post.title}
+                    </span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {format(new Date(post.published_at || new Date()), "d MMM")} • {post.destinations?.country}
+                    </span>
+                  </Link>
+                ))}
+                {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
+              </div>
             </div>
           </div>
 
-          {/* 4. GLOBE (Bottom) */}
+          {/* 3. GLOBE (Bottom Left) */}
           <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
             <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-card/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-border shadow-sm">
               Interactive Route
             </div>
             <MapEmbed className="w-full h-full" />
             <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
-          </div>
-
-          {/* 5. COMBINED STATS & HISTORY (Bottom) */}
-          <div className="col-span-1 md:col-span-2 min-h-[250px] md:min-h-0 md:row-span-2">
-            <TripProgressWidget destinations={destinations || []} />
           </div>
         </div>
       </main>
