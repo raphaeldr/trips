@@ -49,29 +49,36 @@ const Home = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("photos")
-        .select("*, destinations(name, country)")
+        .select("*, destinations(name, country, arrival_date)")
         .order("created_at", { ascending: false })
-        .limit(12);
+        .limit(20);
       if (error) throw error;
       return data;
     },
   });
 
-  // Group photos by country, maintaining order of most recent first
+  // Group photos by country
   const photosByCountry = galleryPhotos?.reduce((acc, photo) => {
     const country = photo.destinations?.country || "Unknown";
-    if (!acc[country]) acc[country] = [];
-    acc[country].push(photo);
+    if (!acc[country]) {
+      acc[country] = {
+        photos: [],
+        arrivalDate: photo.destinations?.arrival_date || "1900-01-01",
+      };
+    }
+    acc[country].photos.push(photo);
     return acc;
-  }, {} as Record<string, typeof galleryPhotos>);
+  }, {} as Record<string, { photos: typeof galleryPhotos; arrivalDate: string }>);
 
-  // Sort countries by most recent photo (photos are already sorted by created_at DESC)
+  // Sort countries by destination arrival_date (most recently visited first)
   const sortedCountries = photosByCountry 
-    ? Object.entries(photosByCountry).sort((a, b) => {
-        const aDate = new Date(a[1]?.[0]?.created_at || 0).getTime();
-        const bDate = new Date(b[1]?.[0]?.created_at || 0).getTime();
-        return bDate - aDate; // Most recent first
-      })
+    ? Object.entries(photosByCountry)
+        .sort((a, b) => {
+          const aDate = new Date(a[1].arrivalDate).getTime();
+          const bDate = new Date(b[1].arrivalDate).getTime();
+          return bDate - aDate; // Most recently visited first
+        })
+        .map(([country, data]) => [country, data.photos] as [string, typeof galleryPhotos])
     : [];
 
   const { data: recentPosts } = useQuery({
