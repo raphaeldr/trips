@@ -87,9 +87,9 @@ const Home = () => {
 
       <main className="container mx-auto px-4 pt-20 md:pt-28">
         {/* BENTO GRID LAYOUT */}
-        <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[200px] gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[220px] gap-4">
           {/* 1. LOCATION STATUS (Large) */}
-          <div className="col-span-1 md:col-span-2 min-h-[320px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
+          <div className="col-span-1 md:col-span-2 min-h-[360px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
             {/* Background Image/Video with Map Fallback */}
             <div className="absolute inset-0">
               {bgMediaUrl ? (
