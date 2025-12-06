@@ -57,13 +57,22 @@ const Home = () => {
     },
   });
 
-  // Group photos by country
+  // Group photos by country, maintaining order of most recent first
   const photosByCountry = galleryPhotos?.reduce((acc, photo) => {
     const country = photo.destinations?.country || "Unknown";
     if (!acc[country]) acc[country] = [];
     acc[country].push(photo);
     return acc;
   }, {} as Record<string, typeof galleryPhotos>);
+
+  // Sort countries by most recent photo (photos are already sorted by created_at DESC)
+  const sortedCountries = photosByCountry 
+    ? Object.entries(photosByCountry).sort((a, b) => {
+        const aDate = new Date(a[1]?.[0]?.created_at || 0).getTime();
+        const bDate = new Date(b[1]?.[0]?.created_at || 0).getTime();
+        return bDate - aDate; // Most recent first
+      })
+    : [];
 
   const { data: recentPosts } = useQuery({
     queryKey: ["recentPostsHome"],
@@ -213,7 +222,7 @@ const Home = () => {
               </div>
 
               <div className="space-y-3">
-                {photosByCountry && Object.entries(photosByCountry).slice(0, 3).map(([country, photos]) => (
+                {sortedCountries.slice(0, 3).map(([country, photos]) => (
                   <div key={country}>
                     <h3 className="text-xs font-bold text-foreground mb-1.5">{country}</h3>
                     <div className="grid grid-cols-3 gap-1.5">
