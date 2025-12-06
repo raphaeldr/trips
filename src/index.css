@@ -9,68 +9,66 @@
 
 @layer base {
   :root {
-    /* Warm cream/peachy background inspired by the artwork */
-    --background: 20 40% 95%;
-    --foreground: 15 30% 20%;
-    
-    /* Soft warm white cards */
-    --card: 30 50% 98%;
-    --card-foreground: 15 30% 20%;
-    
-    --popover: 30 50% 98%;
-    --popover-foreground: 15 30% 20%;
-    
-    /* Teal/jade green primary - the dominant green from the artwork */
-    --primary: 168 50% 40%;
-    --primary-foreground: 30 50% 98%;
-    
-    /* Coral/terracotta secondary */
-    --secondary: 12 55% 65%;
-    --secondary-foreground: 30 50% 98%;
-    
-    /* Soft peachy muted */
-    --muted: 20 30% 90%;
-    --muted-foreground: 15 20% 45%;
-    
-    /* Golden yellow/ochre accent */
-    --accent: 40 80% 55%;
-    --accent-foreground: 15 30% 20%;
-    
-    /* Coral destructive */
-    --destructive: 5 65% 55%;
-    --destructive-foreground: 30 50% 98%;
-    
-    /* Warm borders */
-    --border: 20 25% 85%;
-    --input: 20 25% 85%;
-    --ring: 168 50% 40%;
-    
-    --radius: 1.5rem; /* Softer, more organic corners */
-    
-    --shadow-card: 0 10px 30px -10px hsla(15, 30%, 20%, 0.1);
-    --shadow-elegant: 0 20px 40px -15px hsla(15, 30%, 20%, 0.15);
+    /* Sleek Dark Theme Base */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+
+    /* Cards - Slightly lighter than background for depth */
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Neon Green Primary (Inspired by the green beam in your image) */
+    --primary: 142 70% 50%;
+    --primary-foreground: 144 9% 5%;
+
+    /* Neon Purple/Pink Secondary (Inspired by the clouds/lighting) */
+    --secondary: 280 65% 60%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 280 65% 60%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Subtle borders */
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 142 70% 50%;
+
+    --radius: 1rem; /* Slightly tighter, modern corners */
+
+    --shadow-card: 0 8px 30px -10px rgba(0, 0, 0, 0.5);
+    --shadow-elegant: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
   }
 
   .dark {
-    --background: 15 25% 12%;
-    --foreground: 30 30% 92%;
-    --card: 15 20% 16%;
-    --card-foreground: 30 30% 92%;
-    --popover: 15 20% 16%;
-    --popover-foreground: 30 30% 92%;
-    --primary: 168 55% 50%;
-    --primary-foreground: 15 25% 12%;
-    --secondary: 12 50% 55%;
-    --secondary-foreground: 30 30% 92%;
-    --muted: 15 15% 22%;
-    --muted-foreground: 20 15% 60%;
-    --accent: 40 75% 50%;
-    --accent-foreground: 15 25% 12%;
-    --destructive: 5 60% 45%;
-    --destructive-foreground: 30 30% 92%;
-    --border: 15 15% 25%;
-    --input: 15 15% 25%;
-    --ring: 168 55% 50%;
+    /* Ensure dark mode matches root in this specific design */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 70% 50%;
+    --primary-foreground: 144 9% 5%;
+    --secondary: 280 65% 60%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 280 65% 60%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 142 70% 50%;
   }
 }
 
@@ -79,17 +77,28 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-primary-foreground;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
   }
-  
+
   .glass-panel {
-    @apply bg-white/70 dark:bg-black/70 backdrop-blur-lg border border-white/20 dark:border-white/10;
+    @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+
+  /* Custom Scrollbar for Bento boxes */
+  .bento-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .bento-scroll::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .bento-scroll::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-white/20;
   }
 }
 
