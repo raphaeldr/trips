@@ -129,18 +129,12 @@ export const PhotoCard = ({
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-transparent border-none shadow-none p-0 flex flex-col items-center justify-center outline-none">
           <div className="relative w-full flex justify-center">
             {isVideo ? (
-              <video
-                src={publicUrl}
-                controls
-                autoPlay
-                playsInline
-                className="max-h-[80vh] w-auto rounded-xl shadow-2xl"
-              />
+              <video src={publicUrl} controls autoPlay playsInline className="max-h-[80vh] w-auto shadow-2xl" />
             ) : (
               <img
                 src={publicUrl}
                 alt={title || "Travel photo"}
-                className="max-h-[80vh] w-auto rounded-xl shadow-2xl object-contain"
+                className="max-h-[80vh] w-auto shadow-2xl object-contain"
               />
             )}
 
@@ -158,7 +152,7 @@ export const PhotoCard = ({
           </div>
 
           {(title || description || takenAt) && (
-            <div className="bg-white/90 dark:bg-black/90 backdrop-blur-xl p-6 rounded-2xl max-w-2xl w-full mt-4 shadow-xl border border-white/20">
+            <div className="bg-white/90 dark:bg-black/90 backdrop-blur-xl p-6 rounded-none max-w-2xl w-full mt-4 shadow-xl border border-white/20">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   {title && <h3 className="text-xl font-bold mb-1">{title}</h3>}
