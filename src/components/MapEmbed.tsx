@@ -49,7 +49,7 @@ export const MapEmbed = ({ className = "" }: MapEmbedProps) => {
         // Using streets-v12 for better stability and consistency
         style: "mapbox://styles/mapbox/streets-v12",
         projection: "globe" as any,
-        zoom: 2.2,
+        zoom: 1.8,
         center: [20, 20],
         pitch: 0,
         // Critical for mobile embeds: prevents page scroll from getting stuck in map
