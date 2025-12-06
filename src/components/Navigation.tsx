@@ -12,7 +12,7 @@ export const Navigation = () => {
           to="/"
           className="flex items-center gap-2 text-lg font-bold text-foreground hover:text-primary transition-colors font-display"
         >
-          World Tour
+          De reis
         </NavLink>
 
         <div className="flex items-center gap-1">
