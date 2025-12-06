@@ -169,7 +169,7 @@ const Home = () => {
           </div>
 
           {/* 2. RIGHT COLUMN - Stories + Camera Roll */}
-          <div className="col-span-1 md:col-span-2 md:row-span-3 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+          <div className="col-span-1 md:col-span-2 md:row-span-4 bg-card border border-border rounded-3xl p-4 md:p-5 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
             {/* Latest Stories - Top */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-3">
@@ -201,8 +201,8 @@ const Home = () => {
             </div>
 
             {/* Camera Roll - Bottom */}
-            <div className="flex-1 border-t border-border pt-4">
-              <div className="flex items-center justify-between mb-4">
+            <div className="flex-1 border-t border-border pt-3">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                   <Camera className="w-3 h-3 text-primary" />
                   Camera Roll
@@ -212,11 +212,11 @@ const Home = () => {
                 </Link>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {photosByCountry && Object.entries(photosByCountry).slice(0, 3).map(([country, photos]) => (
                   <div key={country}>
-                    <h3 className="text-sm font-bold text-foreground mb-2">{country}</h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <h3 className="text-xs font-bold text-foreground mb-1.5">{country}</h3>
+                    <div className="grid grid-cols-3 gap-1.5">
                       {photos?.slice(0, 3).map((photo) => {
                         const isPhotoVideo = photo.mime_type?.startsWith("video/");
                         const thumbnailUrl = photo.thumbnail_path
@@ -227,7 +227,7 @@ const Home = () => {
                         return (
                           <div
                             key={photo.id}
-                            className="aspect-square rounded-lg overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
+                            className="aspect-square rounded-md overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md"
                           >
                             <img
                               src={thumbnailUrl || mediaUrl}
@@ -237,8 +237,8 @@ const Home = () => {
                             />
                             {isPhotoVideo && (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-6 h-6 bg-black/50 rounded-full flex items-center justify-center">
-                                  <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
+                                <div className="w-5 h-5 bg-black/50 rounded-full flex items-center justify-center">
+                                  <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5" />
                                 </div>
                               </div>
                             )}
@@ -250,9 +250,9 @@ const Home = () => {
                   </div>
                 ))}
                 {!galleryPhotos?.length && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {Array(6).fill(0).map((_, i) => (
-                      <Skeleton key={i} className="aspect-square rounded-lg bg-secondary" />
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {Array(9).fill(0).map((_, i) => (
+                      <Skeleton key={i} className="aspect-square rounded-md bg-secondary" />
                     ))}
                   </div>
                 )}
