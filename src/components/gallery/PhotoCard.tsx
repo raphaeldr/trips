@@ -129,9 +129,6 @@ export const PhotoCard = ({
           <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground leading-tight truncate">
             {destinationName || title || "Untitled"}
           </h3>
-          {country && (
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">{country}</p>
-          )}
         </div>
       </div>
 
