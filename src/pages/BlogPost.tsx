@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
+import DOMPurify from "dompurify";
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -119,7 +120,7 @@ const BlogPost = () => {
 
           <div 
             className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground/90 prose-a:text-primary prose-strong:text-foreground prose-img:rounded-lg prose-img:shadow-card"
-            dangerouslySetInnerHTML={{ __html: post.content as string }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content as string) }}
           />
         </div>
       </div>
