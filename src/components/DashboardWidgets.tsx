@@ -13,7 +13,7 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
             Our journey
           </div>
           <Badge variant="secondary" className="text-xs font-normal">
-            {destinations?.length || 0} Stops
+            {destinations?.length || 0} destinations visited
           </Badge>
         </div>
 
