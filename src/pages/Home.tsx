@@ -170,7 +170,7 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 flex-1">
+            <div className="grid grid-cols-4 gap-3">
               {recentPhotos?.map(photo => {
               const isPhotoVideo = photo.mime_type?.startsWith("video/");
               const thumbnailUrl = photo.thumbnail_path ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl : null;
