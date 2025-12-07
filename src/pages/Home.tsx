@@ -9,79 +9,80 @@ import { format } from "date-fns";
 import { Calendar, Navigation as NavIcon, Camera, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+
 const Home = () => {
   // --- Data Fetching ---
 
-  const {
-    data: destinations
-  } = useQuery({
+  const { data: destinations } = useQuery({
     queryKey: ["destinations"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("destinations").select("*").order("arrival_date", {
-        ascending: false
-      });
-      if (error) throw error;
-      return data;
-    }
-  });
-  const currentDestination = destinations?.find(d => d.is_current) || destinations?.[0];
-  const {
-    data: locationImage
-  } = useQuery({
-    queryKey: ["locationImage", currentDestination?.id],
-    queryFn: async () => {
-      if (!currentDestination?.id) return null;
-      const {
-        data,
-        error
-      } = await supabase.from("photos").select("storage_path, thumbnail_path, mime_type").eq("destination_id", currentDestination.id).order("is_hero", {
-        ascending: false
-      }).limit(1).maybeSingle();
+      const { data, error } = await supabase
+        .from("destinations")
+        .select("*")
+        .order("arrival_date", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!currentDestination?.id
   });
-  const {
-    data: recentPhotos
-  } = useQuery({
+
+  const currentDestination = destinations?.find((d) => d.is_current) || destinations?.[0];
+
+  const { data: locationImage } = useQuery({
+    queryKey: ["locationImage", currentDestination?.id],
+    queryFn: async () => {
+      if (!currentDestination?.id) return null;
+      const { data, error } = await supabase
+        .from("photos")
+        .select("storage_path, thumbnail_path, mime_type")
+        .eq("destination_id", currentDestination.id)
+        .order("is_hero", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentDestination?.id,
+  });
+
+  const { data: recentPhotos } = useQuery({
     queryKey: ["recentPhotosHome"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("photos").select("*").order("created_at", {
-        ascending: false
-      }).limit(4);
+      const { data, error } = await supabase
+        .from("photos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(4);
       if (error) throw error;
       return data;
-    }
+    },
   });
-  const {
-    data: recentPosts
-  } = useQuery({
+
+  const { data: recentPosts } = useQuery({
     queryKey: ["recentPostsHome"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("blog_posts").select("*, destinations(name, country)").eq("status", "published").order("published_at", {
-        ascending: false
-      }).limit(3);
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*, destinations(name, country)")
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(3);
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   // --- Calculations ---
 
   const isVideo = locationImage?.mime_type?.startsWith("video/");
-  const bgMediaUrl = locationImage ? supabase.storage.from("photos").getPublicUrl(locationImage.storage_path).data.publicUrl : null;
-  const bgThumbnailUrl = locationImage?.thumbnail_path ? supabase.storage.from("photos").getPublicUrl(locationImage.thumbnail_path).data.publicUrl : null;
-  return <div className="min-h-screen bg-background text-foreground pb-20 md:pb-8 selection:bg-primary/20 selection:text-primary">
+  const bgMediaUrl = locationImage
+    ? supabase.storage.from("photos").getPublicUrl(locationImage.storage_path).data.publicUrl
+    : null;
+  const bgThumbnailUrl = locationImage?.thumbnail_path
+    ? supabase.storage.from("photos").getPublicUrl(locationImage.thumbnail_path).data.publicUrl
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground pb-20 md:pb-8 selection:bg-primary/20 selection:text-primary">
       <Navigation />
 
       <main className="container mx-auto px-4 pt-20 md:pt-28">
@@ -91,11 +92,37 @@ const Home = () => {
           <div className="col-span-1 md:col-span-2 min-h-[400px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
             {/* Background Image/Video with Map Fallback */}
             <div className="absolute inset-0">
-              {bgMediaUrl ? isVideo ? <>
+              {bgMediaUrl ? (
+                isVideo ? (
+                  <>
                     {/* Show thumbnail on mobile, video on desktop */}
-                    <img src={bgThumbnailUrl || bgMediaUrl} alt={currentDestination?.name || "Current Location"} className="w-full h-full object-cover md:hidden" loading="eager" />
-                    <video src={bgMediaUrl} poster={bgThumbnailUrl || undefined} autoPlay muted loop playsInline className="w-full h-full object-cover hidden md:block" />
-                  </> : <img src={bgMediaUrl} alt={currentDestination?.name || "Current Location"} className="w-full h-full object-cover" loading="eager" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />}
+                    <img
+                      src={bgThumbnailUrl || bgMediaUrl}
+                      alt={currentDestination?.name || "Current Location"}
+                      className="w-full h-full object-cover md:hidden"
+                      loading="eager"
+                    />
+                    <video
+                      src={bgMediaUrl}
+                      poster={bgThumbnailUrl || undefined}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full object-cover hidden md:block"
+                    />
+                  </>
+                ) : (
+                  <img
+                    src={bgMediaUrl}
+                    alt={currentDestination?.name || "Current Location"}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                  />
+                )
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20" />
+              )}
             </div>
 
             {/* Gradient Overlay for Text Readability */}
@@ -134,8 +161,8 @@ const Home = () => {
           </div>
 
           {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-4 shrink-0">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
                 Latest Stories
@@ -144,23 +171,29 @@ const Home = () => {
                 View all
               </Link>
             </div>
-            <div className="flex flex-col gap-3 flex-1">
-              {recentPosts?.slice(0, 3).map(post => <Link key={post.id} to={`/blog/${post.slug}`} className="group hover:bg-secondary/40 -mx-2 px-2 py-1.5 rounded-lg transition-colors">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-0.5">
+            <div className="flex flex-col gap-4 flex-1 justify-center">
+              {recentPosts?.slice(0, 3).map((post) => (
+                <Link
+                  key={post.id}
+                  to={`/blog/${post.slug}`}
+                  className="group hover:bg-secondary/40 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <span className="tabular-nums">{format(new Date(post.published_at || new Date()), "d MMM")}</span>
                     <span className="text-primary">{post.destinations?.name || post.destinations?.country}</span>
                   </div>
                   <p className="font-medium text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">
                     {post.title}
                   </p>
-                </Link>)}
-              {!recentPosts?.length && <p className="text-muted-foreground text-sm">No stories yet.</p>}
+                </Link>
+              ))}
+              {!recentPosts?.length && <p className="text-muted-foreground text-sm self-center">No stories yet.</p>}
             </div>
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
           <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 shrink-0">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
                 Camera Roll
@@ -170,30 +203,61 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
-              {recentPhotos?.map(photo => {
-              const isPhotoVideo = photo.mime_type?.startsWith("video/");
-              const thumbnailUrl = photo.thumbnail_path ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl : null;
-              const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-              return <div key={photo.id} className="aspect-square overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md rounded-none">
+            <div className="grid grid-cols-4 gap-3 flex-1 content-center">
+              {recentPhotos?.map((photo) => {
+                const isPhotoVideo = photo.mime_type?.startsWith("video/");
+                const thumbnailUrl = photo.thumbnail_path
+                  ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
+                  : null;
+                const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+                return (
+                  <div
+                    key={photo.id}
+                    className="aspect-square overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md rounded-none"
+                  >
                     {/* Always show thumbnail/poster for videos, or use video element to capture first frame */}
-                    {thumbnailUrl ? <img src={thumbnailUrl} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" /> : isPhotoVideo ? <VideoThumbnail src={mediaUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> : <img src={mediaUrl} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />}
-                    {isPhotoVideo && <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    {thumbnailUrl ? (
+                      <img
+                        src={thumbnailUrl}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    ) : isPhotoVideo ? (
+                      <VideoThumbnail
+                        src={mediaUrl}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <img
+                        src={mediaUrl}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    )}
+                    {isPhotoVideo && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
                           <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
                         </div>
-                      </div>}
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                  </div>;
-            })}
-              {(!recentPhotos || recentPhotos.length < 4) && Array(4 - (recentPhotos?.length || 0)).fill(0).map((_, i) => <Skeleton key={i} className="aspect-square rounded-none bg-secondary" />)}
+                  </div>
+                );
+              })}
+              {(!recentPhotos || recentPhotos.length < 4) &&
+                Array(4 - (recentPhotos?.length || 0))
+                  .fill(0)
+                  .map((_, i) => <Skeleton key={i} className="aspect-square rounded-none bg-secondary" />)}
             </div>
           </div>
 
           {/* 4. GLOBE (Bottom) */}
           <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
             <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-card/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-border shadow-sm">
-              Our itinerary so far   
+              Our itinerary so far
             </div>
             <MapEmbed className="w-full h-full" />
             <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
@@ -207,6 +271,7 @@ const Home = () => {
       </main>
 
       <BottomNav />
-    </div>;
+    </div>
+  );
 };
 export default Home;
