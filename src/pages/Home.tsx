@@ -166,7 +166,7 @@ const Home = () => {
                 Camera Roll
               </div>
               <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
-                See All
+                See all
               </Link>
             </div>
 
