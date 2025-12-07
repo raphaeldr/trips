@@ -88,7 +88,7 @@ const Home = () => {
       <main className="container mx-auto px-4 pt-20 md:pt-28">
         {/* BENTO GRID LAYOUT */}
         <div className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[280px] gap-4">
-          {/* 1. LOCATION STATUS (Large) */}
+          {/* 1. LOCATION STATUS (Large - Left Column) */}
           <div className="col-span-1 md:col-span-2 min-h-[400px] md:min-h-0 md:row-span-2 relative group overflow-hidden rounded-3xl border border-border bg-muted shadow-xl hover:shadow-2xl transition-all duration-500">
             {/* Background Image/Video with Map Fallback */}
             <div className="absolute inset-0">
@@ -160,103 +160,106 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-                <BookOpen className="w-3 h-3 text-primary" />
-                Latest Stories
-              </div>
-              <Link to="/blog" className="text-xs text-primary hover:underline font-medium">
-                View all
-              </Link>
-            </div>
-            <div className="flex flex-col gap-3 flex-1 min-h-0">
-              {recentPosts?.slice(0, 3).map((post) => (
-                <Link
-                  key={post.id}
-                  to={`/blog/${post.slug}`}
-                  className="group hover:bg-secondary/40 -mx-2 px-2 py-2 rounded-lg transition-colors flex flex-col gap-1"
-                >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground w-full min-w-0">
-                    <span className="tabular-nums shrink-0">
-                      {format(new Date(post.published_at || new Date()), "d MMM")}
-                    </span>
-                    <span className="text-primary truncate">
-                      {post.destinations?.name || post.destinations?.country}
-                    </span>
-                  </div>
-                  <p className="font-medium text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                    {post.title}
-                  </p>
+          {/* RIGHT COLUMN WRAPPER (Stories + Camera Roll) */}
+          <div className="col-span-1 md:col-span-2 md:row-span-2 flex flex-col gap-4">
+            {/* 2. LATEST STORIES (Taller - Flex Grow) */}
+            <div className="flex-1 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+              <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <BookOpen className="w-3 h-3 text-primary" />
+                  Latest Stories
+                </div>
+                <Link to="/blog" className="text-xs text-primary hover:underline font-medium">
+                  View all
                 </Link>
-              ))}
-              {!recentPosts?.length && (
-                <p className="text-muted-foreground text-sm self-center my-auto">No stories yet.</p>
-              )}
-            </div>
-          </div>
-
-          {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-                <Camera className="w-3 h-3 text-primary" />
-                Camera Roll
               </div>
-              <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
-                See all
-              </Link>
+              <div className="flex flex-col gap-3 flex-1 min-h-0">
+                {recentPosts?.slice(0, 3).map((post) => (
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.slug}`}
+                    className="group hover:bg-secondary/40 -mx-2 px-2 py-2 rounded-lg transition-colors flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground w-full min-w-0">
+                      <span className="tabular-nums shrink-0">
+                        {format(new Date(post.published_at || new Date()), "d MMM")}
+                      </span>
+                      <span className="text-primary truncate">
+                        {post.destinations?.name || post.destinations?.country}
+                      </span>
+                    </div>
+                    <p className="font-medium text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                      {post.title}
+                    </p>
+                  </Link>
+                ))}
+                {!recentPosts?.length && (
+                  <p className="text-muted-foreground text-sm self-center my-auto">No stories yet.</p>
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 flex-1 min-h-0">
-              {recentPhotos?.map((photo) => {
-                const isPhotoVideo = photo.mime_type?.startsWith("video/");
-                const thumbnailUrl = photo.thumbnail_path
-                  ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
-                  : null;
-                const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
-                return (
-                  <div
-                    key={photo.id}
-                    className="aspect-square overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md rounded-none"
-                  >
-                    {/* Always show thumbnail/poster for videos, or use video element to capture first frame */}
-                    {thumbnailUrl ? (
-                      <img
-                        src={thumbnailUrl}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                    ) : isPhotoVideo ? (
-                      <VideoThumbnail
-                        src={mediaUrl}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : (
-                      <img
-                        src={mediaUrl}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                    )}
-                    {isPhotoVideo && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
-                          <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
+            {/* 3. LATEST MEDIA (Shorter - Fixed Height on Desktop) */}
+            <div className="h-auto md:h-[220px] shrink-0 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+              <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <Camera className="w-3 h-3 text-primary" />
+                  Camera Roll
+                </div>
+                <Link to="/gallery" className="text-xs text-primary hover:underline font-medium">
+                  See all
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3 flex-1 min-h-0">
+                {recentPhotos?.map((photo) => {
+                  const isPhotoVideo = photo.mime_type?.startsWith("video/");
+                  const thumbnailUrl = photo.thumbnail_path
+                    ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
+                    : null;
+                  const mediaUrl = supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
+                  return (
+                    <div
+                      key={photo.id}
+                      className="aspect-square overflow-hidden bg-muted relative group cursor-pointer shadow-sm hover:shadow-md rounded-none"
+                    >
+                      {/* Always show thumbnail/poster for videos, or use video element to capture first frame */}
+                      {thumbnailUrl ? (
+                        <img
+                          src={thumbnailUrl}
+                          alt=""
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                      ) : isPhotoVideo ? (
+                        <VideoThumbnail
+                          src={mediaUrl}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <img
+                          src={mediaUrl}
+                          alt=""
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                      )}
+                      {isPhotoVideo && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
+                            <div className="w-0 h-0 border-l-[10px] border-l-white border-y-[6px] border-y-transparent ml-1" />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                  </div>
-                );
-              })}
-              {(!recentPhotos || recentPhotos.length < 4) &&
-                Array(4 - (recentPhotos?.length || 0))
-                  .fill(0)
-                  .map((_, i) => <Skeleton key={i} className="aspect-square rounded-none bg-secondary" />)}
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                    </div>
+                  );
+                })}
+                {(!recentPhotos || recentPhotos.length < 4) &&
+                  Array(4 - (recentPhotos?.length || 0))
+                    .fill(0)
+                    .map((_, i) => <Skeleton key={i} className="aspect-square rounded-none bg-secondary" />)}
+              </div>
             </div>
           </div>
 
