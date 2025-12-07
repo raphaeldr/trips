@@ -26,25 +26,28 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
 
       <ScrollArea className="flex-1 -mx-0 px-0 bento-scroll h-full bg-[#111]">
         <div className="flex flex-col min-h-full py-2">
-          {/* Header Row looking like a terminal screen header (optional, but adds realism) */}
-          <div className="grid grid-cols-[60px_1fr] gap-4 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-primary/70 uppercase tracking-widest bg-[#111]">
+          {/* Header Row looking like a terminal screen header */}
+          <div className="grid grid-cols-[100px_1fr] gap-4 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111]">
             <span>Date</span>
             <span>Destination</span>
           </div>
 
-          {flightList.map((dest, i) => (
+          {flightList.map((dest) => (
             <div
               key={dest.id}
-              className="group/row grid grid-cols-[60px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 hover:bg-white/5 transition-colors"
+              className="group/row grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 hover:bg-white/5 transition-colors"
             >
-              {/* Date Column - Now White */}
-              <div className="text-xs font-mono text-white font-medium tracking-tight">
-                {format(new Date(dest.arrival_date), "dd/MM")}
+              {/* Date Column - Now using AirportBoard for matching style */}
+              <div className="flex items-center">
+                <AirportBoard
+                  text={format(new Date(dest.arrival_date), "dd/MM")}
+                  className="font-bold tracking-widest text-yellow-500"
+                />
               </div>
 
-              {/* Destination Board - Now White via AirportBoard styles */}
+              {/* Destination Board - Matching Yellow */}
               <div className="flex flex-col min-w-0">
-                <AirportBoard text={dest.name.toUpperCase()} className="font-bold tracking-widest text-white" />
+                <AirportBoard text={dest.name.toUpperCase()} className="font-bold tracking-widest text-yellow-500" />
               </div>
             </div>
           ))}
@@ -53,10 +56,10 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
           {Array.from({ length: Math.max(0, 5 - flightList.length) }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="grid grid-cols-[60px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 opacity-30"
+              className="grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 opacity-30"
             >
-              <div className="h-4 w-8 bg-white/10 rounded animate-pulse" />
-              <div className="h-5 w-32 bg-white/10 rounded animate-pulse" />
+              <div className="h-6 w-20 bg-white/5 rounded animate-pulse" />
+              <div className="h-6 w-48 bg-white/5 rounded animate-pulse" />
             </div>
           ))}
         </div>
