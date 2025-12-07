@@ -10,49 +10,44 @@ interface SplitFlapCharProps {
 
 const SplitFlapChar = memo(({ char, className }: SplitFlapCharProps) => {
   const [displayChar, setDisplayChar] = useState(" ");
+  const [prevChar, setPrevChar] = useState(" ");
   const [isFlipping, setIsFlipping] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // We keep track of the target internally to handle the animation loop
   const targetCharRef = useRef(char);
 
   useEffect(() => {
     targetCharRef.current = char.toUpperCase();
 
-    // If already at target, do nothing
     if (displayChar === targetCharRef.current) return;
 
-    // Start cycling if not already running
     if (!intervalRef.current) {
       startCycling();
     }
   }, [char]);
 
   const startCycling = () => {
-    // Clear any existing interval just in case
     if (intervalRef.current) clearInterval(intervalRef.current);
 
     intervalRef.current = setInterval(() => {
-      setDisplayChar((prev) => {
-        const currentIdx = CHARS.indexOf(prev) === -1 ? 0 : CHARS.indexOf(prev);
+      setDisplayChar((current) => {
+        const currentIdx = CHARS.indexOf(current) === -1 ? 0 : CHARS.indexOf(current);
         const targetIdx = CHARS.indexOf(targetCharRef.current) === -1 ? 0 : CHARS.indexOf(targetCharRef.current);
 
-        // If we reached the target, stop
         if (currentIdx === targetIdx) {
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
           setIsFlipping(false);
-          return prev;
+          return current;
         }
 
-        // Otherwise advance one character
         setIsFlipping(true);
+        setPrevChar(current); // Keep track of previous char for animation (if we were doing full 3d flip)
         const nextIdx = (currentIdx + 1) % CHARS.length;
         return CHARS[nextIdx];
       });
-    }, 70); // Speed of the flip
+    }, 70);
   };
 
   useEffect(() => {
@@ -61,28 +56,43 @@ const SplitFlapChar = memo(({ char, className }: SplitFlapCharProps) => {
     };
   }, []);
 
+  // Based on the CSS provided:
+  // .departure-board span.letter style
+  const letterStyle =
+    "inline-block w-[1em] mx-[0.1em] h-[1.3em] text-center relative text-[#eee] font-[Helvetica,Arial,sans-serif]";
+
+  // Box shadows from the CSS
+  const shadowStyle = {
+    boxShadow: `
+      inset 0 -0.07em 0 rgba(50, 50, 50, 0.7),
+      inset 0 -0.14em 0 rgba(0, 0, 0, 0.7),
+      inset 0.14em 0 0.28em rgba(0, 0, 0, 0.9),
+      inset -0.14em 0 0.28em rgba(0, 0, 0, 0.9),
+      0 0.07em 0 rgba(255, 255, 255, 0.2)
+    `,
+  };
+
   return (
-    <div
-      className={cn(
-        "relative inline-block w-[0.6em] h-[1em] text-center font-mono bg-[#222] text-white rounded-[2px] overflow-hidden shadow-sm mx-[1px]",
-        className,
-      )}
-    >
-      {/* Top Half (Static) */}
-      <div className="absolute top-0 left-0 right-0 h-1/2 overflow-hidden bg-[#222] border-b border-black/40 z-0">
-        <span className="absolute top-0 left-0 right-0 leading-[1em]">{displayChar}</span>
+    <div className={cn(letterStyle, "bg-[#1e1e1e] rounded-[0.21em] overflow-hidden", className)} style={shadowStyle}>
+      {/* Top Flap */}
+      <div className="absolute top-0 left-0 w-full h-[0.65em] overflow-hidden bg-[#1e1e1e] z-10">
+        <span className="absolute top-0 left-0 w-full text-center leading-[1.3em]">{displayChar}</span>
+        {/* Top fold shading line from CSS :before */}
+        <div className="absolute bottom-0 left-0 w-full h-0 border-b-[0.07em] border-[rgba(0,0,0,0.4)] z-20"></div>
       </div>
 
-      {/* Bottom Half (Static) */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/2 overflow-hidden bg-[#222] z-0">
-        <span className="absolute bottom-0 left-0 right-0 leading-[1em] translate-y-[-50%]">{displayChar}</span>
+      {/* Bottom Flap */}
+      <div className="absolute top-[0.65em] left-0 w-full h-[0.65em] overflow-hidden bg-[#1e1e1e] z-0">
+        <span className="absolute top-[-0.65em] left-0 w-full text-center leading-[1.3em]">{displayChar}</span>
+        {/* Bottom fold highlight line from CSS :before */}
+        <div className="absolute top-0 left-0 w-full h-0 border-t-[0.07em] border-[rgba(255,255,255,0.08)] z-20"></div>
       </div>
 
-      {/* Animation Overlay (Simulates the flip) */}
-      {isFlipping && <div className="absolute inset-0 z-10 animate-pulse bg-white/5 pointer-events-none" />}
+      {/* Mechanical Fold Line (The split) */}
+      <div className="absolute top-[0.62em] left-0 w-full h-[0.06em] bg-black/80 z-30" />
 
-      {/* Split Line */}
-      <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-black/60 z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]" />
+      {/* Flip Animation Overlay */}
+      {isFlipping && <div className="absolute inset-0 z-40 bg-black/10 animate-pulse pointer-events-none" />}
     </div>
   );
 });
@@ -92,14 +102,13 @@ SplitFlapChar.displayName = "SplitFlapChar";
 interface AirportBoardProps {
   text: string;
   className?: string;
-  padLength?: number; // Ensure board has fixed width if needed
+  padLength?: number;
 }
 
 export const AirportBoard = ({ text, className, padLength }: AirportBoardProps) => {
   const [letters, setLetters] = useState<string[]>([]);
 
   useEffect(() => {
-    // Pad or truncate text to ensure stable grid if needed, or just split
     const upperText = text.toUpperCase();
     const chars = upperText.split("");
     if (padLength) {
@@ -109,13 +118,9 @@ export const AirportBoard = ({ text, className, padLength }: AirportBoardProps) 
   }, [text, padLength]);
 
   return (
-    <div className={cn("inline-flex flex-wrap", className)} aria-label={text}>
+    <div className={cn("inline-flex flex-wrap p-[0.15em] bg-[#1e1e1e] rounded-[0.21em]", className)} aria-label={text}>
       {letters.map((char, i) => (
-        <SplitFlapChar
-          key={i}
-          char={char}
-          className="text-xs md:text-sm lg:text-base w-[12px] md:w-[16px] h-[18px] md:h-[24px] bg-[#1a1a1a] text-[#e0e0e0] rounded-sm"
-        />
+        <SplitFlapChar key={i} char={char} className="text-sm md:text-base lg:text-lg" />
       ))}
     </div>
   );
