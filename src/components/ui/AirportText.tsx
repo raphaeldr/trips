@@ -1,94 +1,121 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, memo } from "react";
 import { cn } from "@/lib/utils";
+
+const CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,':()&!?+-";
+
+interface SplitFlapCharProps {
+  char: string;
+  className?: string;
+}
+
+const SplitFlapChar = memo(({ char, className }: SplitFlapCharProps) => {
+  const [displayChar, setDisplayChar] = useState(" ");
+  const [isFlipping, setIsFlipping] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // We keep track of the target internally to handle the animation loop
+  const targetCharRef = useRef(char);
+
+  useEffect(() => {
+    targetCharRef.current = char.toUpperCase();
+
+    // If already at target, do nothing
+    if (displayChar === targetCharRef.current) return;
+
+    // Start cycling if not already running
+    if (!intervalRef.current) {
+      startCycling();
+    }
+  }, [char]);
+
+  const startCycling = () => {
+    // Clear any existing interval just in case
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
+      setDisplayChar((prev) => {
+        const currentIdx = CHARS.indexOf(prev) === -1 ? 0 : CHARS.indexOf(prev);
+        const targetIdx = CHARS.indexOf(targetCharRef.current) === -1 ? 0 : CHARS.indexOf(targetCharRef.current);
+
+        // If we reached the target, stop
+        if (currentIdx === targetIdx) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          setIsFlipping(false);
+          return prev;
+        }
+
+        // Otherwise advance one character
+        setIsFlipping(true);
+        const nextIdx = (currentIdx + 1) % CHARS.length;
+        return CHARS[nextIdx];
+      });
+    }, 70); // Speed of the flip
+  };
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  return (
+    <div
+      className={cn(
+        "relative inline-block w-[0.6em] h-[1em] text-center font-mono bg-[#222] text-white rounded-[2px] overflow-hidden shadow-sm mx-[1px]",
+        className,
+      )}
+    >
+      {/* Top Half (Static) */}
+      <div className="absolute top-0 left-0 right-0 h-1/2 overflow-hidden bg-[#222] border-b border-black/40 z-0">
+        <span className="absolute top-0 left-0 right-0 leading-[1em]">{displayChar}</span>
+      </div>
+
+      {/* Bottom Half (Static) */}
+      <div className="absolute bottom-0 left-0 right-0 h-1/2 overflow-hidden bg-[#222] z-0">
+        <span className="absolute bottom-0 left-0 right-0 leading-[1em] translate-y-[-50%]">{displayChar}</span>
+      </div>
+
+      {/* Animation Overlay (Simulates the flip) */}
+      {isFlipping && <div className="absolute inset-0 z-10 animate-pulse bg-white/5 pointer-events-none" />}
+
+      {/* Split Line */}
+      <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-black/60 z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]" />
+    </div>
+  );
+});
+
+SplitFlapChar.displayName = "SplitFlapChar";
 
 interface AirportBoardProps {
   text: string;
   className?: string;
+  padLength?: number; // Ensure board has fixed width if needed
 }
 
-// A mix of characters to cycle through for the "flipping" effect
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-., ";
-
-export const AirportBoard = ({ text, className = "" }: AirportBoardProps) => {
-  const [renderedChars, setRenderedChars] = useState<string[]>([]);
-  const requestRef = useRef<number>();
-  const lastUpdateRef = useRef<number>(0);
-
-  // We use a ref for state that updates rapidly to avoid closure staleness in the animation loop
-  const stateRef = useRef({
-    currentIndex: 0,
-    currentCycles: 0,
-    charsArray: [] as string[],
-    targetText: text,
-  });
+export const AirportBoard = ({ text, className, padLength }: AirportBoardProps) => {
+  const [letters, setLetters] = useState<string[]>([]);
 
   useEffect(() => {
-    // Initialize/Reset animation state when text changes
-    const initialArray = Array(text.length).fill(" "); // Start with blank spaces
-
-    stateRef.current = {
-      currentIndex: 0,
-      currentCycles: 0,
-      charsArray: initialArray,
-      targetText: text,
-    };
-
-    setRenderedChars(initialArray);
-
-    // Start the animation loop
-    requestRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, [text]);
-
-  const animate = (time: number) => {
-    // Control speed: Update every ~30ms for a satisfying clicky mechanical feel
-    if (time - lastUpdateRef.current < 30) {
-      requestRef.current = requestAnimationFrame(animate);
-      return;
+    // Pad or truncate text to ensure stable grid if needed, or just split
+    const upperText = text.toUpperCase();
+    const chars = upperText.split("");
+    if (padLength) {
+      while (chars.length < padLength) chars.push(" ");
     }
-    lastUpdateRef.current = time;
-
-    const state = stateRef.current;
-
-    // Stop if we've resolved the entire string
-    if (state.currentIndex >= state.targetText.length) {
-      return;
-    }
-
-    // "Stay longer" logic: Flip the current character X times before locking it
-    // 3 flips * 30ms = ~90ms dwell time per character
-    const FLIPS_BEFORE_LOCK = 3;
-
-    if (state.currentCycles < FLIPS_BEFORE_LOCK) {
-      // Phase 1: Cycle through random characters at the current index
-      state.charsArray[state.currentIndex] = CHARS[Math.floor(Math.random() * CHARS.length)];
-      state.currentCycles++;
-    } else {
-      // Phase 2: Lock the correct character and move to the next index
-      state.charsArray[state.currentIndex] = state.targetText[state.currentIndex];
-      state.currentIndex++;
-      state.currentCycles = 0; // Reset cycle counter for the next character
-    }
-
-    // Trigger re-render with new state
-    setRenderedChars([...state.charsArray]);
-
-    // Continue loop
-    requestRef.current = requestAnimationFrame(animate);
-  };
+    setLetters(chars);
+  }, [text, padLength]);
 
   return (
-    <div className={cn("inline-flex flex-wrap gap-[1px] md:gap-[2px]", className)} aria-label={text}>
-      {renderedChars.map((char, i) => (
-        <span
+    <div className={cn("inline-flex flex-wrap", className)} aria-label={text}>
+      {letters.map((char, i) => (
+        <SplitFlapChar
           key={i}
-          className="inline-flex items-center justify-center min-w-[0.5em] md:min-w-[0.6em] px-[1px] md:px-1 bg-black/80 text-white rounded-[2px] shadow-sm overflow-hidden backdrop-blur-sm border border-white/10"
-        >
-          {char === " " ? "\u00A0" : char}
-        </span>
+          char={char}
+          className="text-xs md:text-sm lg:text-base w-[12px] md:w-[16px] h-[18px] md:h-[24px] bg-[#1a1a1a] text-[#e0e0e0] rounded-sm"
+        />
       ))}
     </div>
   );
