@@ -6,7 +6,7 @@ export const Navigation = () => {
   const { isAdmin } = useAdminAuth();
 
   return (
-    <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-full shadow-lg md:block hidden transition-all hover:bg-white/80 dark:hover:bg-black/80">
+    <nav className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-full shadow-lg md:block hidden transition-all hover:bg-white/80 dark:hover:bg-black/80">
       <div className="px-6 py-3 flex items-center justify-between">
         <NavLink
           to="/"
