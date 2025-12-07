@@ -161,8 +161,8 @@ const Home = () => {
           </div>
 
           {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4 shrink-0">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col gap-5 md:gap-6 shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
                 Latest Stories
@@ -171,29 +171,35 @@ const Home = () => {
                 View all
               </Link>
             </div>
-            <div className="flex flex-col gap-4 flex-1 justify-center">
+            <div className="flex flex-col gap-4 flex-1 min-h-0">
               {recentPosts?.slice(0, 3).map((post) => (
                 <Link
                   key={post.id}
                   to={`/blog/${post.slug}`}
-                  className="group hover:bg-secondary/40 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                  className="group hover:bg-secondary/40 -mx-2 px-2 py-2 rounded-lg transition-colors flex flex-col gap-1"
                 >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <span className="tabular-nums">{format(new Date(post.published_at || new Date()), "d MMM")}</span>
-                    <span className="text-primary">{post.destinations?.name || post.destinations?.country}</span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground w-full min-w-0">
+                    <span className="tabular-nums shrink-0">
+                      {format(new Date(post.published_at || new Date()), "d MMM")}
+                    </span>
+                    <span className="text-primary truncate">
+                      {post.destinations?.name || post.destinations?.country}
+                    </span>
                   </div>
                   <p className="font-medium text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">
                     {post.title}
                   </p>
                 </Link>
               ))}
-              {!recentPosts?.length && <p className="text-muted-foreground text-sm self-center">No stories yet.</p>}
+              {!recentPosts?.length && (
+                <p className="text-muted-foreground text-sm self-center my-auto">No stories yet.</p>
+              )}
             </div>
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-4 shrink-0">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col gap-5 md:gap-6 shadow-sm hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
                 Camera Roll
@@ -203,7 +209,7 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 flex-1 content-center">
+            <div className="grid grid-cols-4 gap-3 flex-1 min-h-0">
               {recentPhotos?.map((photo) => {
                 const isPhotoVideo = photo.mime_type?.startsWith("video/");
                 const thumbnailUrl = photo.thumbnail_path
