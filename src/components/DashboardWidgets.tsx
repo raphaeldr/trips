@@ -12,7 +12,7 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
   );
 
   const ROWS_TO_DISPLAY = 8;
-  const DESTINATION_CHARS = 14; // Number of flaps for destination to fill width
+  const DESTINATION_CHARS = 20; // Increased to ensure it fills to the right
 
   // Generate rows including empty ones to fill the board to the bottom
   const displayRows = Array.from({ length: Math.max(flightList.length, ROWS_TO_DISPLAY) }).map((_, i) => {
@@ -33,19 +33,18 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
       </div>
 
       <ScrollArea className="flex-1 -mx-0 px-0 bento-scroll h-full bg-[#111]">
-        <div className="flex flex-col min-h-full py-2">
-          {/* Header Row looking like a terminal screen header */}
-          <div className="flex items-center gap-2 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111]">
-            {/* Roughly align with 5 chars (date) + gaps */}
-            <span className="w-[85px] pl-1">Date</span>
-            <span className="w-[24px]"></span> {/* Spacer for separator */}
+        <div className="flex flex-col min-h-full py-2 px-2">
+          {/* Header Row - Aligned precisely with columns */}
+          <div className="flex gap-3 px-2 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111] mb-1">
+            <span className="w-[calc(5*1.8ch+20px)] pl-1">Date</span>
+            <span className="w-[1.8ch]"></span> {/* Spacer alignment */}
             <span className="pl-1">Destination</span>
           </div>
 
           {displayRows.map((dest, i) => (
             <div
               key={dest ? dest.id : `empty-${i}`}
-              className="group/row flex items-center gap-2 px-5 py-3 border-b border-white/5 hover:bg-white/5 transition-colors"
+              className="flex items-center gap-3 px-2 py-1.5 border-b border-white/5 hover:bg-white/5 transition-colors"
             >
               {/* Date Column: dd/MM (5 chars) */}
               <AirportBoard
@@ -53,13 +52,13 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
                 className="font-bold tracking-widest text-white"
               />
 
-              {/* Separator Block */}
-              <div className="opacity-30">
-                <AirportBoard text="-" className="font-bold text-white" />
+              {/* Empty Block Separator (Space instead of dash) */}
+              <div className="opacity-50">
+                <AirportBoard text=" " className="font-bold text-white" />
               </div>
 
               {/* Destination - Filled with empty blocks to the right */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden flex">
                 <AirportBoard
                   text={dest ? dest.name.toUpperCase() : ""}
                   padLength={DESTINATION_CHARS}
