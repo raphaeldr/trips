@@ -37,17 +37,14 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
               key={dest.id}
               className="group/row grid grid-cols-[60px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 hover:bg-white/5 transition-colors"
             >
-              {/* Date Column */}
-              <div className="text-xs font-mono text-yellow-500/90 font-medium tracking-tight">
+              {/* Date Column - Now White */}
+              <div className="text-xs font-mono text-white font-medium tracking-tight">
                 {format(new Date(dest.arrival_date), "dd/MM")}
               </div>
 
-              {/* Destination Board */}
+              {/* Destination Board - Now White via AirportBoard styles */}
               <div className="flex flex-col min-w-0">
-                <AirportBoard text={dest.name} className="font-bold tracking-widest text-[#f0f0f0]" />
-                <span className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-wider truncate">
-                  {dest.country}
-                </span>
+                <AirportBoard text={dest.name.toUpperCase()} className="font-bold tracking-widest text-white" />
               </div>
             </div>
           ))}
