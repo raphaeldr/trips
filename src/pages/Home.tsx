@@ -193,7 +193,7 @@ const Home = () => {
           {/* 4. GLOBE (Bottom) */}
           <div className="col-span-1 md:col-span-2 min-h-[200px] md:min-h-0 md:row-span-2 rounded-3xl overflow-hidden border border-border bg-muted relative shadow-sm hover:shadow-lg transition-all">
             <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-card/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-foreground border border-border shadow-sm">
-              Interactive Route
+              Our itinerary so far   
             </div>
             <MapEmbed className="w-full h-full" />
             <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-black/5 rounded-3xl" />
