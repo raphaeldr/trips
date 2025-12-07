@@ -1,58 +1,48 @@
-import { Plane } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { AirportBoard } from "@/components/ui/AirportText";
-import { format } from "date-fns";
-export const TripProgressWidget = ({
-  destinations
-}: {
-  destinations: any[];
-}) => {
-  // Sort destinations by date for the board (ascending) if not already
-  const flightList = [...(destinations || [])].sort((a, b) => new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime());
-  return <Card className="h-full bg-card border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
-      {/* Header */}
-      <div className="p-5 flex items-center justify-between shrink-0 bg-card z-20">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
-          <Plane className="w-3 h-3 text-primary" />
-          Confirmed Flights
-        </div>
-        <Badge variant="secondary" className="text-xs font-normal">
-          {flightList.length} flights
-        </Badge>
-      </div>
-
-      <ScrollArea className="flex-1 -mx-0 px-0 bento-scroll h-full bg-[#111]">
-        <div className="flex flex-col min-h-full py-2">
-          {/* Header Row looking like a terminal screen header */}
-          <div className="grid grid-cols-[100px_1fr] gap-4 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111]">
-            <span>Date</span>
-            <span className="text-left px-[59px]">Destination</span>
+export const TripProgressWidget = ({ destinations }: { destinations: any[] }) => {
+  return (
+    <Card className="h-full bg-card border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
+      {/* Bottom Section: Timeline History */}
+      <div className="flex-1 p-5 md:p-6 flex flex-col min-h-0 bg-card relative">
+        <div className="flex items-center justify-between mb-3 md:mb-4 z-10 shrink-0">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+            <MapPin className="w-3 h-3 text-primary" />
+            Our journey
           </div>
-
-          {flightList.map(dest => <div key={dest.id} className="group/row flex items-center gap-2 px-5 py-3 border-b border-white/5 hover:bg-white/5 transition-colors">
-              {/* Date Column */}
-              <AirportBoard text={format(new Date(dest.arrival_date), "dd/MM")} className="font-bold tracking-widest text-white" />
-
-              {/* Spacer Block */}
-              <AirportBoard text=" " className="font-bold text-white" />
-
-              {/* Destination */}
-              <AirportBoard text={dest.name.toUpperCase()} className="font-bold tracking-widest text-white" />
-            </div>)}
-
-          {/* Empty rows filler to look like a board */}
-          {Array.from({
-          length: Math.max(0, 5 - flightList.length)
-        }).map((_, i) => <div key={`empty-${i}`} className="grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 opacity-30">
-              <div className="h-6 w-20 bg-white/5 rounded animate-pulse" />
-              <div className="h-6 w-48 bg-white/5 rounded animate-pulse" />
-            </div>)}
+          <Badge variant="secondary" className="text-xs font-normal">
+            {destinations?.length || 0} destinations visited
+          </Badge>
         </div>
-      </ScrollArea>
 
-      {/* Bottom Fade */}
-      <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
-    </Card>;
+        <ScrollArea className="flex-1 -mx-4 px-4 bento-scroll h-full">
+          <div className="space-y-0 relative z-0 pb-2">
+            {/* Vertical Line */}
+            <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
+
+            {destinations?.map((dest, i) => (
+              <div key={dest.id} className="relative pl-8 py-2.5 md:py-3 group/item cursor-default">
+                <div
+                  className={`absolute left-4 top-[14px] md:top-[18px] w-1.5 h-1.5 rounded-full ring-4 ring-card ${i === 0 ? "bg-green-500 scale-125" : "bg-muted-foreground/30 group-hover/item:bg-primary/50"} transition-all duration-300 z-10`}
+                />
+                <div className="flex flex-col">
+                  <span
+                    className={`text-sm font-medium leading-none ${i === 0 ? "text-foreground" : "text-muted-foreground group-hover/item:text-foreground"} transition-colors`}
+                  >
+                    {dest.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground/60 font-medium mt-1">{dest.country}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+
+        {/* Bottom Fade for Scroll */}
+        <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-card to-transparent pointer-events-none z-10" />
+      </div>
+    </Card>
+  );
 };
