@@ -2,6 +2,8 @@ import { MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { AirportBoard } from "@/components/ui/AirportText";
+
 export const TripProgressWidget = ({ destinations }: { destinations: any[] }) => {
   return (
     <Card className="h-full bg-card border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
@@ -28,11 +30,11 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
                   className={`absolute left-4 top-[14px] md:top-[18px] w-1.5 h-1.5 rounded-full ring-4 ring-card ${i === 0 ? "bg-green-500 scale-125" : "bg-muted-foreground/30 group-hover/item:bg-primary/50"} transition-all duration-300 z-10`}
                 />
                 <div className="flex flex-col">
-                  <span
+                  <div
                     className={`text-sm font-medium leading-none ${i === 0 ? "text-foreground" : "text-muted-foreground group-hover/item:text-foreground"} transition-colors`}
                   >
-                    {dest.name}
-                  </span>
+                    <AirportBoard text={dest.name} />
+                  </div>
                   <span className="text-xs text-muted-foreground/60 font-medium mt-1">{dest.country}</span>
                 </div>
               </div>
