@@ -4,18 +4,23 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const GalleryTeaser = () => {
-  // Fetch recent photos for the teaser
+  // Fetch recent photos for the teaser using obfuscated view
   const { data: recentPhotos } = useQuery({
     queryKey: ["recentPhotos"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("photos")
+        .from("photos_public" as "photos")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(4);
       
       if (error) throw error;
-      return data;
+      return data as unknown as Array<{
+        id: string;
+        title: string | null;
+        storage_path: string;
+        thumbnail_path: string | null;
+      }>;
     },
   });
 

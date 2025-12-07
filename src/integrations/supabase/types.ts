@@ -471,6 +471,80 @@ export type Database = {
         }
         Relationships: []
       }
+      photos_public: {
+        Row: {
+          ai_caption: string | null
+          ai_tags: string[] | null
+          animated_path: string | null
+          created_at: string | null
+          description: string | null
+          destination_id: string | null
+          file_size: number | null
+          height: number | null
+          id: string | null
+          is_hero: boolean | null
+          latitude: number | null
+          longitude: number | null
+          mime_type: string | null
+          storage_path: string | null
+          taken_at: string | null
+          thumbnail_path: string | null
+          title: string | null
+          updated_at: string | null
+          width: number | null
+        }
+        Insert: {
+          ai_caption?: string | null
+          ai_tags?: string[] | null
+          animated_path?: string | null
+          created_at?: string | null
+          description?: string | null
+          destination_id?: string | null
+          file_size?: number | null
+          height?: number | null
+          id?: string | null
+          is_hero?: boolean | null
+          latitude?: never
+          longitude?: never
+          mime_type?: string | null
+          storage_path?: string | null
+          taken_at?: never
+          thumbnail_path?: string | null
+          title?: string | null
+          updated_at?: string | null
+          width?: number | null
+        }
+        Update: {
+          ai_caption?: string | null
+          ai_tags?: string[] | null
+          animated_path?: string | null
+          created_at?: string | null
+          description?: string | null
+          destination_id?: string | null
+          file_size?: number | null
+          height?: number | null
+          id?: string | null
+          is_hero?: boolean | null
+          latitude?: never
+          longitude?: never
+          mime_type?: string | null
+          storage_path?: string | null
+          taken_at?: never
+          thumbnail_path?: string | null
+          title?: string | null
+          updated_at?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _postgis_deprecate: {
