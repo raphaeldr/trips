@@ -116,7 +116,7 @@ export const AirportBoard = ({ text, className, padLength }: AirportBoardProps) 
   }, [text, padLength]);
 
   return (
-    <div className={cn("inline-flex flex-wrap p-[0.15em] bg-[#1e1e1e] rounded-[0.21em]", className)} aria-label={text}>
+    <div className={cn("inline-flex flex-nowrap p-[0.15em] bg-[#1e1e1e] rounded-[0.21em]", className)} aria-label={text}>
       {letters.map((char, i) => (
         <SplitFlapChar key={i} char={char} className="text-sm md:text-base lg:text-lg" />
       ))}
