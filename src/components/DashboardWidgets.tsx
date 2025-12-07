@@ -4,15 +4,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { AirportBoard } from "@/components/ui/AirportText";
 import { format } from "date-fns";
-
-export const TripProgressWidget = ({ destinations }: { destinations: any[] }) => {
+export const TripProgressWidget = ({
+  destinations
+}: {
+  destinations: any[];
+}) => {
   // Sort destinations by date for the board (ascending) if not already
-  const flightList = [...(destinations || [])].sort(
-    (a, b) => new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime(),
-  );
-
-  return (
-    <Card className="h-full bg-card border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
+  const flightList = [...(destinations || [])].sort((a, b) => new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime());
+  return <Card className="h-full bg-card border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
       {/* Header */}
       <div className="p-5 flex items-center justify-between shrink-0 bg-card z-20">
         <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
@@ -29,49 +28,31 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
           {/* Header Row looking like a terminal screen header */}
           <div className="grid grid-cols-[100px_1fr] gap-4 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111]">
             <span>Date</span>
-            <span>Destination</span>
+            <span className="text-left px-[59px]">Destination</span>
           </div>
 
-          {flightList.map((dest) => (
-            <div
-              key={dest.id}
-              className="group/row flex items-center gap-2 px-5 py-3 border-b border-white/5 hover:bg-white/5 transition-colors"
-            >
+          {flightList.map(dest => <div key={dest.id} className="group/row flex items-center gap-2 px-5 py-3 border-b border-white/5 hover:bg-white/5 transition-colors">
               {/* Date Column */}
-              <AirportBoard
-                text={format(new Date(dest.arrival_date), "dd/MM")}
-                className="font-bold tracking-widest text-white"
-              />
+              <AirportBoard text={format(new Date(dest.arrival_date), "dd/MM")} className="font-bold tracking-widest text-white" />
 
               {/* Spacer Block */}
-              <AirportBoard
-                text=" "
-                className="font-bold text-white"
-              />
+              <AirportBoard text=" " className="font-bold text-white" />
 
               {/* Destination */}
-              <AirportBoard
-                text={dest.name.toUpperCase()}
-                className="font-bold tracking-widest text-white"
-              />
-            </div>
-          ))}
+              <AirportBoard text={dest.name.toUpperCase()} className="font-bold tracking-widest text-white" />
+            </div>)}
 
           {/* Empty rows filler to look like a board */}
-          {Array.from({ length: Math.max(0, 5 - flightList.length) }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 opacity-30"
-            >
+          {Array.from({
+          length: Math.max(0, 5 - flightList.length)
+        }).map((_, i) => <div key={`empty-${i}`} className="grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 opacity-30">
               <div className="h-6 w-20 bg-white/5 rounded animate-pulse" />
               <div className="h-6 w-48 bg-white/5 rounded animate-pulse" />
-            </div>
-          ))}
+            </div>)}
         </div>
       </ScrollArea>
 
       {/* Bottom Fade */}
       <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-10" />
-    </Card>
-  );
+    </Card>;
 };
