@@ -161,7 +161,7 @@ const Home = () => {
           </div>
 
           {/* 2. LATEST STORIES (Prominent - Top Right) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col gap-5 md:gap-6 shadow-sm hover:shadow-lg transition-all duration-300">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
             <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-primary" />
@@ -171,7 +171,7 @@ const Home = () => {
                 View all
               </Link>
             </div>
-            <div className="flex flex-col gap-4 flex-1 min-h-0">
+            <div className="flex flex-col gap-3 flex-1 min-h-0">
               {recentPosts?.slice(0, 3).map((post) => (
                 <Link
                   key={post.id}
@@ -198,7 +198,7 @@ const Home = () => {
           </div>
 
           {/* 3. LATEST MEDIA (Prominent - Below Stories) */}
-          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 md:p-6 flex flex-col gap-5 md:gap-6 shadow-sm hover:shadow-lg transition-all duration-300">
+          <div className="col-span-1 md:col-span-2 md:row-span-1 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
             <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                 <Camera className="w-3 h-3 text-primary" />
