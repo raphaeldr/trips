@@ -57,11 +57,15 @@ const Gallery = () => {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ["photos"],
+    queryKey: ["photos_public"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("photos").select("*").order("taken_at", { ascending: false });
+      // Use photos_public view for obfuscated GPS coordinates (city-level only)
+      const { data, error } = await supabase
+        .from("photos_public" as "photos")
+        .select("*")
+        .order("taken_at", { ascending: false });
       if (error) throw error;
-      return data as Photo[];
+      return data as unknown as Photo[];
     },
   });
 
