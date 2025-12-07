@@ -199,8 +199,8 @@ const Home = () => {
               </div>
             </div>
 
-            {/* 3. LATEST MEDIA (Shorter - Fixed Height on Desktop) */}
-            <div className="h-auto md:h-[220px] shrink-0 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+            {/* 3. LATEST MEDIA (Shorter - Auto Height to fit content) */}
+            <div className="shrink-0 bg-card border border-border rounded-3xl p-5 flex flex-col gap-5 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
               <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                   <Camera className="w-3 h-3 text-primary" />
@@ -211,7 +211,7 @@ const Home = () => {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-4 gap-3 flex-1 min-h-0">
+              <div className="grid grid-cols-4 gap-3">
                 {recentPhotos?.map((photo) => {
                   const isPhotoVideo = photo.mime_type?.startsWith("video/");
                   const thumbnailUrl = photo.thumbnail_path
