@@ -33,36 +33,32 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
       </div>
 
       <ScrollArea className="flex-1 -mx-0 px-0 bento-scroll h-full bg-[#111]">
-        <div className="flex flex-col min-h-full py-2 px-2">
+        <div className="flex flex-col min-h-full py-3 px-3">
           {/* Header Row - Aligned precisely with columns */}
-          <div className="flex gap-3 px-2 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111] mb-1">
-            <span className="w-[calc(5*1.8ch+20px)] pl-1">Date</span>
-            <span className="w-[1.8ch]"></span> {/* Spacer alignment */}
+          <div className="flex gap-4 px-2 py-2 border-b border-white/10 text-[10px] font-mono text-white/50 uppercase tracking-widest bg-[#111] mb-2">
+            <span className="w-[120px] pl-1">Date</span>
             <span className="pl-1">Destination</span>
           </div>
 
           {displayRows.map((dest, i) => (
             <div
               key={dest ? dest.id : `empty-${i}`}
-              className="flex items-center gap-3 px-2 py-1.5 border-b border-white/5 hover:bg-white/5 transition-colors"
+              className="flex items-center gap-4 px-2 py-1.5 border-b border-white/5 hover:bg-white/5 transition-colors"
             >
               {/* Date Column: dd/MM (5 chars) */}
-              <AirportBoard
-                text={dest ? format(new Date(dest.arrival_date), "dd/MM") : "     "}
-                className="font-bold tracking-widest text-white"
-              />
-
-              {/* Empty Block Separator (Space instead of dash) */}
-              <div className="opacity-50">
-                <AirportBoard text=" " className="font-bold text-white" />
+              <div className="shrink-0">
+                <AirportBoard
+                  text={dest ? format(new Date(dest.arrival_date), "dd/MM") : "     "}
+                  className="font-bold tracking-widest text-white"
+                />
               </div>
 
               {/* Destination - Filled with empty blocks to the right */}
-              <div className="flex-1 overflow-hidden flex">
+              <div className="flex-1 overflow-hidden flex min-w-0">
                 <AirportBoard
                   text={dest ? dest.name.toUpperCase() : ""}
                   padLength={DESTINATION_CHARS}
-                  className="font-bold tracking-widest text-white"
+                  className="font-bold tracking-widest text-white w-full"
                 />
               </div>
             </div>
