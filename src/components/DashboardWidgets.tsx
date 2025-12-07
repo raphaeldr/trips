@@ -35,8 +35,8 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
           {flightList.map((dest) => (
             <div
               key={dest.id}
-              className="group/row grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 hover:bg-white/5 transition-colors"
-            >
+            className="group/row grid grid-cols-[100px_1fr] gap-6 px-5 py-3 items-center border-b border-white/5 hover:bg-white/5 transition-colors"
+          >
               {/* Date Column - Using AirportBoard for matching style */}
               <div className="flex items-center">
                 <AirportBoard
