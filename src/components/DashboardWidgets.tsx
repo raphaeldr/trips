@@ -11,6 +11,14 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
     (a, b) => new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime(),
   );
 
+  const ROWS_TO_DISPLAY = 8;
+  const DESTINATION_CHARS = 14; // Number of flaps for destination to fill width
+
+  // Generate rows including empty ones to fill the board to the bottom
+  const displayRows = Array.from({ length: Math.max(flightList.length, ROWS_TO_DISPLAY) }).map((_, i) => {
+    return flightList[i] || null;
+  });
+
   return (
     <Card className="h-full bg-card border-border flex flex-col relative overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300">
       {/* Header */}
@@ -27,44 +35,37 @@ export const TripProgressWidget = ({ destinations }: { destinations: any[] }) =>
       <ScrollArea className="flex-1 -mx-0 px-0 bento-scroll h-full bg-[#111]">
         <div className="flex flex-col min-h-full py-2">
           {/* Header Row looking like a terminal screen header */}
-          <div className="grid grid-cols-[100px_1fr] gap-4 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111]">
-            <span>Date</span>
-            <span>Destination</span>
+          <div className="flex items-center gap-2 px-5 py-2 border-b border-white/10 text-[10px] font-mono text-yellow-500/70 uppercase tracking-widest bg-[#111]">
+            {/* Roughly align with 5 chars (date) + gaps */}
+            <span className="w-[85px] pl-1">Date</span>
+            <span className="w-[24px]"></span> {/* Spacer for separator */}
+            <span className="pl-1">Destination</span>
           </div>
 
-          {flightList.map((dest) => (
+          {displayRows.map((dest, i) => (
             <div
-              key={dest.id}
+              key={dest ? dest.id : `empty-${i}`}
               className="group/row flex items-center gap-2 px-5 py-3 border-b border-white/5 hover:bg-white/5 transition-colors"
             >
-              {/* Date Column */}
+              {/* Date Column: dd/MM (5 chars) */}
               <AirportBoard
-                text={format(new Date(dest.arrival_date), "dd/MM")}
+                text={dest ? format(new Date(dest.arrival_date), "dd/MM") : "     "}
                 className="font-bold tracking-widest text-white"
               />
 
-              {/* Spacer Block */}
-              <AirportBoard
-                text=" "
-                className="font-bold text-white"
-              />
+              {/* Separator Block */}
+              <div className="opacity-30">
+                <AirportBoard text="-" className="font-bold text-white" />
+              </div>
 
-              {/* Destination */}
-              <AirportBoard
-                text={dest.name.toUpperCase()}
-                className="font-bold tracking-widest text-white"
-              />
-            </div>
-          ))}
-
-          {/* Empty rows filler to look like a board */}
-          {Array.from({ length: Math.max(0, 5 - flightList.length) }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="grid grid-cols-[100px_1fr] gap-4 px-5 py-3 items-center border-b border-white/5 opacity-30"
-            >
-              <div className="h-6 w-20 bg-white/5 rounded animate-pulse" />
-              <div className="h-6 w-48 bg-white/5 rounded animate-pulse" />
+              {/* Destination - Filled with empty blocks to the right */}
+              <div className="flex-1 overflow-hidden">
+                <AirportBoard
+                  text={dest ? dest.name.toUpperCase() : ""}
+                  padLength={DESTINATION_CHARS}
+                  className="font-bold tracking-widest text-white"
+                />
+              </div>
             </div>
           ))}
         </div>
