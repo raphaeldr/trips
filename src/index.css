@@ -105,6 +105,15 @@
     @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-sm;
   }
 
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Custom Scrollbar */
   .bento-scroll::-webkit-scrollbar {
     width: 6px;
