@@ -1,11 +1,11 @@
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
-import { FloatingActionButton } from "@/components/home/FloatingActionButton";
-import { HeroLocation } from "@/components/home/HeroLocation";
-import { RecentMoments } from "@/components/home/RecentMoments";
-import { WeeklySummaryCard } from "@/components/home/WeeklySummaryCard";
-import { MiniTimeline } from "@/components/home/MiniTimeline";
-import { LatestStories } from "@/components/home/LatestStories";
+import { QuickCaptureFAB } from "@/components/home/QuickCaptureFAB";
+import { ScrapbookHero } from "@/components/home/ScrapbookHero";
+import { PolaroidMoments } from "@/components/home/PolaroidMoments";
+import { JourneyRibbon } from "@/components/home/JourneyRibbon";
+import { WeeklyRecap } from "@/components/home/WeeklyRecap";
+import { StoriesStack } from "@/components/home/StoriesStack";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
@@ -100,13 +100,10 @@ const Home = () => {
         .data.publicUrl
     : null;
 
-  // Calculate day number
   const dayNumber = tripSettings?.start_date
     ? differenceInDays(new Date(), new Date(tripSettings.start_date)) + 1
     : 1;
   const totalDays = tripSettings?.total_days || 180;
-
-  // Week number calculation
   const weekNumber = Math.ceil(dayNumber / 7);
   const weekPhotosCount = recentPhotos?.length || 0;
 
@@ -141,12 +138,11 @@ const Home = () => {
         <Navigation />
       </div>
 
-      {/* Mobile-first layout */}
+      {/* Mobile Layout */}
       <main className="md:container md:mx-auto md:px-4 md:pt-28">
-        {/* MOBILE LAYOUT */}
-        <div className="md:hidden flex flex-col gap-6">
-          {/* Hero - Full width on mobile */}
-          <HeroLocation
+        <div className="md:hidden">
+          {/* Hero */}
+          <ScrapbookHero
             destination={currentDestination || null}
             mediaUrl={bgMediaUrl}
             thumbnailUrl={bgThumbnailUrl}
@@ -155,32 +151,31 @@ const Home = () => {
             totalDays={totalDays}
           />
 
-          {/* Recent Moments - Horizontal scroll */}
-          <RecentMoments photos={recentPhotos} isLoading={isLoadingPhotos} />
+          {/* Journey Ribbon */}
+          <JourneyRibbon destinations={destinations} />
 
-          {/* Weekly Summary Card */}
-          <WeeklySummaryCard
+          {/* Recent Moments */}
+          <PolaroidMoments photos={recentPhotos} isLoading={isLoadingPhotos} />
+
+          {/* Weekly Recap */}
+          <WeeklyRecap
             photos={recentPhotos}
             weekNumber={weekNumber}
             photosCount={weekPhotosCount}
             onPublish={handlePublishWeekly}
           />
 
-          {/* Mini Timeline */}
-          <MiniTimeline destinations={destinations} />
+          {/* Stories */}
+          <StoriesStack posts={recentPosts} />
 
-          {/* Latest Stories */}
-          <LatestStories posts={recentPosts} />
-
-          {/* Bottom spacing for nav */}
-          <div className="h-4" />
+          {/* Bottom spacing */}
+          <div className="h-8" />
         </div>
 
-        {/* DESKTOP LAYOUT - Keep existing bento grid */}
-        <div className="hidden md:grid md:grid-cols-4 md:auto-rows-[280px] gap-4">
-          {/* Hero Location - Large */}
-          <div className="col-span-2 row-span-2 relative overflow-hidden rounded-3xl">
-            <HeroLocation
+        {/* Desktop - Bento Grid */}
+        <div className="hidden md:grid md:grid-cols-3 gap-6">
+          <div className="col-span-2 row-span-2">
+            <ScrapbookHero
               destination={currentDestination || null}
               mediaUrl={bgMediaUrl}
               thumbnailUrl={bgThumbnailUrl}
@@ -189,36 +184,28 @@ const Home = () => {
               totalDays={totalDays}
             />
           </div>
-
-          {/* Right column - Stories + Moments */}
-          <div className="col-span-2 row-span-2 flex flex-col gap-4">
-            <div className="flex-1">
-              <LatestStories posts={recentPosts} />
-            </div>
-            <div className="flex-1">
-              <RecentMoments photos={recentPhotos} isLoading={isLoadingPhotos} />
-            </div>
-          </div>
-
-          {/* Timeline */}
-          <div className="col-span-2">
-            <MiniTimeline destinations={destinations} />
-          </div>
-
-          {/* Weekly Summary */}
-          <div className="col-span-2">
-            <WeeklySummaryCard
+          <div>
+            <WeeklyRecap
               photos={recentPhotos}
               weekNumber={weekNumber}
               photosCount={weekPhotosCount}
               onPublish={handlePublishWeekly}
             />
           </div>
+          <div>
+            <StoriesStack posts={recentPosts} />
+          </div>
+          <div className="col-span-3">
+            <PolaroidMoments photos={recentPhotos} isLoading={isLoadingPhotos} />
+          </div>
+          <div className="col-span-3">
+            <JourneyRibbon destinations={destinations} />
+          </div>
         </div>
       </main>
 
       {/* FAB - Mobile only */}
-      <FloatingActionButton
+      <QuickCaptureFAB
         onAddMoment={handleAddMoment}
         onAddVoiceNote={handleAddVoiceNote}
         onAddNote={handleAddNote}
