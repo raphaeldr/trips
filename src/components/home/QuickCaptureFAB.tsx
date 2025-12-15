@@ -1,29 +1,26 @@
 import { useState } from "react";
-import { Plus, Camera, Mic, PenLine, MapPin, X } from "lucide-react";
+import { Plus, Camera, Mic, MapPin, X } from "lucide-react";
 
 interface QuickCaptureFABProps {
   onAddMoment: () => void;
   onAddVoiceNote: () => void;
-  onAddNote: () => void;
   onAddLocation: () => void;
 }
 
 const actions = [
   { icon: Camera, label: "Moment", color: "bg-primary" },
   { icon: Mic, label: "Voice", color: "bg-accent" },
-  { icon: PenLine, label: "Note", color: "bg-secondary" },
   { icon: MapPin, label: "Pin", color: "bg-muted" },
 ];
 
 export const QuickCaptureFAB = ({
   onAddMoment,
   onAddVoiceNote,
-  onAddNote,
   onAddLocation,
 }: QuickCaptureFABProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handlers = [onAddMoment, onAddVoiceNote, onAddNote, onAddLocation];
+  const handlers = [onAddMoment, onAddVoiceNote, onAddLocation];
 
   const handleAction = (index: number) => {
     handlers[index]();

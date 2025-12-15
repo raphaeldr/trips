@@ -11,10 +11,9 @@ interface WeeklyRecapProps {
   photos: Photo[] | undefined;
   weekNumber: number;
   photosCount: number;
-  onPublish?: () => void;
 }
 
-export const WeeklyRecap = ({ photos, weekNumber, photosCount, onPublish }: WeeklyRecapProps) => {
+export const WeeklyRecap = ({ photos, weekNumber, photosCount }: WeeklyRecapProps) => {
   const previewPhotos = photos?.slice(0, 4) || [];
 
   return (
@@ -49,6 +48,10 @@ export const WeeklyRecap = ({ photos, weekNumber, photosCount, onPublish }: Week
                   ? supabase.storage.from("photos").getPublicUrl(photo.thumbnail_path).data.publicUrl
                   : supabase.storage.from("photos").getPublicUrl(photo.storage_path).data.publicUrl;
 
+                if (!url) {
+                  return null;
+                }
+
                 return (
                   <div
                     key={photo.id}
@@ -72,14 +75,10 @@ export const WeeklyRecap = ({ photos, weekNumber, photosCount, onPublish }: Week
             </div>
           )}
 
-          {/* Publish button */}
-          <button
-            onClick={onPublish}
-            className="w-full flex items-center justify-center gap-2 bg-card hover:bg-card/80 text-foreground font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <span>Create Weekly Story</span>
+          <div className="w-full flex items-center justify-between text-sm text-muted-foreground font-medium">
+            <span>Weekly story publishing is temporarily disabled.</span>
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </div>
         </div>
       </div>
     </section>

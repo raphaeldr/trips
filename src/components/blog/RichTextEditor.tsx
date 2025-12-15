@@ -1,3 +1,4 @@
+// DEPRECATED: Journal/blog feature, kept temporarily for cleanup safety
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';

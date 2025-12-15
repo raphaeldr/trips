@@ -1,3 +1,4 @@
+// DEPRECATED: Journal/blog feature, kept temporarily for cleanup safety
 import { Navigation } from "@/components/Navigation";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useNavigate, useParams } from "react-router-dom";

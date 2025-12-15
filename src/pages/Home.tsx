@@ -5,7 +5,6 @@ import { ScrapbookHero } from "@/components/home/ScrapbookHero";
 import { PolaroidMoments } from "@/components/home/PolaroidMoments";
 import { JourneyRibbon } from "@/components/home/JourneyRibbon";
 import { WeeklyRecap } from "@/components/home/WeeklyRecap";
-import { StoriesStack } from "@/components/home/StoriesStack";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
@@ -62,20 +61,6 @@ const Home = () => {
     },
   });
 
-  const { data: recentPosts } = useQuery({
-    queryKey: ["recentPostsHome"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .select("*, destinations(name, country)")
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const { data: tripSettings } = useQuery({
     queryKey: ["tripSettings"],
     queryFn: async () => {
@@ -117,18 +102,9 @@ const Home = () => {
     toast.info("Voice notes coming soon!");
   };
 
-  const handleAddNote = () => {
-    navigate("/admin/blog/new");
-  };
-
   const handleAddLocation = () => {
     navigate("/admin");
     toast.info("Navigate to add destination");
-  };
-
-  const handlePublishWeekly = () => {
-    navigate("/admin/blog/new");
-    toast.info("Create your weekly summary");
   };
 
   return (
@@ -162,11 +138,7 @@ const Home = () => {
             photos={recentPhotos}
             weekNumber={weekNumber}
             photosCount={weekPhotosCount}
-            onPublish={handlePublishWeekly}
           />
-
-          {/* Stories */}
-          <StoriesStack posts={recentPosts} />
 
           {/* Bottom spacing */}
           <div className="h-8" />
@@ -189,11 +161,7 @@ const Home = () => {
               photos={recentPhotos}
               weekNumber={weekNumber}
               photosCount={weekPhotosCount}
-              onPublish={handlePublishWeekly}
             />
-          </div>
-          <div>
-            <StoriesStack posts={recentPosts} />
           </div>
           <div className="col-span-3">
             <PolaroidMoments photos={recentPhotos} isLoading={isLoadingPhotos} />
@@ -208,7 +176,6 @@ const Home = () => {
       <QuickCaptureFAB
         onAddMoment={handleAddMoment}
         onAddVoiceNote={handleAddVoiceNote}
-        onAddNote={handleAddNote}
         onAddLocation={handleAddLocation}
       />
 

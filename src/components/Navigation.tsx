@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { Map, Image, BookOpen, Home, Lock } from "lucide-react";
+import { Map, Image, Home, Lock } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 export const Navigation = () => {
@@ -42,15 +42,6 @@ export const Navigation = () => {
           >
             <Image className="w-4 h-4" />
             <span>Gallery</span>
-          </NavLink>
-
-          <NavLink
-            to="/blog"
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
-            activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Journal</span>
           </NavLink>
 
           {isAdmin && (

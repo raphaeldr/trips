@@ -1,3 +1,4 @@
+// DEPRECATED: Journal/blog feature, kept temporarily for cleanup safety
 import { Navigation } from "@/components/Navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { useQuery } from "@tanstack/react-query";

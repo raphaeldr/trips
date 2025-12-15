@@ -1,4 +1,4 @@
-import { Home, Map, ImageIcon, BookOpen } from "lucide-react";
+import { Home, Map, ImageIcon } from "lucide-react";
 import { NavLink } from "./NavLink";
 
 export const BottomNav = () => {
@@ -6,7 +6,6 @@ export const BottomNav = () => {
     { to: "/", icon: Home, label: "Home" },
     { to: "/map", icon: Map, label: "Map" },
     { to: "/gallery", icon: ImageIcon, label: "Gallery" },
-    { to: "/blog", icon: BookOpen, label: "Blog" },
   ];
 
   return (

@@ -182,22 +182,6 @@ const Admin = () => {
           {/* TAB 2: Content & Trips */}
           <TabsContent value="content" className="space-y-6 animate-in fade-in-50 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Blog Post Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Blog Posts
-                  </CardTitle>
-                  <CardDescription>Write rich multimedia blog posts about your adventures</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full" onClick={() => navigate("/admin/blog/new")}>
-                    Create New Post
-                  </Button>
-                </CardContent>
-              </Card>
-
               {/* Destination Section */}
               <Card>
                 <CardHeader>

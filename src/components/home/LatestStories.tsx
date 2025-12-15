@@ -1,3 +1,4 @@
+// DEPRECATED: Journal/blog feature, kept temporarily for cleanup safety
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { BookOpen, ChevronRight } from "lucide-react";
