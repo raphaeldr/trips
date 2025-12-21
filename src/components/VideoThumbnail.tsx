@@ -30,7 +30,7 @@ export const VideoThumbnail = ({ src, className }: VideoThumbnailProps) => {
     };
 
     video.addEventListener("loadeddata", captureFrame);
-    
+
     // If video is already loaded
     if (video.readyState >= 2) {
       captureFrame();
@@ -61,7 +61,7 @@ export const VideoThumbnail = ({ src, className }: VideoThumbnailProps) => {
           className={className}
         />
       ) : (
-        <div className={`bg-muted ${className}`} />
+        <div className={`bg-muted aspect-video w-full ${className}`} />
       )}
     </>
   );

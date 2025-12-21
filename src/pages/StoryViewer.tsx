@@ -172,7 +172,7 @@ const StoryViewer = () => {
                                     )}
                                     {moment.taken_at && (
                                         <div className="mt-2 text-center text-xs text-muted-foreground/60 uppercase tracking-widest font-sans">
-                                            {format(new Date(moment.taken_at), "MMMM d, h:mm a")}
+                                            {format(new Date(moment.taken_at), "d MMMM, h:mm a")}
                                         </div>
                                     )}
                                 </div>

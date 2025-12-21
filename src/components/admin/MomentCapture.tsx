@@ -118,7 +118,7 @@ export const MomentCapture = ({ onCaptureComplete }: MomentCaptureProps) => {
           title: null, // Moments do not have titles
           mime_type: file.type,
           file_size: file.size,
-          status: "draft", // Always draft first
+          status: "published", // Default to published as requested
           media_type: detectedMediaType,
           caption: null, // Captions are added later
           ...exifData,
@@ -200,7 +200,7 @@ export const MomentCapture = ({ onCaptureComplete }: MomentCaptureProps) => {
         title: null,
         mime_type: "audio/webm",
         file_size: audioBlob.size,
-        status: "draft",
+        status: "published",
         media_type: "audio",
         caption: null,
       });
@@ -242,7 +242,7 @@ export const MomentCapture = ({ onCaptureComplete }: MomentCaptureProps) => {
         caption: textContent,
         title: null,
         mime_type: "text/plain",
-        status: "draft",
+        status: "published",
         media_type: "text",
       });
       if (dbError) throw dbError;

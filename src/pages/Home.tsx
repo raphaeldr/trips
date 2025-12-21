@@ -3,6 +3,7 @@ import { VideoThumbnail } from "@/components/VideoThumbnail";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInDays } from "date-fns";
+import { MasonryGrid } from "@/components/ui/MasonryGrid";
 import { MapPin, Calendar, Navigation as NavIcon, ChevronRight, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +24,7 @@ const Home = () => {
     },
   });
 
-  const { count: momentsCount } = useQuery({
+  const { data: momentsCount } = useQuery({
     queryKey: ["momentsCount"],
     queryFn: async () => {
       const { count, error } = await supabase
@@ -142,15 +143,9 @@ const Home = () => {
     }
   }
 
-  // Static Map - Focus on current location
-  // Mapbox Static Images API
-  // Using satelite or dark style? User had a dark globe in screenshot but light in others. 
-  // User screenshot shows a dark/space globe. "Satellite-v9" or "dark-v11"?
-  // The screenshot says "mapbox" and looks like a globe view.
-  // Static API doesn't do 3D globes well (it projects to flat image), but we can use "satellite-streets-v12" for a nice look or "dark-v11".
-  // Let's try to match the dark aesthetic from the screenshot roughly, or just clean light if generic.
-  // User asked for "astatic map which indictaes with a marker where we are now".
-  const staticMapUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/pin-s-circle+10b981(${currentLng},${currentLat})/${currentLng},${currentLat},3/600x400@2x?access_token=${MAPBOX_TOKEN}&logo=false&attribution=false`;
+  // Static Map - Minimal Light Style as requested
+  // Using light-v11 for a clean, minimal look
+  const staticMapUrl = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s-circle+10b981(${currentLng},${currentLat})/${currentLng},${currentLat},3/600x400@2x?access_token=${MAPBOX_TOKEN}&logo=false&attribution=false`;
 
 
   return (
@@ -161,16 +156,16 @@ const Home = () => {
         {/* JOURNEY STRIP */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
           <div className="flex flex-col md:flex-row">
-            {/* Static Map Image */}
-            <div className="w-full md:w-1/3 h-40 md:h-48 relative bg-muted">
+            {/* Static Map Image - Full Height/Width cover */}
+            <div className="w-full md:w-1/3 min-h-[200px] md:h-auto relative bg-muted self-stretch">
               <img
                 src={staticMapUrl}
                 alt="Current Location Map"
-                className="w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               <Link
                 to="/map"
-                className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 hover:bg-card transition-colors border border-border shadow-sm"
+                className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 hover:bg-white transition-colors border border-black/5 shadow-sm text-foreground/80"
               >
                 Full journey <ChevronRight className="w-3 h-3" />
               </Link>
@@ -197,8 +192,9 @@ const Home = () => {
               {nextDestination && (
                 <div className="mb-4 inline-flex items-center gap-2 text-xs font-medium text-muted-foreground/80 bg-muted/50 px-2 py-1 rounded-md w-fit">
                   <ArrowRight className="w-3 h-3" />
-                  Next: <span className="text-foreground">{nextDestination.name}</span>
-                  <span className="opacity-50">({format(new Date(nextDestination.arrival_date), "MMM d")})</span>
+                  <span>
+                    Next: <span className="text-foreground">{nextDestination.name}</span> <span className="opacity-50">({format(new Date(nextDestination.arrival_date), "d MMM")})</span>
+                  </span>
                 </div>
               )}
 
@@ -264,99 +260,91 @@ const Home = () => {
             </Link>
           </div>
 
-          {/* Grid of moments - Portrait.so inspired "airy" grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
+          {/* Grid of moments - Masonry Layout */}
+          <MasonryGrid>
             {recentMoments?.map((moment, index) => {
               const isMomentVideo = moment.mime_type?.startsWith("video/");
               const thumbnailUrl = resolveMediaUrl(moment.thumbnail_path);
               const mediaUrl = resolveMediaUrl(moment.storage_path);
-
-              // Simple "bento" logic: Every 7th item spans 2 columns (index 0, 7, 14...)
-              // This breaks uniformity and adds that "dynamic" feel
-              const isLarge = index === 0 || index % 7 === 0;
 
               if (!mediaUrl) return null;
 
               return (
                 <div
                   key={moment.id}
-                  className={`
-                    relative group cursor-pointer overflow-hidden bg-muted
-                    rounded-3xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 ease-out
-                    ${isLarge ? 'md:col-span-2 md:row-span-2 aspect-square md:aspect-auto' : 'aspect-square'}
-                  `}
+                  className="masonry-item w-1/2 md:w-1/3 lg:w-1/4 p-3"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  {thumbnailUrl ? (
-                    <img
-                      src={thumbnailUrl}
-                      alt={moment.caption || ""}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  ) : isMomentVideo ? (
-                    <VideoThumbnail
-                      src={mediaUrl}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <img
-                      src={mediaUrl}
-                      alt={moment.caption || ""}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  )}
-
-                  {/* Video indicator - Minimalist Top Right */}
-                  {isMomentVideo && (
-                    <div className="absolute top-3 right-3 flex items-center justify-center pointer-events-none z-20">
-                      <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-white/10">
-                        <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Overlay - Portrait style: Clean, bottom-aligned, gradient only at very bottom */}
-                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">
-
-                    {/* Caption (if any) */}
-                    {moment.caption && (
-                      <p className="text-white font-medium line-clamp-2 mb-1.5 drop-shadow-md text-sm leading-snug">{moment.caption}</p>
+                  <div className="relative group cursor-pointer overflow-hidden bg-muted rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out">
+                    {thumbnailUrl ? (
+                      <img
+                        src={thumbnailUrl}
+                        alt={moment.caption || ""}
+                        className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    ) : isMomentVideo ? (
+                      <VideoThumbnail
+                        src={mediaUrl}
+                        className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    ) : (
+                      <img
+                        src={mediaUrl}
+                        alt={moment.caption || ""}
+                        className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
                     )}
 
-                    {/* Meta Pill */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-[10px] text-white font-medium">
-                        <Calendar className="w-3 h-3" />
-                        {moment.taken_at ? format(new Date(moment.taken_at), "MMM d") : ""}
-                      </div>
-
-                      {moment.location_name && (
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-[10px] text-white font-medium truncate max-w-[120px]">
-                          <MapPin className="w-3 h-3" />
-                          <span className="truncate">{moment.location_name}</span>
+                    {/* Video indicator - Minimalist Top Right */}
+                    {isMomentVideo && (
+                      <div className="absolute top-3 right-3 flex items-center justify-center pointer-events-none z-20">
+                        <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-white/10">
+                          <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
                         </div>
+                      </div>
+                    )}
+
+                    {/* Overlay - Portrait style: Clean, bottom-aligned, gradient only at very bottom */}
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">
+                      {/* Caption (if any) */}
+                      {moment.caption && (
+                        <p className="text-white text-xs font-medium line-clamp-2 mb-1 drop-shadow-md">
+                          {moment.caption}
+                        </p>
                       )}
+
+                      {/* Meta Info (Date/Loc) */}
+                      <div className="flex items-center gap-2 text-[10px] text-white/80 font-medium">
+                        <span className="backdrop-blur-sm bg-black/20 px-1.5 py-0.5 rounded-full">
+                          {format(new Date(moment.taken_at || moment.created_at), "d MMM")}
+                        </span>
+                        {(moment.location_name || (moment.latitude && moment.longitude)) && (
+                          <span className="flex items-center gap-0.5 backdrop-blur-sm bg-black/20 px-1.5 py-0.5 rounded-full max-w-[120px] truncate">
+                            <MapPin className="w-2.5 h-2.5" />
+                            <span className="truncate">{moment.location_name || "Location"}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })}
-
-            {/* Skeleton loaders */}
-            {(!recentMoments || recentMoments.length === 0) &&
-              Array(8)
+          </MasonryGrid>
+          {/* Skeleton loaders */}
+          {(!recentMoments || recentMoments.length === 0) && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array(8)
                 .fill(0)
                 .map((_, i) => (
                   <Skeleton key={i} className="aspect-square rounded-xl bg-secondary" />
                 ))}
-          </div>
+            </div>
+          )}
         </div>
       </main>
-
-
     </div>
   );
 };

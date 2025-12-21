@@ -88,31 +88,7 @@ export const PhotoManager = () => {
 
   // --- Actions ---
 
-  const handleSetHero = async (momentId: string, isCurrentHero: boolean) => {
-    if (isCurrentHero) return;
 
-    setProcessingId(momentId);
-    try {
-      await supabase.from("moments").update({ is_hero: false }).neq("id", "00000000-0000-0000-0000-000000000000");
-      const { error } = await supabase.from("moments").update({ is_hero: true }).eq("id", momentId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Hero Updated",
-        description: "This item is now the main background for your homepage.",
-      });
-      refetch();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  };
 
   const handleDelete = async (momentId: string, storagePath: string | null) => {
     if (!confirm("Are you sure you want to delete this moment?")) return;
@@ -224,8 +200,7 @@ export const PhotoManager = () => {
                 return (
                   <Card
                     key={moment.id}
-                    className={`group flex flex-col overflow-hidden transition-all duration-300 ${moment.is_hero ? "ring-2 ring-primary shadow-lg scale-[1.01]" : "hover:shadow-md"
-                      }`}
+                    className={`group flex flex-col overflow-hidden transition-all duration-300 hover:shadow-md`}
                   >
                     {/* Media Thumbnail */}
                     <div className="aspect-[4/3] bg-muted relative overflow-hidden">
@@ -267,11 +242,7 @@ export const PhotoManager = () => {
 
                       {/* Status Badges */}
                       <div className="absolute top-2 left-2 flex flex-col gap-1.5 pointer-events-none">
-                        {moment.is_hero && (
-                          <Badge className="bg-primary/90 hover:bg-primary shadow-sm text-[10px] h-5 px-1.5 gap-1 animate-in fade-in zoom-in">
-                            <Star className="w-3 h-3 fill-current" /> Hero
-                          </Badge>
-                        )}
+
                         {moment.status === "draft" && (
                           <Badge variant="outline" className="bg-background/80 text-[10px] h-5 px-1.5">
                             Draft
@@ -311,17 +282,7 @@ export const PhotoManager = () => {
 
                       {/* Action Buttons */}
                       <div className="grid grid-cols-3 gap-2 mt-auto pt-2 border-t border-border/50">
-                        <Button
-                          variant={moment.is_hero ? "secondary" : "outline"}
-                          size="sm"
-                          className={`h-8 px-0 text-xs ${moment.is_hero ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200" : ""}`}
-                          onClick={() => handleSetHero(moment.id, moment.is_hero || false)}
-                          disabled={isProcessing || isAudio || isText}
-                          title={moment.is_hero ? "Unset Hero" : "Set as Hero"}
-                        >
-                          <Star className={`w-3.5 h-3.5 ${moment.is_hero ? "fill-current" : "mr-1"}`} />
-                          {!moment.is_hero && "Hero"}
-                        </Button>
+
 
                         <Button
                           variant="ghost"
@@ -425,11 +386,7 @@ export const PhotoManager = () => {
                     {editingMoment.file_size ? `${(editingMoment.file_size / 1024 / 1024).toFixed(2)} MB • ` : ""}
                     {editingMoment.media_type || "photo"}
                   </p>
-                  {editingMoment.is_hero && (
-                    <div className="flex items-center gap-1 text-[10px] text-yellow-600 font-medium mt-1.5">
-                      <Star className="w-3 h-3 fill-current" /> Currently Hero Image
-                    </div>
-                  )}
+
                 </div>
               </div>
 

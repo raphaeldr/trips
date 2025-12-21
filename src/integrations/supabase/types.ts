@@ -151,6 +151,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           width?: number | null
+          location_name?: string | null
         }
         Update: {
           ai_caption?: string | null
@@ -178,6 +179,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           width?: number | null
+          location_name?: string | null
         }
         Relationships: [
           {
