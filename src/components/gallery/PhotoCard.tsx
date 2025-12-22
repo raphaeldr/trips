@@ -56,7 +56,12 @@ export const PhotoCard = ({
   const thumbnailUrl = thumbnailPath ? resolveMediaUrl(thumbnailPath) : null;
 
   // Use thumbnail if available, otherwise use publicUrl (for photos) or VideoThumbnail (for videos without thumb)
-  const displayUrl = thumbnailUrl || (!isVideo ? publicUrl : null);
+  // OPTIMIZATION: If falling back to publicUrl for a photo, request a resized version (600px width)
+  const displayUrl = thumbnailUrl
+    ? thumbnailUrl
+    : (!isVideo
+      ? resolveMediaUrl(storagePath, { width: 600 })
+      : null);
 
   const handleClick = (e: React.MouseEvent) => {
     // If clicking admin buttons, don't trigger lightbox
@@ -95,27 +100,35 @@ export const PhotoCard = ({
         </div>
       )}
 
-      {/* Overlay - Portrait style: Clean, bottom-aligned, gradient only at very bottom */}
-      <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">
-        {/* Caption (if any) */}
-        {(destinationName || title || description) && (
-          <p className="text-white text-xs font-medium line-clamp-2 mb-1 drop-shadow-md">
-            {destinationName || title || description}
-          </p>
-        )}
+      {/* Overlay - Portrait style: Soft gradient, airy feel */}
+      <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end">
+        {/* Animated Content Container */}
+        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">
+          {/* Caption (if any) */}
+          {/* Meta Info (Location · Date) - Editorial Style */}
+          <div className="flex items-center text-xs font-light text-white/90 mb-1.5">
+            {(destinationName || (latitude && longitude)) && (
+              <span className="truncate max-w-[150px]">
+                {destinationName || "Location"}
+              </span>
+            )}
 
-        {/* Meta Info (Date/Loc) */}
-        <div className="flex items-center gap-2 text-[10px] text-white/80 font-medium">
-          {takenAt && (
-            <span className="backdrop-blur-sm bg-black/20 px-1.5 py-0.5 rounded-full">
-              {format(new Date(takenAt), "d MMM")}
-            </span>
-          )}
-          {(latitude && longitude) && (
-            <span className="flex items-center gap-0.5 backdrop-blur-sm bg-black/20 px-1.5 py-0.5 rounded-full max-w-[120px] truncate">
-              <MapPin className="w-2.5 h-2.5" />
-              <span className="truncate">Location</span>
-            </span>
+            {takenAt && (destinationName || (latitude && longitude)) && (
+              <span className="mx-1.5 opacity-60">·</span>
+            )}
+
+            {takenAt && (
+              <span>
+                {format(new Date(takenAt), "d MMMM")}
+              </span>
+            )}
+          </div>
+
+          {/* Caption (if any) - Only show explicit Title or Description */}
+          {(title || description) && (
+            <p className="text-white font-medium text-sm leading-snug line-clamp-2 drop-shadow-md">
+              {title || description}
+            </p>
           )}
         </div>
       </div>
