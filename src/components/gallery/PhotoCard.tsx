@@ -60,7 +60,7 @@ export const PhotoCard = ({
   const displayUrl = thumbnailUrl
     ? thumbnailUrl
     : (!isVideo
-      ? resolveMediaUrl(storagePath, { width: 600 })
+      ? resolveMediaUrl(storagePath, { width: 400 })
       : null);
 
   const handleClick = (e: React.MouseEvent) => {

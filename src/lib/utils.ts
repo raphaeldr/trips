@@ -19,6 +19,7 @@ interface ResolveOptions {
   width?: number;
   height?: number;
   resize?: 'cover' | 'contain' | 'fill';
+  quality?: number;
 }
 
 export function resolveMediaUrl(path: string | null | undefined, options?: ResolveOptions): string | null {
@@ -41,6 +42,7 @@ export function resolveMediaUrl(path: string | null | undefined, options?: Resol
         width: options.width,
         height: options.height,
         resize: options.resize || 'contain', // contain ensures aspect ratio is preserved
+        quality: options.quality,
       },
     }).data.publicUrl;
   }

@@ -51,7 +51,7 @@ export function Lightbox({ isOpen, onClose, moments, initialIndex }: LightboxPro
     if (!currentMoment) return null;
 
     const isVideo = currentMoment.mime_type?.startsWith("video/") || currentMoment.media_type === "video";
-    const publicUrl = resolveMediaUrl(currentMoment.storage_path);
+    const publicUrl = resolveMediaUrl(currentMoment.storage_path, { width: 800, quality: 80 });
 
     return (
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>

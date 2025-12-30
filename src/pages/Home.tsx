@@ -234,7 +234,7 @@ const Home = () => {
                   <div className="group relative aspect-video md:aspect-[4/3] overflow-hidden rounded-xl bg-muted cursor-pointer">
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors z-10" />
                     {story.cover_image_path ? (
-                      <img src={resolveMediaUrl(story.cover_image_path)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={story.title} />
+                      <img src={resolveMediaUrl(story.cover_image_path, { width: 300, quality: 70 })} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={story.title} />
                     ) : (
                       <div className="w-full h-full bg-secondary flex items-center justify-center text-muted-foreground">
                         <Calendar className="w-8 h-8" />
