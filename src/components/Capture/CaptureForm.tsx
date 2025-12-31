@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowLeft, Send, MapPin } from "lucide-react";
+import { Loader2, ArrowLeft, Send, MapPin, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
     // Location State
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [locationName, setLocationName] = useState("");
+    const [countryName, setCountryName] = useState("");
     const [isLocating, setIsLocating] = useState(false);
     const [locationSource, setLocationSource] = useState<'exif' | 'device' | 'manual' | null>(null);
 
@@ -37,21 +38,16 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
     const fetchLocationName = async (lat: number, lng: number) => {
         try {
             const res = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,country&access_token=${MAPBOX_TOKEN}`
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,locality,country&access_token=${MAPBOX_TOKEN}`
             );
             const data = await res.json();
             if (data.features && data.features.length > 0) {
                 // Find place and country
-                const place = data.features.find((f: any) => f.place_type.includes('place'))?.text;
-                const country = data.features.find((f: any) => f.place_type.includes('country'))?.text;
+                const placeFeature = data.features.find((f: any) => f.place_type.includes('place') || f.place_type.includes('locality'));
+                const countryFeature = data.features.find((f: any) => f.place_type.includes('country'));
 
-                let formatted = "";
-                if (place && country) formatted = `${place}, ${country}`;
-                else if (place) formatted = place;
-                else if (country) formatted = country;
-                else formatted = data.features[0].text; // Fallback
-
-                setLocationName(formatted);
+                setLocationName(placeFeature?.text || data.features[0].text);
+                setCountryName(countryFeature?.text || "");
             }
         } catch (e) {
             console.error("Reverse geocoding failed", e);
@@ -234,7 +230,8 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                     taken_at: now.toISOString(),
                     latitude: location?.lat || null,
                     longitude: location?.lng || null,
-                    location_name: locationName || null, // Saving the location string
+                    location_name: locationName || null,
+                    country: countryName || null,
                     destination_id: destinationId,
                     status: 'draft',
                     width: width,
@@ -281,7 +278,7 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                 </div>
             </div>
 
-            <div className="flex-1 space-y-4 overflow-y-auto pb-4">
+            <div className="flex-1 space-y-4 overflow-y-auto pb-32">
                 {/* Media Preview or Text Input */}
                 <div className="bg-muted rounded-xl overflow-hidden min-h-[200px] flex items-center justify-center relative shrink-0">
                     {type === "text" ? (
@@ -294,14 +291,21 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                         />
                     ) : previewUrl ? (
                         type === "video" ? (
-                            <video src={previewUrl} className="w-full h-full object-cover max-h-[400px]" controls />
+                            <video src={previewUrl} className="w-full h-full object-cover max-h-[400px]" controls playsInline />
+                        ) : type === "audio" ? (
+                            <div className="w-full p-8 flex flex-col items-center justify-center gap-4 bg-secondary">
+                                <div className="p-4 rounded-full bg-primary/10 text-primary">
+                                    <Mic className="w-8 h-8" />
+                                </div>
+                                <audio src={previewUrl} className="w-full" controls />
+                            </div>
                         ) : (
                             <img src={previewUrl} alt="Preview" className="w-full h-full object-cover max-h-[400px]" />
                         )
                     ) : (
                         <div className="text-muted-foreground flex flex-col items-center gap-2">
                             <Loader2 className="w-8 h-8 animate-spin" />
-                            <span className="text-xs">Waiting for camera...</span>
+                            <span className="text-xs">Waiting for {type}...</span>
                         </div>
                     )}
                 </div>
@@ -310,13 +314,13 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                 {type !== "text" && (
                     <div className="space-y-4">
                         <Input
-                            placeholder="Add a caption (optional)..."
+                            placeholder="Add a description (optional)..."
                             value={caption}
                             onChange={(e) => setCaption(e.target.value)}
                             className="bg-muted/50 border-input"
                         />
 
-                        {/* Location Field - Prepopulated & Editable */}
+                        {/* Location Fields - Place & Country */}
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -325,15 +329,26 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                                 </label>
                                 {isLocating && <span className="text-[10px] text-muted-foreground animate-pulse">Locating...</span>}
                             </div>
-                            <Input
-                                placeholder="City, Country"
-                                value={locationName}
-                                onChange={(e) => {
-                                    setLocationName(e.target.value);
-                                    setLocationSource('manual');
-                                }}
-                                className={`bg-muted/50 border-input transition-colors ${locationSource === 'exif' ? "border-green-500/50 bg-green-50/10" : ""}`}
-                            />
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                    placeholder="Place / City"
+                                    value={locationName}
+                                    onChange={(e) => {
+                                        setLocationName(e.target.value);
+                                        setLocationSource('manual');
+                                    }}
+                                    className={`bg-muted/50 border-input transition-colors ${locationSource === 'exif' ? "border-green-500/50 bg-green-50/10" : ""}`}
+                                />
+                                <Input
+                                    placeholder="Country"
+                                    value={countryName}
+                                    onChange={(e) => {
+                                        setCountryName(e.target.value);
+                                        setLocationSource('manual');
+                                    }}
+                                    className={`bg-muted/50 border-input transition-colors ${locationSource === 'exif' ? "border-green-500/50 bg-green-50/10" : ""}`}
+                                />
+                            </div>
                             {locationSource && (
                                 <p className="text-[10px] text-muted-foreground px-1">
                                     {locationSource === 'exif' ? "📍 Location detected from photo" : locationSource === 'device' ? "📍 Location detected from device" : "✏️ Custom location"}
@@ -366,7 +381,7 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                 )}
             </div>
 
-            <div className="mt-4 shrink-0">
+            <div className="mt-4 shrink-0 pb-6">
                 <Button className="w-full h-12 text-base font-semibold" onClick={handleSubmit} disabled={isUploading || (type === "text" && !caption)}>
                     {isUploading ? (
                         <>
@@ -385,7 +400,7 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                 <input
                     type="file"
                     accept={type === 'photo' ? "image/*" : type === "video" ? "video/*" : "audio/*"}
-                    capture="environment"
+                    // capture="environment" // REMOVED to allow file selection
                     className="hidden"
                     ref={fileInputRef}
                     onChange={handleFileChange}

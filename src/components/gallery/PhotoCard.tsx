@@ -74,30 +74,57 @@ export const PhotoCard = ({
       className={`relative group cursor-pointer overflow-hidden bg-muted rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out ${className || ""}`}
       onClick={handleClick}
     >
-      {!displayUrl && isVideo ? (
-        <VideoThumbnail src={publicUrl} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110" />
-      ) : (
-        <img
-          src={imageError ? "/placeholder.svg" : (displayUrl || publicUrl)}
-          alt={title || "Travel photo"}
-          className={`w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110 ${imageLoaded || imageError ? "opacity-100" : "opacity-0"
-            } ${imageError ? "opacity-50 p-8 grayscale" : ""}`}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => {
-            setImageLoaded(true);
-            setImageError(true);
-          }}
-          loading="lazy"
-        />
+      {/* Content Rendering Logic */}
+      {status === 'draft' && (
+        <div className="absolute top-2 right-2 z-30 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-[10px] font-bold uppercase tracking-wider rounded-sm shadow-sm pointer-events-none">
+          Draft
+        </div>
       )}
 
-      {/* Video indicator - Minimalist Top Right */}
-      {isVideo && (
-        <div className="absolute top-3 right-3 flex items-center justify-center pointer-events-none z-20">
-          <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-white/10">
-            <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
-          </div>
+      {(mimeType === 'text/plain' || mimeType === 'text') ? (
+        // --- TEXT CARD ---
+        <div className="w-full aspect-[4/5] bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center p-6 text-center">
+          <p className="font-display font-medium text-xl text-primary/80 line-clamp-6 leading-relaxed">
+            "{title || description}"
+          </p>
         </div>
+      ) : (mimeType?.includes('audio') || mimeType === 'audio') ? (
+        // --- AUDIO CARD ---
+        <div className="w-full aspect-[4/5] bg-gradient-to-br from-indigo-50 to-indigo-100 flex flex-col items-center justify-center p-6 text-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></svg>
+          </div>
+          <span className="text-indigo-900/60 text-sm font-medium">Voice Note</span>
+        </div>
+      ) : (
+        // --- PHOTO / VIDEO CARD ---
+        <>
+          {!displayUrl && isVideo ? (
+            <VideoThumbnail src={publicUrl} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110" />
+          ) : (
+            <img
+              src={imageError ? "/placeholder.svg" : (displayUrl || publicUrl)}
+              alt={title || "Travel photo"}
+              className={`w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110 ${imageLoaded || imageError ? "opacity-100" : "opacity-0"
+                } ${imageError ? "opacity-50 p-8 grayscale" : ""}`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageLoaded(true);
+                setImageError(true);
+              }}
+              loading="lazy"
+            />
+          )}
+
+          {/* Video indicator */}
+          {isVideo && (
+            <div className="absolute top-3 right-3 flex items-center justify-center pointer-events-none z-20">
+              <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-white/10">
+                <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Overlay - Portrait style: Soft gradient, airy feel */}

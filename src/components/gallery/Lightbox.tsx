@@ -50,8 +50,15 @@ export function Lightbox({ isOpen, onClose, moments, initialIndex }: LightboxPro
 
     if (!currentMoment) return null;
 
-    const isVideo = currentMoment.mime_type?.startsWith("video/") || currentMoment.media_type === "video";
-    const publicUrl = resolveMediaUrl(currentMoment.storage_path, { width: 800, quality: 80 });
+    const isVideo = currentMoment.mime_type?.startsWith("video/") ||
+        currentMoment.mime_type === "video/quicktime" ||
+        currentMoment.media_type === "video" ||
+        currentMoment.storage_path?.toLowerCase().endsWith('.mov') ||
+        currentMoment.storage_path?.toLowerCase().endsWith('.mp4');
+
+    const publicUrl = isVideo
+        ? resolveMediaUrl(currentMoment.storage_path)
+        : resolveMediaUrl(currentMoment.storage_path, { width: 800, quality: 80 });
 
     return (
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -102,6 +109,7 @@ export function Lightbox({ isOpen, onClose, moments, initialIndex }: LightboxPro
                                     src={publicUrl}
                                     controls
                                     autoPlay
+                                    playsInline
                                     className="max-h-[75vh] max-w-full object-contain rounded-xl shadow-xl bg-black/5"
                                 />
                             ) : (

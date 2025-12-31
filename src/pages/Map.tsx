@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MapPin, Calendar, ArrowRight } from "lucide-react";
@@ -270,6 +271,7 @@ const Map = () => {
     }), "top-right");
 
     // Interactivity
+    // Interactivity - Destinations
     map.on("click", "destinations-points", e => {
       if (!e.features?.length) return;
       const id = e.features[0].properties?.id;
@@ -281,6 +283,20 @@ const Map = () => {
     map.on("mouseleave", "destinations-points", () => {
       map.getCanvas().style.cursor = "";
     });
+
+    // Interactivity - Visited Places
+    map.on("click", "emergent-dots", e => {
+      if (!e.features?.length) return;
+      const id = e.features[0].properties?.id;
+      handleSelectPlace(id);
+    });
+    map.on("mouseenter", "emergent-dots", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "emergent-dots", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
     return () => {
       resizeObserver.disconnect();
       map.remove();
@@ -288,7 +304,6 @@ const Map = () => {
     };
   }, [destinations, visitedPlaces]);
 
-  // Handle sidebar selection -> map interaction
   // Handle sidebar selection -> map interaction
   const handleSelectDestination = (id: string) => {
     setSelectedDestId(id);
@@ -300,6 +315,7 @@ const Map = () => {
         zoom: 6,
         essential: true
       });
+      // On mobile, maybe scroll to item?
     }
   };
 
@@ -310,7 +326,7 @@ const Map = () => {
     if (place && mapRef.current) {
       mapRef.current.flyTo({
         center: [place.longitude, place.latitude],
-        zoom: 10,
+        zoom: 11, // Zoomed in closer for visited places
         essential: true
       });
     }
@@ -332,7 +348,7 @@ const Map = () => {
     {/* Main Content Area - constrained to viewport height minus nav */}
     <div className="flex-1 flex flex-col md:flex-row relative overflow-hidden pt-16 h-full">
       {/* Sidebar: Fixed width, constrained height with internal scroll */}
-      <div className="w-full md:w-96 bg-background/95 backdrop-blur shadow-xl z-20 flex flex-col border-r border-border h-[40vh] md:h-full order-2 md:order-1 flex-shrink-0">
+      <div className="w-full md:w-96 bg-background/95 backdrop-blur shadow-xl z-20 flex flex-col border-r border-border flex-1 md:flex-none md:h-full order-2 md:order-1 min-h-0">
         <div className="p-6 border-b border-border">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground">Our journey</h1>
           <p className="text-muted-foreground text-sm">
@@ -392,13 +408,15 @@ const Map = () => {
                       />
 
                       <div
-                        className={`text-sm cursor-pointer transition-colors flex items-center gap-2 ${selectedPlaceId === place.id ? "text-orange-600 font-medium translate-x-1" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`text-sm cursor-pointer transition-colors flex flex-col items-start gap-1 ${selectedPlaceId === place.id ? "text-orange-600 font-medium translate-x-1" : "text-muted-foreground hover:text-foreground"}`}
                         onClick={() => handleSelectPlace(place.id)}
                       >
                         <span className="truncate">{place.name}</span>
-                        {/* Optional date for context if needed, maybe too cluttered
-                       <span className="text-[10px] opacity-50">{safeFormat(place.first_visited_at, "MMM d")}</span>
-                       */}
+                        {selectedPlaceId === place.id && (
+                          <Link to="/gallery" className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                            View Moments <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        )}
                       </div>
                     </div>
                   );
@@ -410,7 +428,7 @@ const Map = () => {
       </div>
 
       {/* Map Container: Takes remaining space */}
-      <div className="flex-1 relative h-[60vh] md:h-full order-1 md:order-2 min-h-0">
+      <div className="h-[35vh] md:h-full w-full md:flex-1 relative order-1 md:order-2 shrink-0">
         <div ref={mapContainer} className="absolute inset-0 w-full h-full bg-muted" />
 
         {/* Overlay info for mobile map view */}
