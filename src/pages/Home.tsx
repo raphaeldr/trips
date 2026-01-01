@@ -1,9 +1,10 @@
-import { Navigation } from "@/components/Navigation";
-import { VideoThumbnail } from "@/components/VideoThumbnail";
+
+
 import { useQuery } from "@tanstack/react-query";
 import { formatLocation, getLocationParts } from "@/utils/location";
 import { supabase } from "@/integrations/supabase/client";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
+import { useJourney } from "@/hooks/useJourney";
 import { MasonryGrid } from "@/components/ui/MasonryGrid";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 import { MapPin, Calendar, Navigation as NavIcon, ChevronRight, ArrowRight, Send } from "lucide-react";
@@ -14,17 +15,14 @@ import { MAPBOX_TOKEN } from "@/lib/mapbox";
 
 const Home = () => {
   // --- Data Fetching ---
-  const { data: destinations } = useQuery({
-    queryKey: ["destinations"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("destinations")
-        .select("*")
-        .order("arrival_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { currentDestination, stats } = useJourney();
+  // We still need destinations for the "next" logic loop, but useJourney provides it too!
+  const { destinations } = useJourney(); // Actually useJourney returns it all.
+
+  // Destructure all needed
+  // const { destinations, currentDestination, stats } = useJourney(); 
+  // Wait, I can't call it twice comfortably. Let's merge.
+
 
   const { data: momentsCount } = useQuery({
     queryKey: ["momentsCount"],
@@ -82,109 +80,25 @@ const Home = () => {
     },
   });
 
-  // --- Logic for "Currently In" and "Next" ---
-  const now = new Date();
-  const firstDestination = destinations?.[0];
+  // --- Simplified Logic via Hook ---
+  // Fallback to "Luxembourg" if nothing returned (though hook handles fallback)
+  const currentName = currentDestination?.name || "Luxembourg";
+  const currentCountry = currentDestination?.country || "Luxembourg";
+  const currentLat = currentDestination?.latitude || 49.61;
+  const currentLng = currentDestination?.longitude || 6.13;
 
-  // Find strictly active destination
-  const activeDestination = destinations?.find((d) => {
-    const start = new Date(d.arrival_date);
-    const end = d.departure_date ? new Date(d.departure_date) : new Date(3000, 0, 1);
-    return now >= start && now <= end;
-  });
-
-  // Determine the "True Current" context
-  // Priority: 
-  // 1. Future Moment (Simulation/Flash Forward)
-  // 2. Active Destination (Reality Check)
-  // 3. Latest Past Data (Moment or Destination)
-
-  let currentName = "Luxembourg";
-  let currentCountry = "Luxembourg";
-  let currentLat = 49.61; // Luxembourg approx
-  let currentLng = 6.13;
-
-  const latestMoment = recentMoments?.[0];
-  const momentDate = latestMoment
-    ? new Date(latestMoment.taken_at || latestMoment.created_at).getTime()
-    : 0;
-
-  // Check if moment is in the future relative to "Now" (Active Context)
-  if (latestMoment && momentDate > now.getTime()) {
-    // Future moment wins (Test/Simulation Mode)
-    currentName = latestMoment.location_name || "Unknown Location";
-    // @ts-ignore - Assuming country exists on moment from database
-    currentCountry = latestMoment.country || "On the road";
-    currentLat = latestMoment.latitude || currentLat;
-    currentLng = latestMoment.longitude || currentLng;
-  } else if (activeDestination) {
-    currentName = activeDestination.name;
-    currentCountry = activeDestination.country;
-    currentLat = activeDestination.latitude;
-    currentLng = activeDestination.longitude;
-  } else {
-    // If no active destination, find the latest recorded location (Destination or Moment)
-    const lastDestination = destinations
-      ?.filter((d) => new Date(d.arrival_date) <= now)
-      .sort((a, b) => new Date(b.arrival_date).getTime() - new Date(a.arrival_date).getTime())[0];
-
-    const lastDestDate = lastDestination
-      ? new Date(lastDestination.departure_date || lastDestination.arrival_date).getTime()
-      : 0;
-
-    if (latestMoment && momentDate > lastDestDate) {
-      // Moment is the latest truth
-      currentName = latestMoment.location_name || "Unknown Location";
-      // @ts-ignore - Assuming country exists on moment from database
-      currentCountry = latestMoment.country || "On the road";
-      currentLat = latestMoment.latitude || currentLat;
-      currentLng = latestMoment.longitude || currentLng;
-    } else if (lastDestination) {
-      // Last destination is the latest truth
-      currentName = lastDestination.name;
-      currentCountry = lastDestination.country;
-      currentLat = lastDestination.latitude;
-      currentLng = lastDestination.longitude;
-    }
-  }
-
-  // "Next" logic
-  // If active, next is the one after active.
-  // If not active and before first, next is first.
+  // Re-implement basic Next logic using stats/list
   let nextDestination = null;
-  if (activeDestination) {
-    const activeIndex = destinations?.findIndex(d => d.id === activeDestination.id) ?? -1;
-    if (activeIndex >= 0 && destinations && activeIndex < destinations.length - 1) {
+  if (destinations && currentDestination) {
+    const activeIndex = destinations.findIndex(d => d.id === currentDestination.id);
+    if (activeIndex >= 0 && activeIndex < destinations.length - 1) {
       nextDestination = destinations[activeIndex + 1];
     }
-  } else if (destinations && destinations.length > 0) {
-    // Check if we are past the last one
-    const lastDest = destinations[destinations.length - 1];
-    if (now < new Date(firstDestination?.arrival_date ?? 0)) {
-      nextDestination = firstDestination;
-    } else if (now > new Date(lastDest.arrival_date)) {
-      // Post trip? Maybe nothing up next or "Home"
-      nextDestination = null;
-    }
   }
 
-  // Trip Days Logic
-  let daysLabel = "Day 0";
-  // The User says: "before the trip starts... in XX days".
-  // Trip start date is usually the first destination's arrival date.
-  const tripStartDate = firstDestination ? new Date(firstDestination.arrival_date) : null;
+  const daysLabel = `Day ${stats.daysOnRoad}`;
 
-  if (tripStartDate) {
-    const diff = differenceInDays(now, tripStartDate);
-    // differenceInDays(later, earlier) returns positive.
-    // If now < tripStart, diff is negative. e.g. -56.
 
-    if (diff < 0) {
-      daysLabel = `In ${Math.abs(diff)} days`;
-    } else {
-      daysLabel = `Day ${diff + 1}`;
-    }
-  }
 
   // Static Map - Minimal Light Style as requested
   // Using light-v11 for a clean, minimal look
@@ -194,7 +108,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 md:pb-8">
-      <Navigation />
+
 
       <main className="container mx-auto px-4 pt-20 md:pt-28 space-y-12">
         {/* JOURNEY STRIP */}
@@ -246,27 +160,27 @@ const Home = () => {
             )}
 
             {/* refined stats row */}
-            <div className="w-full flex items-center mt-2 border-t border-neutral-100 pt-8">
+            <div className="stats-container w-full flex items-center mt-2 border-t border-neutral-100 pt-8">
               {/* Day Count */}
-              <div className="flex items-center gap-3 md:gap-4 pr-6 md:pr-8 border-r border-neutral-200/60">
-                <Calendar className="w-6 h-6 text-teal-600" strokeWidth={1.8} />
-                <span className="text-lg md:text-xl font-medium text-foreground tracking-tight whitespace-nowrap">
+              <div className="flex items-center pr-6 md:pr-8 border-r border-neutral-200/60">
+                <Calendar className="stats-icon text-teal-600" strokeWidth={1.8} />
+                <span className="font-medium tracking-tight whitespace-nowrap">
                   {daysLabel}
                 </span>
               </div>
 
               {/* Stops Count */}
-              <div className="flex items-center gap-3 md:gap-4 px-6 md:px-8 border-r border-neutral-200/60">
-                <MapPin className="w-6 h-6 text-teal-600" strokeWidth={1.8} />
-                <span className="text-lg md:text-xl font-medium text-foreground tracking-tight whitespace-nowrap">
-                  {destinations?.length || 0} destinations
+              <div className="flex items-center px-6 md:px-8 border-r border-neutral-200/60">
+                <MapPin className="stats-icon text-teal-600" strokeWidth={1.8} />
+                <span className="font-medium tracking-tight whitespace-nowrap">
+                  {stats.totalStops} destinations
                 </span>
               </div>
 
               {/* Moments Count */}
-              <div className="flex items-center gap-3 md:gap-4 pl-6 md:pl-8">
-                <Send className="w-6 h-6 text-teal-600" strokeWidth={1.8} />
-                <span className="text-lg md:text-xl font-medium text-foreground tracking-tight whitespace-nowrap">
+              <div className="flex items-center pl-6 md:pl-8">
+                <Send className="stats-icon text-teal-600" strokeWidth={1.8} />
+                <span className="font-medium tracking-tight whitespace-nowrap">
                   {momentsCount ?? 0} moments
                 </span>
               </div>

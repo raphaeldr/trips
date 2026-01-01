@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Loading } from "@/components/ui/Loading";
 import { CaptureButton } from "@/components/Capture/CaptureButton";
+import { MainLayout } from "@/layouts/MainLayout";
 
 // Lazy load pages for performance
 const Home = lazy(() => import("./pages/Home"));
@@ -26,11 +27,16 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={<Loading />}>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/gallery" element={<Gallery />} />
+            {/* Public Routes wrapped in Layout */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/map" element={<Map />} />
+              <Route path="/gallery" element={<Gallery />} />
+              <Route path="/story/:id" element={<StoryViewer />} />
+            </Route>
+
+            {/* Standalone Routes */}
             <Route path="/auth" element={<Auth />} />
-            <Route path="/story/:id" element={<StoryViewer />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

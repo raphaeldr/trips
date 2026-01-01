@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { formatLocation, getLocationParts } from "@/utils/location";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Navigation } from "@/components/Navigation";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,9 +12,9 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MapPin, Calendar, ArrowRight } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import { MAPBOX_TOKEN } from "@/lib/mapbox";
-import type { Destination } from "@/types";
+import { useJourney } from "@/hooks/useJourney";
 
 // Helper to adjust coordinates for routes that should cross the antimeridian (Pacific)
 const getAdjustedRouteCoordinates = (coords: [number, number][]): [number, number][] => {
@@ -67,23 +67,8 @@ const Map = () => {
   // Visited Place selection
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
-  // Fetch destinations
-  const {
-    data: destinations,
-    isLoading
-  } = useQuery({
-    queryKey: ["destinations"],
-    queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("destinations").select("*").order("arrival_date", {
-        ascending: true
-      });
-      if (error) throw error;
-      return data as Destination[];
-    }
-  });
+  // Fetch destinations via Hook
+  const { destinations, isLoading } = useJourney();
 
   // Fetch Visited Places (Dynamic from Moments)
   const { data: visitedPlaces, isLoading: isPlacesLoading } = useQuery({
@@ -167,11 +152,7 @@ const Map = () => {
 
   // Calculate total days
   // (existing code)
-  const totalDays = destinations && destinations.length > 0 ? (() => {
-    const start = new Date(destinations[0].arrival_date);
-    const end = destinations[destinations.length - 1].departure_date ? new Date(destinations[destinations.length - 1].departure_date!) : new Date(); // If no departure date, assume current date
-    return differenceInDays(end, start) + 1; // +1 to include the start day
-  })() : 0;
+
 
   const addMapLayers = (map: mapboxgl.Map) => {
     if (!destinations || !map) return;
@@ -445,7 +426,7 @@ const Map = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
-      <Navigation />
+
 
       {/* Main Container: Split Screen below header */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">

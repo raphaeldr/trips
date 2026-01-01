@@ -1,10 +1,10 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigation } from "@/components/Navigation";
+
 import { Loader2, ArrowLeft, Calendar, Share2 } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/utils";
-import { VideoThumbnail } from "@/components/VideoThumbnail";
+
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -92,7 +92,7 @@ const StoryViewer = () => {
 
     return (
         <div className="min-h-screen bg-background">
-            <Navigation />
+
 
             {/* HERO HEADER */}
             <div className="relative h-[60vh] md:h-[70vh] w-full overflow-hidden">

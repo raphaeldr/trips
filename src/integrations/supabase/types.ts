@@ -14,42 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      visited_places: {
-        Row: {
-          id: string
-          name: string
-          latitude: number
-          longitude: number
-          first_visited_at: string | null
-          last_visited_at: string | null
-          user_id: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name?: string
-          latitude: number
-          longitude: number
-          first_visited_at?: string | null
-          last_visited_at?: string | null
-          user_id: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          latitude?: number
-          longitude?: number
-          first_visited_at?: string | null
-          last_visited_at?: string | null
-          user_id?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       destinations: {
         Row: {
           arrival_date: string

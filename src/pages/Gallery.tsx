@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/Navigation";
+
 import { useMemo, useState, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -235,7 +235,7 @@ const Gallery = () => {
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] pb-20">
-      <Navigation />
+
 
       <main className="container mx-auto px-4 pt-24 md:pt-32">
         {isLoading ? (

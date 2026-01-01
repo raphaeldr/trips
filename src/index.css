@@ -10,8 +10,10 @@
 @layer base {
   :root {
     /* Sleek Light Theme */
-    --background: 210 20% 95%; /* Slightly warmer, subtly darker off-white */
-    --foreground: 222.2 84% 4.9%; /* Deep dark blue-gray for text */
+    --background: 210 20% 95%;
+    /* Slightly warmer, subtly darker off-white */
+    --foreground: 222.2 84% 4.9%;
+    /* Deep dark blue-gray for text */
 
     /* Pure white cards for crispness */
     --card: 0 0% 100%;
@@ -42,7 +44,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 173 58% 39%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
     --shadow-elegant: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
@@ -76,29 +78,53 @@
   * {
     @apply border-border;
   }
+
   html {
-    font-size: 18px; /* Increased from default 16px */
+    font-size: 18px;
+    /* Increased from default 16px */
   }
+
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary;
   }
+
   h1 {
     @apply text-4xl md:text-5xl;
   }
+
   h2 {
     @apply text-2xl md:text-3xl;
   }
+
   h3 {
     @apply text-xl md:text-2xl;
   }
-  p, span, a, li {
+
+  p,
+  span,
+  a,
+  li {
     @apply text-base;
+  }
+
+  h1,
+  h2,
+  p {
+    text-wrap: balance;
   }
 }
 
 @layer utilities {
   .font-display {
     font-family: "DM Sans", sans-serif;
+  }
+
+  .text-meta {
+    @apply font-sans text-[11px] font-bold uppercase tracking-widest text-muted-foreground;
+  }
+
+  .text-balance {
+    text-wrap: balance;
   }
 
   .glass-panel {
@@ -109,11 +135,26 @@
   .bento-scroll::-webkit-scrollbar {
     width: 6px;
   }
+
   .bento-scroll::-webkit-scrollbar-track {
     @apply bg-transparent;
   }
+
   .bento-scroll::-webkit-scrollbar-thumb {
     @apply bg-gray-200 rounded-full hover:bg-gray-300;
+  }
+
+  /* Stats Utilities */
+  .stats-container {
+    color: #666;
+    font-size: 0.875rem;
+  }
+
+  .stats-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    opacity: 0.8;
   }
 }
 
@@ -127,6 +168,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

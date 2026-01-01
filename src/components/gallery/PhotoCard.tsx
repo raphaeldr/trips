@@ -5,7 +5,7 @@ import { MapPin, Eye, EyeOff, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { VideoThumbnail } from "@/components/VideoThumbnail";
+
 import { resolveMediaUrl } from "@/lib/utils";
 
 interface PhotoCardProps {
@@ -80,7 +80,7 @@ export const PhotoCard = ({
 
   return (
     <div
-      className={`relative group cursor-pointer overflow-hidden bg-muted rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out ${className || ""}`}
+      className={`relative group cursor-pointer overflow-hidden bg-muted rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 ease-out ${className || ""}`}
       onClick={handleClick}
     >
       {/* Content Rendering Logic */}
@@ -114,12 +114,12 @@ export const PhotoCard = ({
         // --- PHOTO / VIDEO CARD ---
         <>
           {!displayUrl && isVideo ? (
-            <VideoThumbnail src={publicUrl} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110" />
+            <video src={publicUrl} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" muted playsInline />
           ) : (
             <img
               src={imageError ? "/placeholder.svg" : (displayUrl || publicUrl)}
               alt={title || "Travel photo"}
-              className={`w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110 ${imageLoaded || imageError ? "opacity-100" : "opacity-0"
+              className={`w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105 ${imageLoaded || imageError ? "opacity-100" : "opacity-0"
                 } ${imageError ? "opacity-50 p-8 grayscale" : ""}`}
               onLoad={() => setImageLoaded(true)}
               onError={() => {
@@ -142,7 +142,7 @@ export const PhotoCard = ({
       )}
 
       {/* Overlay - Portrait style: Soft gradient, airy feel */}
-      <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end">
+      <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end">
         {/* Animated Content Container */}
         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">
           {/* Caption (if any) */}
