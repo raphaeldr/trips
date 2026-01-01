@@ -15,7 +15,7 @@ const Gallery = lazy(() => import("./pages/Gallery"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const StoryViewer = lazy(() => import("./pages/StoryViewer"));
+
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,7 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/map" element={<Map />} />
               <Route path="/gallery" element={<Gallery />} />
-              <Route path="/story/:id" element={<StoryViewer />} />
+
             </Route>
 
             {/* Standalone Routes */}

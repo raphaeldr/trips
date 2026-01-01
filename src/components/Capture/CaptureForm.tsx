@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import ExifReader from 'exifreader';
 import { MAPBOX_TOKEN } from "@/lib/mapbox";
+import { uploadMedia } from "@/utils/IngestionEngine";
 
 type MediaType = "photo" | "video" | "audio" | "text" | null;
 
@@ -236,158 +237,38 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
 
 
 
-    const findDestinationId = async (date: Date) => {
-        const { data: destinations } = await supabase
-            .from("destinations")
-            .select("id, arrival_date, departure_date");
-
-        if (!destinations) return null;
-
-        // Simple check if date is within range
-        const match = destinations.find(d => {
-            const start = new Date(d.arrival_date);
-            const end = d.departure_date ? new Date(d.departure_date) : new Date(8640000000000000); // far future
-            return date >= start && date <= end;
-        });
-
-        return match?.id || null;
-    };
-
-    const generateVideoThumbnail = (file: File): Promise<Blob | null> => {
-        return new Promise((resolve) => {
-            const video = document.createElement("video");
-            video.preload = "metadata";
-            video.src = URL.createObjectURL(file);
-            video.muted = true;
-            video.playsInline = true;
-            video.crossOrigin = "anonymous"; // Important for some browsers if blob is treated weirdly
-
-            video.onloadeddata = () => {
-                video.currentTime = Math.min(1.0, video.duration / 2); // Seek to 1s or middle if shorter
-            };
-
-            video.onseeked = () => {
-                try {
-                    const canvas = document.createElement("canvas");
-                    // Limit thumbnail size to max 1280px width for performance/storage
-                    const scale = Math.min(1, 1280 / video.videoWidth);
-                    canvas.width = video.videoWidth * scale;
-                    canvas.height = video.videoHeight * scale;
-
-                    const ctx = canvas.getContext("2d");
-                    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                    canvas.toBlob((blob) => {
-                        resolve(blob);
-                        URL.revokeObjectURL(video.src);
-                        video.remove();
-                    }, "image/jpeg", 0.7);
-                } catch (e) {
-                    console.error("Thumbnail generation error", e);
-                    resolve(null);
-                }
-            };
-
-            video.onerror = () => {
-                console.error("Video load error for thumbnail");
-                resolve(null);
-            };
-        });
-    };
-
     const handleSubmit = async () => {
         if (!type) return;
         if (type !== 'text' && !file) return;
 
         setIsUploading(true);
         try {
-            const user = (await supabase.auth.getUser()).data.user;
-            if (!user) {
-                throw new Error("You must be logged in to capture moments.");
-            }
+            // Map location state to IngestionEngine expected format
+            const manualLocation = location ? {
+                latitude: location.lat,
+                longitude: location.lng
+            } : undefined;
 
-            let storagePath = null;
-            let thumbnailPath = null;
-            let width = null;
-            let height = null;
-
-            // 1. Upload File
-            if (file && type !== 'text') {
-                const fileExt = file.name.split(".").pop() || (type === "audio" ? "webm" : "jpg");
-                const fileName = `${crypto.randomUUID()}.${fileExt}`;
-                // IMPORTANT: Must be in a folder named with user.id to satisfy RLS
-                const filePath = `${user.id}/${fileName}`;
-                storagePath = filePath;
-
-                // Concurrent Uploads (File + Thumbnail)
-                const uploadPromises: Promise<any>[] = [
-                    supabase.storage.from("photos").upload(filePath, file)
-                ];
-
-                // Generate and Upload Thumbnail for Video
-                if (type === 'video') {
-                    const thumbBlob = await generateVideoThumbnail(file);
-                    if (thumbBlob) {
-                        const thumbName = `${user.id}/${crypto.randomUUID()}_thumb.jpg`;
-                        thumbnailPath = thumbName;
-                        uploadPromises.push(
-                            supabase.storage.from("photos").upload(thumbName, thumbBlob)
-                        );
-                    }
-                }
-
-                const results = await Promise.all(uploadPromises);
-                const mainUploadError = results[0].error;
-                if (mainUploadError) throw mainUploadError;
-
-                // Basic image dimensions (optional optimization for photos)
-                if (type === 'photo') {
-                    const img = new Image();
-                    img.src = previewUrl!;
-                    await new Promise(resolve => img.onload = resolve);
-                    width = img.width;
-                    height = img.height;
-                }
-            }
-
-            // 2. Find Destination (based on Taken At or Now?)
-            // Ideally should match the photo date, but we use Now for simplicity unless we parse date from EXIF too
-            const now = new Date();
-            const destinationId = await findDestinationId(now);
-
-            // 3. Insert Record
-            const { error: insertError } = await supabase
-                .from("moments")
-                .insert({
-                    user_id: user.id,
-                    media_type: type,
-                    storage_path: storagePath,
-                    thumbnail_path: thumbnailPath,
-                    caption: caption || null,
-                    taken_at: now.toISOString(),
-                    latitude: location?.lat || null,
-                    longitude: location?.lng || null,
-                    location_name: locationName || null,
-                    country: countryName || null, // Save country denormalized
-                    destination_id: destinationId,
-                    status: 'draft',
-                    width: width,
-                    height: height,
-                    mime_type: file?.type || (type === 'audio' ? 'audio/webm' : 'text/plain'),
-                    title: type === 'text' ? (caption ? caption.slice(0, 30) : "Note") : null
-                });
-
-            if (insertError) throw insertError;
-
-            // 4. Success
-            toast({
-                title: "Moment Captured!",
-                description: "Your moment has been saved (Draft).",
+            const result = await uploadMedia({
+                file: file || undefined,
+                manualLocation,
+                noteText: caption || undefined
             });
 
-            queryClient.invalidateQueries({ queryKey: ["recentMomentsHome"] });
-            queryClient.invalidateQueries({ queryKey: ["moments_public"] });
-            onClose();
+            if (result.success) {
+                // 4. Success
+                toast({
+                    title: "Moment Captured!",
+                    description: `Added to ${countryName || "Journey"}.`,
+                });
+
+                queryClient.invalidateQueries({ queryKey: ["recentMomentsHome"] });
+                queryClient.invalidateQueries({ queryKey: ["moments_public"] });
+                // Also invalidate local journey/segments if we want to reflect new segments immediately
+                queryClient.invalidateQueries({ queryKey: ["journey_segments"] });
+
+                onClose();
+            }
 
         } catch (error: any) {
             console.error("Upload error:", error);

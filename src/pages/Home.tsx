@@ -15,9 +15,40 @@ import { MAPBOX_TOKEN } from "@/lib/mapbox";
 
 const Home = () => {
   // --- Data Fetching ---
-  const { currentDestination, stats } = useJourney();
-  // We still need destinations for the "next" logic loop, but useJourney provides it too!
-  const { destinations } = useJourney(); // Actually useJourney returns it all.
+  const { segments, loading } = useJourney();
+
+  // Derived State (re-implemented from old hook logic)
+  const { currentDestination, nextDestination, stats } = (() => {
+    if (!segments) return { currentDestination: null, nextDestination: null, stats: { daysOnRoad: 0, totalStops: 0 } };
+
+    const now = new Date();
+
+    // Find current segment
+    const current = segments.find((d) => d.is_current)
+      || segments.find((d) => {
+        const start = new Date(d.arrival_date);
+        const end = d.departure_date ? new Date(d.departure_date) : new Date(3000, 0, 1);
+        return now >= start && now <= end;
+      })
+      || segments[0];
+
+    // Find next segment
+    let next = null;
+    if (current) {
+      const idx = segments.findIndex(s => s.id === current.id);
+      if (idx !== -1 && idx < segments.length - 1) {
+        next = segments[idx + 1];
+      }
+    }
+
+    // Stats
+    const totalStops = segments.length;
+    const tripStartDate = segments[0]?.arrival_date ? new Date(segments[0].arrival_date) : new Date();
+    // @ts-ignore
+    const daysOnRoad = Math.max(0, Math.ceil((now - tripStartDate) / (1000 * 60 * 60 * 24)));
+
+    return { currentDestination: current, nextDestination: next, stats: { daysOnRoad, totalStops } };
+  })();
 
   // Destructure all needed
   // const { destinations, currentDestination, stats } = useJourney(); 
@@ -51,52 +82,16 @@ const Home = () => {
     },
   });
 
-  const { data: stories } = useQuery({
-    queryKey: ["published_stories"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stories")
-        .select(`
-          *,
-          story_moments (
-            sort_order,
-            moments (
-              storage_path
-            )
-          )
-        `)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
 
-      // Transform to get the fallback image
-      return data.map(story => {
-        const firstMomentPath = story.story_moments?.[0]?.moments?.storage_path;
-        return {
-          ...story,
-          cover_image_path: story.cover_image_path || firstMomentPath
-        };
-      });
-    },
-  });
 
   // --- Simplified Logic via Hook ---
   // Fallback to "Luxembourg" if nothing returned (though hook handles fallback)
-  const currentName = currentDestination?.name || "Luxembourg";
-  const currentCountry = currentDestination?.country || "Luxembourg";
+  const currentName = currentDestination?.name || "";
+  const currentCountry = currentDestination?.country || "";
   const currentLat = currentDestination?.latitude || 49.61;
   const currentLng = currentDestination?.longitude || 6.13;
 
-  // Re-implement basic Next logic using stats/list
-  let nextDestination = null;
-  if (destinations && currentDestination) {
-    const activeIndex = destinations.findIndex(d => d.id === currentDestination.id);
-    if (activeIndex >= 0 && activeIndex < destinations.length - 1) {
-      nextDestination = destinations[activeIndex + 1];
-    }
-  }
 
-  const daysLabel = `Day ${stats.daysOnRoad}`;
 
 
 
@@ -105,6 +100,8 @@ const Home = () => {
   // Updated pin to medium (pin-m) and darker green (059669) for better contrast
   const staticMapUrl = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-m-circle+059669(${currentLng},${currentLat})/${currentLng},${currentLat},3/600x400@2x?access_token=${MAPBOX_TOKEN}&logo=false&attribution=false`;
 
+
+  const daysLabel = `Day ${stats.daysOnRoad}`;
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 md:pb-8">
@@ -133,10 +130,14 @@ const Home = () => {
             {/* Location Info */}
             <div className="flex flex-col items-start text-left w-full">
               <span className="font-sans text-xs font-semibold uppercase tracking-[2px] text-muted-foreground mb-4 pl-0.5 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
-                Currently in
+                {currentDestination ? "Currently in" : "Welcome"}
               </span>
               <h1 className="font-display font-bold text-foreground text-5xl md:text-6xl leading-[1.1] tracking-tight mb-0 break-words max-w-full">
                 {(() => {
+                  if (!currentDestination) {
+                    return "Ready to start";
+                  }
+
                   const parts = getLocationParts(currentName, currentCountry);
                   return (
                     <>
@@ -189,34 +190,7 @@ const Home = () => {
         </div>
 
         {/* FEATURED STORIES */}
-        {stories && stories.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-6 pb-2 border-b border-border/40">
-              <h2 className="font-display text-xl md:text-2xl font-semibold tracking-tight text-foreground">Stories</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stories.map((story) => (
-                <Link key={story.id} to={`/story/${story.id}`}>
-                  <div className="group relative aspect-video md:aspect-[4/3] overflow-hidden bg-muted cursor-pointer">
-                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors z-10" />
-                    {story.cover_image_path ? (
-                      <img src={resolveMediaUrl(story.cover_image_path, { width: 300, quality: 70 })} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={story.title} />
-                    ) : (
-                      <div className="w-full h-full bg-secondary flex items-center justify-center text-muted-foreground">
-                        <Calendar className="w-8 h-8" strokeWidth={1.5} />
-                      </div>
-                    )}
 
-                    <div className="absolute inset-0 p-6 flex flex-col justify-end z-20 bg-gradient-to-t from-black/60 to-transparent">
-                      <h3 className="font-display text-lg font-semibold text-white leading-tight mb-1">{story.title}</h3>
-                      {story.description && <p className="text-white/80 text-sm line-clamp-1 font-sans font-normal">{story.description}</p>}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* LIVING MOMENTS FEED */}
         <div>

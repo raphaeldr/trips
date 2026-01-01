@@ -11,7 +11,7 @@ import { Lightbox } from "@/components/gallery/Lightbox";
 import { ContextCard } from "@/components/gallery/ContextCard";
 import { useInView } from "react-intersection-observer";
 
-interface Moment {
+interface GalleryMedia {
   id: string;
   storage_path: string | null;
   thumbnail_path: string | null;
@@ -115,7 +115,7 @@ const Gallery = () => {
 
       // Return object structure to pass 'noMoreGroups' signal
       return {
-        moments: moments as unknown as Moment[],
+        moments: moments as unknown as GalleryMedia[],
         noMoreGroups: groups.length < 3
       };
     },
@@ -147,7 +147,7 @@ const Gallery = () => {
     const groups: Record<string, {
       country: string;
       place: string;
-      moments: Moment[];
+      moments: GalleryMedia[];
       maxTakenAt: string;
     }> = {};
 

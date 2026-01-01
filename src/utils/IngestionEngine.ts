@@ -14,7 +14,7 @@ interface Location {
 }
 
 interface IngestionOptions {
-    file: File;
+    file?: File | null;
     manualLocation?: Location;
     noteText?: string; // For text notes if no file
 }
@@ -85,8 +85,7 @@ export async function uploadMedia({ file, manualLocation, noteText }: IngestionO
         }
     }
 
-    // 2. Determine Location Context (Segment/Destination)
-    let destinationId: string | null = null;
+    // 2. Determine Location Context
     let country = "Unknown";
     let placeName = "Unknown Position";
 
@@ -94,56 +93,51 @@ export async function uploadMedia({ file, manualLocation, noteText }: IngestionO
         const geo = await reverseGeocode(latitude, longitude);
         country = geo.country;
         placeName = geo.placeName;
+    }
 
-        // --- SEGMENT LOGIC (Destinations) ---
-        // Check for ACTIVE destination (is_current = true) matching this country
-        const { data: activeDestinations } = await supabase
-            .from("destinations")
-            .select("*")
-            .eq("is_current", true)
+    // 3. Find or Create SEGMENT (Country-level)
+    let segmentId: string | null = null;
+
+    if (country !== "Unknown") {
+        // Find existing segment for this country
+        const { data: existingSegments } = await supabase
+            .from("segments" as any)
+            .select("id, country, is_current")
+            .eq("country", country)
+            .order("created_at", { ascending: false })
             .limit(1);
 
-        const activeDest = activeDestinations?.[0];
-
-        if (activeDest && activeDest.country === country) {
-            // Keep using current segment
-            destinationId = activeDest.id;
+        if (existingSegments && existingSegments.length > 0) {
+            segmentId = existingSegments[0].id;
         } else {
-            // Close old segment if exists
-            if (activeDest) {
-                await supabase
-                    .from("destinations")
-                    .update({ is_current: false, departure_date: new Date().toISOString() })
-                    .eq("id", activeDest.id);
-            }
-
-            // Create NEW Segment (Destination)
-            const { data: newDest, error: destError } = await supabase
-                .from("destinations")
+            // Create NEW Segment
+            const { data: newSegment, error: segError } = await supabase
+                .from("segments" as any)
                 .insert({
-                    name: placeName, // Start the "Trip" name with the first place visited
+                    name: country,
                     country: country,
-                    continent: "Unknown", // Could be mapped or filled later
-                    arrival_date: takenAt.toISOString(),
-                    latitude: latitude,
-                    longitude: longitude,
+                    arrival_date: takenAt.toISOString(), // Use takenAt for arrival if new
                     is_current: true,
-                    description: `Journey through ${country}`
+                    latitude: latitude || 0,
+                    longitude: longitude || 0
                 })
                 .select()
                 .single();
 
-            if (destError) throw destError;
-            destinationId = newDest.id;
+            if (segError) {
+                console.error("Failed to create segment", segError);
+            } else {
+                segmentId = newSegment.id;
+            }
         }
     }
 
-    // 3. Place Logic (Clustering)
+    // 4. Find or Create PLACE (City/Spot-level)
     let placeId: string | null = null;
 
-    if (latitude && longitude) {
-        // Fetch all places (assuming relatively small table for a personal blog, or reliable spatial index)
-        // Using 'any' for table name since 'places' might not be in generated types yet
+    if (latitude && longitude && segmentId) {
+        // Fetch all places linked to this segment? Or just all places to check distance.
+        // Optimization: checking all places might be heavy, but fine for now.
         const { data: allPlaces } = await supabase.from("places" as any).select("*");
 
         if (allPlaces) {
@@ -163,6 +157,7 @@ export async function uploadMedia({ file, manualLocation, noteText }: IngestionO
             const { data: newPlace, error: placeError } = await supabase
                 .from("places" as any)
                 .insert({
+                    segment_id: segmentId, // Link to Segment
                     name: placeName,
                     latitude: latitude,
                     longitude: longitude,
@@ -175,19 +170,17 @@ export async function uploadMedia({ file, manualLocation, noteText }: IngestionO
 
             if (placeError) {
                 console.error("Failed to create place", placeError);
-                // Continue without place_id if failing
             } else {
                 placeId = newPlace.id;
             }
         }
     }
 
-    // 4. Upload File
+    // 5. Upload File
     let storagePath = null;
     if (file) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        // Assuming bucket allows public root or user folder. Using simple path for now.
         const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabase.storage
@@ -198,27 +191,26 @@ export async function uploadMedia({ file, manualLocation, noteText }: IngestionO
         storagePath = filePath;
     }
 
-    // 5. Insert Media Record (Moment)
+    // 6. Insert MEDIA Record
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error("User not authenticated");
 
-    const { error: momentError } = await supabase
-        .from("moments")
+    const { error: mediaError } = await supabase
+        .from("media" as any) // Updated table name
         .insert({
             user_id: user.id,
             media_type: noteText ? "text" : (file?.type.startsWith("video") ? "video" : "photo"),
             storage_path: storagePath,
-            caption: noteText,
+            description: noteText,
             taken_at: takenAt.toISOString(),
             latitude: latitude,
             longitude: longitude,
-            destination_id: destinationId,
-            visited_place_id: placeId, // Linking to the Places logic
+            segment_id: segmentId, // Updated FK
+            place_id: placeId,     // Updated FK
             location_name: placeName,
-            status: "published" // Auto-publish or draft? "Ingestion" implies processing, defaulting to published or user preference. Draft is safer.
         });
 
-    if (momentError) throw momentError;
+    if (mediaError) throw mediaError;
 
-    return { success: true, destinationId, placeId };
+    return { success: true, segmentId, placeId };
 }
