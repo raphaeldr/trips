@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowLeft, Send, MapPin, Mic } from "lucide-react";
+import { Loader2, ArrowLeft, Send, MapPin, Mic, Square, Circle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,14 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [caption, setCaption] = useState("");
     const [isUploading, setIsUploading] = useState(false);
+
+    // Audio Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Location State
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -54,9 +62,90 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
         }
     };
 
+    // Audio Recording Functions
+    const mimeTypeRef = useRef<string>("");
+
+    const startAudioRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // Prefer MP4 (AAC) for better compatibility (Safari/iOS), fallback to WebM
+            const mimeType = MediaRecorder.isTypeSupported("audio/mp4")
+                ? "audio/mp4"
+                : MediaRecorder.isTypeSupported("audio/webm")
+                    ? "audio/webm"
+                    : "";
+
+            mimeTypeRef.current = mimeType;
+
+            const options = mimeType ? { mimeType } : undefined;
+            const mediaRecorder = new MediaRecorder(stream, options);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const type = mimeTypeRef.current || mediaRecorder.mimeType || "audio/webm";
+                const blob = new Blob(audioChunksRef.current, { type });
+
+                if (blob.size === 0) {
+                    toast({ variant: "destructive", title: "Recording failed", description: "Audio clip was empty." });
+                    return;
+                }
+
+                setAudioBlob(blob);
+                const url = URL.createObjectURL(blob);
+                setPreviewUrl(url);
+
+                // Convert Blob to File
+                // Ensure extension matches mime type
+                const ext = type.includes("mp4") ? "mp4" : "webm";
+                const audioFile = new File([blob], `recording.${ext}`, { type });
+                setFile(audioFile);
+
+                stream.getTracks().forEach((track) => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingDuration(0);
+            timerRef.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+            toast({
+                variant: "destructive",
+                title: "Microphone access denied",
+                description: "Please allow microphone access to record audio.",
+            });
+        }
+    };
+
+    const stopAudioRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+    };
+
+    const discardAudio = () => {
+        setAudioBlob(null);
+        setPreviewUrl(null);
+        setFile(null);
+        setRecordingDuration(0);
+    };
+
     useEffect(() => {
-        // Auto-trigger file input for media types
-        if ((type === "photo" || type === "video" || type === "audio") && !file) {
+        // Auto-trigger file input for media types (except audio which is manual record first)
+        if ((type === "photo" || type === "video") && !file) {
             fileInputRef.current?.click();
         }
 
@@ -106,21 +195,8 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                     const gpsLngRef = tags['GPSLongitudeRef'];
 
                     if (gpsLat && gpsLng && gpsLatRef && gpsLngRef) {
-                        // Convert DMS to Decimal
-                        // ExifReader returns array of [numerator, denominator] usually, or simple number.
-                        // Actually ExifReader standardizes this somewhat but let's be safe.
-                        // The 'description' property usually holds the decimal value for modern ExifReader?
-                        // Let's use the description if available, or calculate.
-                        // Check documentation or debug... 
-                        // ExifReader 4.x: tags.GPSLatitude.description is a number like 34.0522... NO, usually it's string.
-                        // Better to use the raw values if needed, but let's try the library's processed values if available.
-                        // Actually, easier way: 
-
                         // Parse helper
                         const convertDMSToDD = (dms: any, ref: string) => {
-                            // dms is array of values usually [degrees, minutes, seconds]
-                            // In ExifReader, `description` is often "34, 31.2, 0" string.
-                            // `value` is array of 3 rational numbers.
                             if (!dms || !dms.value) return null;
 
                             const d = dms.value[0][0] / dms.value[0][1];
@@ -152,11 +228,13 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                     // Use fallback (device location) which is already running or set
                 }
             }
-        } else if (!file) {
+        } else if (!file && type !== 'audio') { // For audio we don't go back just because file isn't set yet (could be recording)
             // If they cancelled file picker and haven't selected one, go back
             onBack();
         }
     };
+
+
 
     const findDestinationId = async (date: Date) => {
         const { data: destinations } = await supabase
@@ -175,6 +253,48 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
         return match?.id || null;
     };
 
+    const generateVideoThumbnail = (file: File): Promise<Blob | null> => {
+        return new Promise((resolve) => {
+            const video = document.createElement("video");
+            video.preload = "metadata";
+            video.src = URL.createObjectURL(file);
+            video.muted = true;
+            video.playsInline = true;
+            video.crossOrigin = "anonymous"; // Important for some browsers if blob is treated weirdly
+
+            video.onloadeddata = () => {
+                video.currentTime = Math.min(1.0, video.duration / 2); // Seek to 1s or middle if shorter
+            };
+
+            video.onseeked = () => {
+                try {
+                    const canvas = document.createElement("canvas");
+                    // Limit thumbnail size to max 1280px width for performance/storage
+                    const scale = Math.min(1, 1280 / video.videoWidth);
+                    canvas.width = video.videoWidth * scale;
+                    canvas.height = video.videoHeight * scale;
+
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                        URL.revokeObjectURL(video.src);
+                        video.remove();
+                    }, "image/jpeg", 0.7);
+                } catch (e) {
+                    console.error("Thumbnail generation error", e);
+                    resolve(null);
+                }
+            };
+
+            video.onerror = () => {
+                console.error("Video load error for thumbnail");
+                resolve(null);
+            };
+        });
+    };
+
     const handleSubmit = async () => {
         if (!type) return;
         if (type !== 'text' && !file) return;
@@ -187,24 +307,40 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
             }
 
             let storagePath = null;
+            let thumbnailPath = null;
             let width = null;
             let height = null;
 
             // 1. Upload File
             if (file && type !== 'text') {
-                const fileExt = file.name.split(".").pop() || 'jpg';
+                const fileExt = file.name.split(".").pop() || (type === "audio" ? "webm" : "jpg");
                 const fileName = `${crypto.randomUUID()}.${fileExt}`;
                 // IMPORTANT: Must be in a folder named with user.id to satisfy RLS
                 const filePath = `${user.id}/${fileName}`;
-
-                const { error: uploadError } = await supabase.storage
-                    .from("photos")
-                    .upload(filePath, file);
-
-                if (uploadError) throw uploadError;
                 storagePath = filePath;
 
-                // Basic image dimensions (optional optimization)
+                // Concurrent Uploads (File + Thumbnail)
+                const uploadPromises: Promise<any>[] = [
+                    supabase.storage.from("photos").upload(filePath, file)
+                ];
+
+                // Generate and Upload Thumbnail for Video
+                if (type === 'video') {
+                    const thumbBlob = await generateVideoThumbnail(file);
+                    if (thumbBlob) {
+                        const thumbName = `${user.id}/${crypto.randomUUID()}_thumb.jpg`;
+                        thumbnailPath = thumbName;
+                        uploadPromises.push(
+                            supabase.storage.from("photos").upload(thumbName, thumbBlob)
+                        );
+                    }
+                }
+
+                const results = await Promise.all(uploadPromises);
+                const mainUploadError = results[0].error;
+                if (mainUploadError) throw mainUploadError;
+
+                // Basic image dimensions (optional optimization for photos)
                 if (type === 'photo') {
                     const img = new Image();
                     img.src = previewUrl!;
@@ -226,17 +362,18 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                     user_id: user.id,
                     media_type: type,
                     storage_path: storagePath,
+                    thumbnail_path: thumbnailPath,
                     caption: caption || null,
                     taken_at: now.toISOString(),
                     latitude: location?.lat || null,
                     longitude: location?.lng || null,
                     location_name: locationName || null,
-                    country: countryName || null,
+                    country: countryName || null, // Save country denormalized
                     destination_id: destinationId,
                     status: 'draft',
                     width: width,
                     height: height,
-                    mime_type: file?.type || 'text/plain',
+                    mime_type: file?.type || (type === 'audio' ? 'audio/webm' : 'text/plain'),
                     title: type === 'text' ? (caption ? caption.slice(0, 30) : "Note") : null
                 });
 
@@ -264,6 +401,12 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
         }
     };
 
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     return (
         <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex items-center gap-2 mb-4">
@@ -273,13 +416,13 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                 <div className="flex flex-col">
                     <span className="font-semibold capitalize leading-none">{type}</span>
                     <span className="text-[10px] text-muted-foreground">
-                        {isUploading ? "Uploading..." : locationSource === 'exif' ? "Extracted from photo" : locationSource === 'device' ? "From device" : "New Moment"}
+                        {isUploading ? "Uploading..." : locationSource === 'exif' ? "Extracted from photo" : locationSource === 'device' ? "From device" : "New moment"}
                     </span>
                 </div>
             </div>
 
             <div className="flex-1 space-y-4 overflow-y-auto pb-32">
-                {/* Media Preview or Text Input */}
+                {/* Media Preview or Text Input or Recorder */}
                 <div className="bg-muted rounded-xl overflow-hidden min-h-[200px] flex items-center justify-center relative shrink-0">
                     {type === "text" ? (
                         <Textarea
@@ -289,15 +432,72 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
                             onChange={(e) => setCaption(e.target.value)}
                             autoFocus
                         />
+                    ) : type === "audio" && !previewUrl ? (
+                        // Audio Recorder UI
+                        <div className="flex flex-col items-center gap-6 p-8 w-full">
+                            <div className={`relative flex items-center justify-center w-32 h-32 rounded-full border-4 ${isRecording ? "border-red-500 animate-pulse bg-red-50" : "border-muted-foreground/20 bg-background"}`}>
+                                {isRecording ? (
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-3 h-3 rounded-full bg-red-500 mb-2 animate-bounce" />
+                                        <span className="font-mono text-2xl font-bold tabular-nums text-red-600">
+                                            {formatDuration(recordingDuration)}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <Mic className="w-12 h-12 text-muted-foreground" />
+                                )}
+                            </div>
+
+                            <div className="flex gap-4">
+                                {isRecording ? (
+                                    <Button
+                                        variant="destructive"
+                                        size="lg"
+                                        className="h-14 px-8 rounded-full text-lg shadow-lg"
+                                        onClick={stopAudioRecording}
+                                    >
+                                        <Square className="w-5 h-5 mr-2 fill-current" />
+                                        Stop
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="lg"
+                                        className="h-14 px-8 rounded-full text-lg shadow-lg"
+                                        onClick={startAudioRecording}
+                                    >
+                                        <Circle className="w-4 h-4 mr-2 fill-red-500 text-red-500" />
+                                        Record
+                                    </Button>
+                                )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {isRecording ? "Tap to stop" : "Tap to record voice note"}
+                            </p>
+                        </div>
                     ) : previewUrl ? (
                         type === "video" ? (
                             <video src={previewUrl} className="w-full h-full object-cover max-h-[400px]" controls playsInline />
                         ) : type === "audio" ? (
-                            <div className="w-full p-8 flex flex-col items-center justify-center gap-4 bg-secondary">
-                                <div className="p-4 rounded-full bg-primary/10 text-primary">
-                                    <Mic className="w-8 h-8" />
+                            <div className="w-full p-8 flex flex-col items-center justify-center gap-6 bg-secondary relative">
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-2 right-2 rounded-full h-8 w-8 opacity-80 hover:opacity-100"
+                                    onClick={discardAudio}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+
+                                <div className="p-6 rounded-full bg-primary/10 text-primary">
+                                    <Mic className="w-10 h-10" />
                                 </div>
-                                <audio src={previewUrl} className="w-full" controls />
+                                <div className="w-full max-w-sm">
+                                    <audio src={previewUrl} className="w-full" controls />
+                                </div>
+                                <span className="text-xs text-muted-foreground">Voice note recorded</span>
+                                <div className="text-[10px] text-gray-300 font-mono mt-2">
+                                    Debug: {audioBlob?.type} / {audioBlob?.size} bytes
+                                </div>
                             </div>
                         ) : (
                             <img src={previewUrl} alt="Preview" className="w-full h-full object-cover max-h-[400px]" />
@@ -382,25 +582,34 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
             </div>
 
             <div className="mt-4 shrink-0 pb-6">
-                <Button className="w-full h-12 text-base font-semibold" onClick={handleSubmit} disabled={isUploading || (type === "text" && !caption)}>
+                <Button className="w-full h-12 text-base font-semibold" onClick={handleSubmit} disabled={isUploading || (type === "text" && !caption) || (type === "audio" && !file && !isRecording)}>
                     {isUploading ? (
                         <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...
                         </>
                     ) : (
                         <>
-                            Save Moment <Send className="w-4 h-4 ml-2" />
+                            Save moment <Send className="w-4 h-4 ml-2" />
                         </>
                     )}
                 </Button>
             </div>
 
             {/* Hidden File Input */}
-            {type !== "text" && (
+            {type !== "text" && type !== "audio" && (
                 <input
                     type="file"
-                    accept={type === 'photo' ? "image/*" : type === "video" ? "video/*" : "audio/*"}
-                    // capture="environment" // REMOVED to allow file selection
+                    accept={type === 'photo' ? "image/*" : "video/*"}
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                />
+            )}
+            {/* Audio input allows uploading file too? Maybe later, keep it simple for now standard record */}
+            {type === 'audio' && (
+                <input
+                    type="file"
+                    accept="audio/*"
                     className="hidden"
                     ref={fileInputRef}
                     onChange={handleFileChange}
@@ -409,3 +618,4 @@ export const CaptureForm = ({ type, onBack, onClose }: CaptureFormProps) => {
         </div>
     );
 };
+

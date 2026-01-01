@@ -84,15 +84,15 @@ const Map = () => {
     }
   });
 
-  // Fetch Visited Places
+  // Fetch Visited Places (Dynamic from Moments)
   const { data: visitedPlaces } = useQuery({
     queryKey: ["visited_places_map"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("visited_places")
-        .select("*");
+        .rpc("get_visited_places_from_moments" as any);
+
       if (error) throw error;
-      return data;
+      return data as { id: string; name: string; latitude: number; longitude: number; first_visited_at: string }[];
     },
   });
 
@@ -350,8 +350,8 @@ const Map = () => {
       {/* Sidebar: Fixed width, constrained height with internal scroll */}
       <div className="w-full md:w-96 bg-background/95 backdrop-blur shadow-xl z-20 flex flex-col border-r border-border flex-1 md:flex-none md:h-full order-2 md:order-1 min-h-0">
         <div className="p-6 border-b border-border">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground">Our journey</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-foreground">Our journey</h1>
+          <p className="text-muted-foreground text-xs uppercase tracking-wide font-semibold mt-2 opacity-60">
             {destinations?.length} destinations • {totalDays} days of adventure
           </p>
         </div>
@@ -368,28 +368,32 @@ const Map = () => {
                       <div className="absolute left-[15px] top-4 bottom-0 w-px bg-border/50" />
 
                       {/* Dot */}
-                      <div className={`absolute left-1.5 top-2 w-7 h-7 rounded-full border-4 border-background ${dest.is_current ? "bg-green-500" : selectedDestId === dest.id ? "bg-primary" : "bg-muted-foreground/30"} z-10 transition-colors duration-300`} />
+                      <div className={`absolute left-1.5 top-2 w-7 h-7 rounded-full border-4 border-background transition-all duration-300 z-10 
+                        ${dest.is_current ? "bg-primary shadow-[0_0_0_4px_rgba(var(--primary),0.2)]" : "bg-muted hover:bg-muted-foreground/50"} 
+                        ${selectedDestId === dest.id ? "scale-110 !bg-foreground border-foreground/10" : ""}
+                      `} />
 
                       <Card
-                        className={`cursor-pointer transition-all hover:shadow-md border-l-4 ${selectedDestId === dest.id ? "border-l-primary ring-1 ring-primary/20" : "border-l-transparent hover:border-l-muted-foreground/30"}`}
+                        className={`cursor-pointer transition-all duration-300 border-l-4 hover:bg-muted/30
+                          ${selectedDestId === dest.id ? "border-l-foreground shadow-md bg-muted/20" : "border-l-transparent hover:border-l-muted-foreground/20"}
+                        `}
                         onClick={() => handleSelectDestination(dest.id)}
                       >
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-1">
-                            <h3 className="font-bold text-foreground flex items-center gap-2">
+                            <h3 className={`font-display font-bold text-lg flex items-center gap-2 transition-colors ${selectedDestId === dest.id ? "text-foreground" : "text-foreground/80"}`}>
                               {dest.name}
-                              {dest.is_current && <Badge className="bg-green-500 hover:bg-green-600 text-white text-[10px] h-5 px-1.5 border-0">Current</Badge>}
+                              {dest.is_current && <Badge className="bg-primary/10 text-primary hover:bg-primary/20 text-[10px] h-5 px-2 border-0 font-medium tracking-wide">Current</Badge>}
                             </h3>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="font-medium text-foreground/70">{dest.country}</span>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wide">
+                            <span className="font-semibold text-foreground/60">{dest.country}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
+                            <span className="flex items-center gap-1 font-medium">
                               {safeFormat(dest.arrival_date, "d MMM")}
                             </span>
                           </div>
-                          {dest.description && <p className="text-sm text-foreground/80 mt-2 line-clamp-2 leading-relaxed">{dest.description}</p>}
+                          {dest.description && <p className="text-sm text-foreground/70 mt-3 line-clamp-2 leading-relaxed font-sans text-muted-foreground">{dest.description}</p>}
                         </CardContent>
                       </Card>
                     </div>
@@ -399,22 +403,27 @@ const Map = () => {
                   return (
                     <div key={place.id} className="relative pl-8 pb-6">
                       {/* Connector Line */}
-                      <div className="absolute left-[15px] top-0 bottom-0 w-px bg-border/50" />
+                      <div className="absolute left-[15px] top-0 bottom-0 w-px bg-border/40" />
 
-                      {/* Small Dot */}
+                      {/* Small Dot - Emergent Place (Low noise) */}
                       <div
-                        className={`absolute left-[11px] top-1.5 w-2.5 h-2.5 rounded-full border border-background z-10 cursor-pointer transition-all duration-300 ${selectedPlaceId === place.id ? "bg-orange-500 scale-125" : "bg-orange-300 hover:bg-orange-400"}`}
+                        className={`absolute left-[11px] top-1.5 w-2.5 h-2.5 rounded-full border border-background z-10 cursor-pointer transition-all duration-300 
+                          ${selectedPlaceId === place.id ? "bg-foreground scale-125" : "bg-muted-foreground/40 hover:bg-muted-foreground/80"}
+                        `}
                         onClick={() => handleSelectPlace(place.id)}
                       />
 
                       <div
-                        className={`text-sm cursor-pointer transition-colors flex flex-col items-start gap-1 ${selectedPlaceId === place.id ? "text-orange-600 font-medium translate-x-1" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`text-sm cursor-pointer transition-colors flex flex-col items-start gap-0.5 
+                          ${selectedPlaceId === place.id ? "text-foreground font-medium translate-x-1" : "text-muted-foreground hover:text-foreground/80"}
+                        `}
                         onClick={() => handleSelectPlace(place.id)}
                       >
-                        <span className="truncate">{place.name}</span>
+                        <span className="truncate font-sans font-medium tracking-tight leading-none">{place.name}</span>
                         {selectedPlaceId === place.id && (
-                          <Link to="/gallery" className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                            View Moments <ArrowRight className="w-3 h-3" />
+                          <Link to="/gallery" className="group/link flex items-center gap-1.5 mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 hover:text-foreground transition-colors">
+                            Explore moments
+                            <ArrowRight className="w-3 h-3 transition-transform duration-300 group-hover/link:translate-x-0.5" strokeWidth={1.5} />
                           </Link>
                         )}
                       </div>
@@ -438,7 +447,7 @@ const Map = () => {
           </Badge>
         </div>
       </div>
-    </div>
-  </div>;
+    </div >
+  </div >;
 };
 export default Map;

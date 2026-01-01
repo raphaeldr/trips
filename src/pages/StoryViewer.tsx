@@ -78,7 +78,7 @@ const StoryViewer = () => {
             <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
                 <h1 className="text-2xl font-bold mb-2">Story not found</h1>
                 <p className="text-muted-foreground mb-4">It might have been deleted or is not published yet.</p>
-                <Link to="/"><Button>Go Home</Button></Link>
+                <Link to="/"><Button>Go home</Button></Link>
             </div>
         );
     }
@@ -183,7 +183,7 @@ const StoryViewer = () => {
 
                 {/* FOOTER AREA */}
                 <div className="mt-32 text-center space-y-6">
-                    <h3 className="text-2xl font-display font-bold">End of Story</h3>
+                    <h3 className="text-2xl font-display font-bold">End of story</h3>
                     <div className="flex justify-center gap-4">
                         <Button variant="outline" onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => { })}>
                             <Share2 className="w-4 h-4 mr-2" /> Share this story

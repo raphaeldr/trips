@@ -32,7 +32,7 @@ interface DestinationFormProps {
 export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
-  
+
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<DestinationFormData>({
     resolver: zodResolver(destinationSchema),
     defaultValues: {
@@ -57,7 +57,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
       // North America
       'US': 'North America', 'CA': 'North America', 'MX': 'North America',
       // South America
-      'BR': 'South America', 'AR': 'South America', 'CL': 'South America', 
+      'BR': 'South America', 'AR': 'South America', 'CL': 'South America',
       'PE': 'South America', 'CO': 'South America', 'EC': 'South America',
       // Africa
       'ZA': 'Africa', 'EG': 'Africa', 'MA': 'Africa', 'KE': 'Africa', 'TZ': 'Africa',
@@ -70,12 +70,12 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
   useEffect(() => {
     const geocodeLocation = async () => {
       if (!name || !country) return;
-      
+
       setIsGeocoding(true);
       try {
         const { data: tokenData } = await supabase.functions.invoke('get-mapbox-token');
         const mapboxToken = tokenData?.token;
-        
+
         if (!mapboxToken) {
           throw new Error("Mapbox token not available");
         }
@@ -84,24 +84,24 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
         const response = await fetch(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxToken}&limit=1`
         );
-        
+
         const data = await response.json();
-        
+
         if (data.features && data.features.length > 0) {
           const [longitude, latitude] = data.features[0].center;
           const context = data.features[0].context || [];
-          
+
           // Find country code from context
           const countryContext = context.find((c: any) => c.id.startsWith('country'));
           const countryCode = countryContext?.short_code?.toUpperCase();
-          
+
           setValue("latitude", latitude.toString());
           setValue("longitude", longitude.toString());
-          
+
           if (countryCode) {
             setValue("continent", getContinent(countryCode));
           }
-          
+
           toast.success("Location coordinates found!");
         } else {
           toast.error("Location not found. Please enter coordinates manually.");
@@ -123,7 +123,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
 
   const onSubmit = async (data: DestinationFormData) => {
     setIsSubmitting(true);
-    
+
     try {
       const { error } = await supabase.from('destinations').insert({
         name: data.name,
@@ -154,7 +154,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">Location Name</Label>
+          <Label htmlFor="name">Location name</Label>
           <Input
             id="name"
             {...register("name")}
@@ -192,7 +192,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="arrival_date">Arrival Date</Label>
+          <Label htmlFor="arrival_date">Arrival date</Label>
           <Input
             id="arrival_date"
             type="date"
@@ -204,7 +204,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="departure_date">Departure Date (Optional)</Label>
+          <Label htmlFor="departure_date">Departure date (optional)</Label>
           <Input
             id="departure_date"
             type="date"
@@ -249,7 +249,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
             id="is_current"
             {...register("is_current")}
           />
-          <Label htmlFor="is_current">Current Location</Label>
+          <Label htmlFor="is_current">Current location</Label>
         </div>
       </div>
 
@@ -270,7 +270,7 @@ export const DestinationForm = ({ onSuccess }: DestinationFormProps) => {
             Adding...
           </>
         ) : (
-          "Add Destination"
+          "Add destination"
         )}
       </Button>
     </form>

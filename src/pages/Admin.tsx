@@ -81,7 +81,7 @@ const Admin = () => {
             <p className="text-muted-foreground mt-1">Capture and manage your travel moments</p>
           </div>
           <Button variant="outline" onClick={handleSignOut} className="w-full sm:w-auto">
-            Sign Out
+            Sign out
           </Button>
         </div>
 
@@ -94,7 +94,7 @@ const Admin = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{stats?.moments || 0}</p>
-                <p className="text-sm text-muted-foreground">Total Moments</p>
+                <p className="text-sm text-muted-foreground">Total moments</p>
               </div>
             </CardContent>
           </Card>
@@ -136,7 +136,7 @@ const Admin = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="w-5 h-5 text-primary" />
-                  Quick Capture
+                  Quick capture
                 </CardTitle>
                 <CardDescription>
                   Add photos, videos, voice notes, or text moments. All saved as drafts.
@@ -152,12 +152,12 @@ const Admin = () => {
                       }}
                     />
                     <Button variant="ghost" size="sm" className="mt-4 w-full" onClick={() => setShowMomentCapture(false)}>
-                      Hide Capture
+                      Hide capture
                     </Button>
                   </div>
                 ) : (
                   <Button className="w-full" onClick={() => setShowMomentCapture(true)}>
-                    Add Moment
+                    Add moment
                   </Button>
                 )}
               </CardContent>
@@ -192,7 +192,7 @@ const Admin = () => {
                   </div>
                 ) : (
                   <Button variant="secondary" className="w-full" onClick={() => setShowDestinationForm(true)}>
-                    Add New Location
+                    Add new location
                   </Button>
                 )}
               </CardContent>

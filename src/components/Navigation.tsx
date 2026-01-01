@@ -22,8 +22,8 @@ export const Navigation = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
             activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
           >
-            <Home className="w-4 h-4" />
-            <span>Home</span>
+            <Home className="w-4 h-4" strokeWidth={1.5} />
+            <span className="font-sans">Home</span>
           </NavLink>
 
           <NavLink
@@ -31,8 +31,8 @@ export const Navigation = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
             activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
           >
-            <Map className="w-4 h-4" />
-            <span>Journey</span>
+            <Map className="w-4 h-4" strokeWidth={1.5} />
+            <span className="font-sans">Journey</span>
           </NavLink>
 
           <NavLink
@@ -40,8 +40,8 @@ export const Navigation = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
             activeClassName="bg-black/5 dark:bg-white/10 text-foreground font-semibold"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Moments</span>
+            <Sparkles className="w-4 h-4" strokeWidth={1.5} />
+            <span className="font-sans">Moments</span>
           </NavLink>
 
           {isAdmin && (
@@ -50,7 +50,7 @@ export const Navigation = () => {
               className="flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-all ml-2"
               activeClassName="text-primary bg-primary/10"
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4" strokeWidth={1.5} />
             </NavLink>
           )}
         </div>
@@ -67,8 +67,8 @@ export const Navigation = () => {
           className="flex flex-col items-center justify-center gap-1 h-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
           activeClassName="text-primary font-medium"
         >
-          <Home className="w-6 h-6" />
-          <span className="text-[10px]">Home</span>
+          <Home className="w-6 h-6" strokeWidth={1.5} />
+          <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Home</span>
         </NavLink>
 
         <NavLink
@@ -76,8 +76,8 @@ export const Navigation = () => {
           className="flex flex-col items-center justify-center gap-1 h-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
           activeClassName="text-primary font-medium"
         >
-          <Map className="w-6 h-6" />
-          <span className="text-[10px]">Journey</span>
+          <Map className="w-6 h-6" strokeWidth={1.5} />
+          <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Journey</span>
         </NavLink>
 
         <NavLink
@@ -85,8 +85,8 @@ export const Navigation = () => {
           className="flex flex-col items-center justify-center gap-1 h-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
           activeClassName="text-primary font-medium"
         >
-          <Sparkles className="w-6 h-6" />
-          <span className="text-[10px]">Moments</span>
+          <Sparkles className="w-6 h-6" strokeWidth={1.5} />
+          <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Moments</span>
         </NavLink>
 
         {isAdmin ? (
@@ -95,8 +95,8 @@ export const Navigation = () => {
             className="flex flex-col items-center justify-center gap-1 h-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
             activeClassName="text-primary font-medium"
           >
-            <Lock className="w-6 h-6" />
-            <span className="text-[10px]">Admin</span>
+            <Lock className="w-6 h-6" strokeWidth={1.5} />
+            <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Admin</span>
           </NavLink>
         ) : (
           <div className="flex flex-col items-center justify-center gap-1 h-full opacity-0 pointer-events-none">

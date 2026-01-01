@@ -51,7 +51,11 @@ export const PhotoCard = ({
   const { toast } = useToast();
   const { isAdmin } = useAdminAuth();
 
-  const isVideo = mimeType?.startsWith("video/") || mimeType === "video";
+  const isVideo = mimeType?.toLowerCase().startsWith("video/") || mimeType === "video";
+  const isAudio = mimeType?.toLowerCase().startsWith("audio/") ||
+    mimeType === "audio" ||
+    (!mimeType && (storagePath?.endsWith('.webm') || storagePath?.endsWith('.mp3') || storagePath?.endsWith('.wav') || storagePath?.endsWith('.m4a') || storagePath?.endsWith('.ogg')));
+
   const publicUrl = resolveMediaUrl(storagePath) || "";
   const thumbnailUrl = thumbnailPath ? resolveMediaUrl(thumbnailPath) : null;
 
@@ -59,7 +63,7 @@ export const PhotoCard = ({
   // OPTIMIZATION: If falling back to publicUrl for a photo, request a resized version (600px width)
   const displayUrl = thumbnailUrl
     ? thumbnailUrl
-    : (!isVideo
+    : (!isVideo && !isAudio
       ? resolveMediaUrl(storagePath, { width: 400 })
       : null);
 
@@ -76,25 +80,30 @@ export const PhotoCard = ({
     >
       {/* Content Rendering Logic */}
       {status === 'draft' && (
-        <div className="absolute top-2 right-2 z-30 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-[10px] font-bold uppercase tracking-wider rounded-sm shadow-sm pointer-events-none">
+        <div className="absolute top-2 right-2 z-30 px-2 py-0.5 bg-background/80 backdrop-blur-sm text-foreground/70 text-[10px] font-bold uppercase tracking-wider rounded-sm shadow-sm pointer-events-none border border-border/50">
           Draft
         </div>
       )}
 
       {(mimeType === 'text/plain' || mimeType === 'text') ? (
         // --- TEXT CARD ---
-        <div className="w-full aspect-[4/5] bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col items-center justify-center p-6 text-center">
-          <p className="font-display font-medium text-xl text-primary/80 line-clamp-6 leading-relaxed">
+        <div className="w-full aspect-[4/5] bg-secondary/30 flex flex-col items-center justify-center p-6 text-center border border-border/50">
+          <p className="font-display font-medium text-xl text-foreground/80 line-clamp-6 leading-relaxed">
             "{title || description}"
           </p>
         </div>
-      ) : (mimeType?.includes('audio') || mimeType === 'audio') ? (
+      ) : isAudio ? (
         // --- AUDIO CARD ---
-        <div className="w-full aspect-[4/5] bg-gradient-to-br from-indigo-50 to-indigo-100 flex flex-col items-center justify-center p-6 text-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></svg>
+        <div className="w-full aspect-[4/5] bg-secondary/30 flex flex-col items-center justify-center p-6 text-center gap-6 relative border border-border/50">
+          <div className="w-20 h-20 rounded-full bg-background flex items-center justify-center text-foreground/60 ring-1 ring-border shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></svg>
           </div>
-          <span className="text-indigo-900/60 text-sm font-medium">Voice Note</span>
+
+          <div className="w-full max-w-[80%]" onClick={(e) => e.stopPropagation()}>
+            <audio src={publicUrl} controls className="w-full shadow-sm rounded-full opacity-90 hover:opacity-100 transition-opacity" />
+          </div>
+
+          <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-2">Voice Note</span>
         </div>
       ) : (
         // --- PHOTO / VIDEO CARD ---
@@ -133,7 +142,7 @@ export const PhotoCard = ({
         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">
           {/* Caption (if any) */}
           {/* Meta Info (Location · Date) - Editorial Style */}
-          <div className="flex items-center text-xs font-light text-white/90 mb-1.5">
+          <div className="flex items-center text-[10px] md:text-[11px] font-medium tracking-wide text-white/90 mb-1.5 font-sans">
             {(destinationName || (latitude && longitude)) && (
               <span className="truncate max-w-[150px]">
                 {destinationName || "Location"}
@@ -146,7 +155,7 @@ export const PhotoCard = ({
 
             {takenAt && (
               <span>
-                {format(new Date(takenAt), "d MMMM")}
+                {format(new Date(takenAt), "d MMM")}
               </span>
             )}
           </div>
@@ -173,17 +182,17 @@ export const PhotoCard = ({
               }}
             >
               {status === "published" ? (
-                <Eye className="w-3.5 h-3.5 text-green-600" />
+                <Eye className="w-3.5 h-3.5 text-foreground" strokeWidth={1.5} />
               ) : (
-                <EyeOff className="w-3.5 h-3.5 text-orange-500" />
+                <EyeOff className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
               )}
             </Button>
           )}
           {onDelete && (
             <Button
-              variant="destructive"
+              variant="secondary"
               size="icon"
-              className="h-7 w-7 rounded-full shadow-sm"
+              className="h-7 w-7 rounded-full shadow-sm bg-white/90 hover:bg-white text-muted-foreground hover:text-destructive transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 if (confirm("Are you sure you want to delete this moment?")) {
@@ -191,7 +200,7 @@ export const PhotoCard = ({
                 }
               }}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
             </Button>
           )}
         </div>

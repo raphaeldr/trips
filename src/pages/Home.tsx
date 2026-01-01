@@ -173,48 +173,46 @@ const Home = () => {
             </div>
 
             {/* Current Location + Stats */}
-            <div className="flex-1 p-5 md:p-6 flex flex-col justify-center">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            {/* Current Location + Stats */}
+            <div className="flex-1 p-6 md:p-10 flex flex-col justify-center">
+              <div className="flex items-center gap-3 text-xs text-primary/80 font-semibold uppercase tracking-wide mb-4">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-primary opacity-40"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
                 </span>
                 Currently in
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground leading-tight mb-1">
+              <h1 className="font-display text-6xl md:text-8xl font-bold text-foreground tracking-tighter leading-[0.9] mb-3">
                 {currentName}
               </h1>
-              <p className="text-muted-foreground mb-4">
+              <p className="font-sans text-xl md:text-2xl text-muted-foreground font-medium mb-10">
                 {currentCountry}
               </p>
 
               {/* Up Next Indicator */}
               {nextDestination && (
-                <div className="mb-4 inline-flex items-center gap-2 text-xs font-medium text-muted-foreground/80 bg-muted/50 px-2 py-1 rounded-md w-fit">
-                  <ArrowRight className="w-3 h-3" />
+                <div className="mb-10 inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70 bg-secondary/50 px-3 py-1.5 rounded-full w-fit">
+                  <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
                   <span>
-                    Next: <span className="text-foreground">{nextDestination.name}</span> <span className="opacity-50">({format(new Date(nextDestination.arrival_date), "d MMM")})</span>
+                    Next: <span className="text-foreground">{nextDestination.name}</span>
                   </span>
                 </div>
               )}
 
               {/* Stats row */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="font-medium text-foreground">{daysLabel}</span>
+              <div className="flex flex-wrap items-center gap-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground/60">
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground text-sm font-bold font-sans tracking-normal normal-case">{daysLabel}</span>
                 </div>
-                <div className="w-px h-4 bg-border hidden sm:block" />
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="font-medium text-foreground">{destinations?.length || 0}</span>
+                <div className="hidden sm:block opacity-30">•</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground text-sm font-bold font-sans tracking-normal normal-case">{destinations?.length || 0}</span>
                   <span>stops</span>
                 </div>
-                <div className="w-px h-4 bg-border hidden sm:block" />
-                <div className="flex items-center gap-1.5">
-                  <NavIcon className="w-4 h-4 text-primary" />
-                  <span className="font-medium text-foreground">{momentsCount ?? 0}</span>
+                <div className="hidden sm:block opacity-30">•</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground text-sm font-bold font-sans tracking-normal normal-case">{momentsCount ?? 0}</span>
                   <span>moments</span>
                 </div>
               </div>
@@ -225,25 +223,25 @@ const Home = () => {
         {/* FEATURED STORIES */}
         {stories && stories.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-display font-semibold text-foreground">Stories</h2>
+            <div className="flex items-center justify-between mb-8 border-b border-border/40 pb-4">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-foreground">Stories</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stories.map((story) => (
                 <Link key={story.id} to={`/story/${story.id}`}>
-                  <div className="group relative aspect-video md:aspect-[4/3] overflow-hidden rounded-xl bg-muted cursor-pointer">
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors z-10" />
+                  <div className="group relative aspect-video md:aspect-[4/3] overflow-hidden bg-muted cursor-pointer transition-all duration-500 hover:shadow-2xl">
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors z-10" />
                     {story.cover_image_path ? (
-                      <img src={resolveMediaUrl(story.cover_image_path, { width: 300, quality: 70 })} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={story.title} />
+                      <img src={resolveMediaUrl(story.cover_image_path, { width: 300, quality: 70 })} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={story.title} />
                     ) : (
                       <div className="w-full h-full bg-secondary flex items-center justify-center text-muted-foreground">
-                        <Calendar className="w-8 h-8" />
+                        <Calendar className="w-8 h-8" strokeWidth={1.5} />
                       </div>
                     )}
 
-                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent z-20 pt-12">
-                      <h3 className="text-xl font-bold text-white">{story.title}</h3>
-                      {story.description && <p className="text-white/80 text-sm line-clamp-1">{story.description}</p>}
+                    <div className="absolute inset-0 p-6 flex flex-col justify-end z-20 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90">
+                      <h3 className="font-display text-2xl font-bold text-white leading-tight mb-2 group-hover:-translate-y-1 transition-transform duration-300">{story.title}</h3>
+                      {story.description && <p className="text-white/80 text-sm line-clamp-1 font-medium tracking-wide">{story.description}</p>}
                     </div>
                   </div>
                 </Link>
@@ -254,10 +252,11 @@ const Home = () => {
 
         {/* LIVING MOMENTS FEED */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-display font-semibold text-foreground">Latest Moments</h2>
-            <Link to="/gallery" className="text-sm text-primary hover:underline font-medium flex items-center gap-1">
-              See all <ChevronRight className="w-4 h-4" />
+          <div className="flex items-center justify-between mb-8 border-b border-border/40 pb-4">
+            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-foreground">Latest moments</h2>
+            <Link to="/gallery" className="group flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
+              Browse all moments
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
           </div>
 

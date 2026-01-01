@@ -161,8 +161,7 @@ export const PhotoManager = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card p-4 rounded-lg border shadow-sm gap-4">
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Moments Library
+              Moments library
             </h3>
             <p className="text-sm text-muted-foreground">Manage all your captured moments.</p>
           </div>
@@ -348,7 +347,7 @@ export const PhotoManager = () => {
       <Dialog open={!!editingMoment} onOpenChange={(open) => !open && setEditingMoment(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Moment</DialogTitle>
+            <DialogTitle>Edit moment</DialogTitle>
             <DialogDescription>Update location details.</DialogDescription>
           </DialogHeader>
 
@@ -392,7 +391,7 @@ export const PhotoManager = () => {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Linked Location</Label>
+                  <Label>Linked location</Label>
                   <Select
                     value={editingMoment.destination_id || "none"}
                     onValueChange={(val) => handleSaveDestination(editingMoment.id, val)}

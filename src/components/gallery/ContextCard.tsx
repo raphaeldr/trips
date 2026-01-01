@@ -18,11 +18,11 @@ export const ContextCard = ({ country, place, className }: ContextCardProps) => 
             )}
         >
             <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground/80">
+                <span className="font-sans text-[10px] md:text-xs font-semibold uppercase tracking-wide text-muted-foreground/60 mb-2">
                     {country}
                 </span>
                 {place && (
-                    <h2 className="text-2xl md:text-3xl font-light tracking-tight text-foreground/90">
+                    <h2 className="font-display text-4xl md:text-6xl font-bold tracking-tighter text-foreground leading-[0.9]">
                         {place}
                     </h2>
                 )}

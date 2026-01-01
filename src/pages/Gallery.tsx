@@ -49,12 +49,15 @@ const Gallery = () => {
     queryFn: async ({ pageParam = 0 }) => {
       // 1. Fetch Group Manifest (3 locations per page)
       // Note: Casting to any to avoid type errors until types are regenerated
-      const { data: groups, error: rpcError } = await supabase.rpc('get_gallery_manifest', {
+      const { data: rawGroups, error: rpcError } = await supabase.rpc('get_gallery_manifest', {
         limit_val: 3,
         offset_val: pageParam * 3
       } as any);
 
       if (rpcError) throw rpcError;
+
+      const groups = rawGroups as any[] || [];
+
       if (!groups || groups.length === 0) {
         return { moments: [], noMoreGroups: true };
       }
@@ -84,6 +87,7 @@ const Gallery = () => {
           media_type,
           status,
           location_name,
+          country,
           destinations ( name, country, id )
         `)
         .in("media_type", ["photo", "video", "audio", "text"]);
@@ -147,9 +151,10 @@ const Gallery = () => {
       maxTakenAt: string;
     }> = {};
 
-    moments.forEach((moment) => {
-      const country = moment.destinations?.country || "Other Locations";
-      const place = moment.destinations?.name || moment.location_name || "";
+    moments.forEach((moment: any) => { // Type cast to any to access new country field safely if interface outdated
+      // Priority: Organic Moment Location -> Destination Plan
+      const country = moment.country || moment.destinations?.country || "Other Locations";
+      const place = moment.location_name || moment.destinations?.name || "";
       const key = `${country}-${place}`;
 
       if (!groups[key]) {
@@ -261,7 +266,7 @@ const Gallery = () => {
                   </div>
 
                   {/* Group Moments */}
-                  {group.moments.map((moment) => {
+                  {group.moments.map((moment: any) => { // Type cast for new fields
                     const globalIndex = momentGlobalIndices[moment.id];
                     return (
                       <div key={moment.id} className="masonry-item w-1/2 md:w-1/3 lg:w-1/4 p-2">
@@ -276,8 +281,8 @@ const Gallery = () => {
                           takenAt={moment.taken_at || undefined}
                           mimeType={moment.mime_type || moment.media_type || undefined}
                           className="w-full"
-                          destinationName={moment.destinations?.name || moment.location_name || undefined}
-                          country={moment.destinations?.country}
+                          destinationName={moment.location_name || moment.destinations?.name || undefined} // Prioritize organic
+                          country={moment.country || moment.destinations?.country} // Prioritize organic
                           status={moment.status}
                           onDelete={() => handleDelete(moment.id, moment.storage_path)}
                           onStatusToggle={() => handleToggleStatus(moment.id, moment.status)}

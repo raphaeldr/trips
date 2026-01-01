@@ -131,7 +131,7 @@ const Auth = () => {
           <form onSubmit={handleAuth} className="space-y-6">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">Full name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -170,7 +170,7 @@ const Auth = () => {
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLogin ? "Sign In" : "Create Account"}
+              {isLogin ? "Sign in" : "Create account"}
             </Button>
           </form>
 
