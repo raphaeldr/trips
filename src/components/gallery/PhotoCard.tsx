@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
+import { formatLocation, getLocationParts } from "@/utils/location";
 import { Button } from "@/components/ui/button";
 import { MapPin, Eye, EyeOff, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -40,6 +41,7 @@ export const PhotoCard = ({
   takenAt,
   mimeType,
   destinationName,
+  country,
   className,
   status,
   onDelete,
@@ -66,6 +68,9 @@ export const PhotoCard = ({
     : (!isVideo && !isAudio
       ? resolveMediaUrl(storagePath, { width: 400 })
       : null);
+
+  const formattedLocation = formatLocation(destinationName || "", country);
+  const formattedTime = takenAt ? format(new Date(takenAt), "HH:mm") : null;
 
   const handleClick = (e: React.MouseEvent) => {
     // If clicking admin buttons, don't trigger lightbox
@@ -125,10 +130,10 @@ export const PhotoCard = ({
             />
           )}
 
-          {/* Video indicator */}
+          {/* Location & Time Overlay Removed per user request */}
           {isVideo && (
-            <div className="absolute top-3 right-3 flex items-center justify-center pointer-events-none z-20">
-              <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-white/10">
+            <div className="absolute top-3 left-3 flex flex-col items-start gap-0.5 z-20">
+              <div className="bg-black/40 backdrop-blur-md rounded-full p-2 border border-white/10">
                 <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
               </div>
             </div>
@@ -142,7 +147,7 @@ export const PhotoCard = ({
         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">
           {/* Caption (if any) */}
           {/* Meta Info (Location · Date) - Editorial Style */}
-          <div className="flex items-center text-[10px] md:text-[11px] font-medium tracking-wide text-white/90 mb-1.5 font-sans">
+          <div className="flex items-center text-xs font-normal text-white/90 mb-1 font-sans">
             {(destinationName || (latitude && longitude)) && (
               <span className="truncate max-w-[150px]">
                 {destinationName || "Location"}

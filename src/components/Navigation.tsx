@@ -10,7 +10,7 @@ export const Navigation = () => {
       <div className="px-6 py-3 flex items-center justify-between">
         <NavLink
           to="/"
-          className="flex items-center gap-2 text-lg font-bold text-foreground hover:text-primary transition-colors font-display"
+          className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors font-display"
         >
           De reis
         </NavLink>
@@ -68,7 +68,7 @@ export const Navigation = () => {
           activeClassName="text-primary font-medium"
         >
           <Home className="w-6 h-6" strokeWidth={1.5} />
-          <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Home</span>
+          <span className="text-xs font-medium font-sans">Home</span>
         </NavLink>
 
         <NavLink
@@ -77,7 +77,7 @@ export const Navigation = () => {
           activeClassName="text-primary font-medium"
         >
           <Map className="w-6 h-6" strokeWidth={1.5} />
-          <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Journey</span>
+          <span className="text-xs font-medium font-sans">Journey</span>
         </NavLink>
 
         <NavLink
@@ -86,7 +86,7 @@ export const Navigation = () => {
           activeClassName="text-primary font-medium"
         >
           <Sparkles className="w-6 h-6" strokeWidth={1.5} />
-          <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Moments</span>
+          <span className="text-xs font-medium font-sans">Moments</span>
         </NavLink>
 
         {isAdmin ? (
@@ -96,7 +96,7 @@ export const Navigation = () => {
             activeClassName="text-primary font-medium"
           >
             <Lock className="w-6 h-6" strokeWidth={1.5} />
-            <span className="text-[10px] font-sans font-medium tracking-wide uppercase">Admin</span>
+            <span className="text-xs font-medium font-sans">Admin</span>
           </NavLink>
         ) : (
           <div className="flex flex-col items-center justify-center gap-1 h-full opacity-0 pointer-events-none">

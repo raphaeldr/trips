@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { formatLocation, getLocationParts } from "@/utils/location";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Navigation } from "@/components/Navigation";
@@ -85,20 +86,87 @@ const Map = () => {
   });
 
   // Fetch Visited Places (Dynamic from Moments)
-  const { data: visitedPlaces } = useQuery({
+  const { data: visitedPlaces, isLoading: isPlacesLoading } = useQuery({
     queryKey: ["visited_places_map"],
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc("get_visited_places_from_moments" as any);
 
       if (error) throw error;
-      return data as { id: string; name: string; latitude: number; longitude: number; first_visited_at: string }[];
+      return data as { id: string; name: string; country: string; latitude: number; longitude: number; first_visited_at: string }[];
+    },
+  });
+
+  // Fetch Latest Moment for "Currently In" fallback
+  const { data: recentMoments, isLoading: isMomentsLoading } = useQuery({
+    queryKey: ["recentMomentsMap"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("moments")
+        .select("*")
+        .in("media_type", ["photo", "video"])
+        .order("taken_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return data;
     },
   });
 
   // No longer needed: destinationStats (removed "new places" badge)
 
+  // --- Logic for "Currently In" ---
+  const currentContext = useMemo(() => {
+    if (!destinations) return { currentDestId: null, currentPlaceId: null };
+
+    const now = new Date();
+
+    // 1. Identify the "Best Destination" (Active or most recent past)
+    // This serves as our guaranteed fallback if no granular place logic applies.
+    const activeDest = destinations.find((d) => {
+      const start = new Date(d.arrival_date);
+      const end = d.departure_date ? new Date(d.departure_date) : new Date(3000, 0, 1);
+      return now >= start && now <= end;
+    });
+
+    const lastDest = destinations
+      .filter((d) => new Date(d.arrival_date) <= now)
+      .sort((a, b) => new Date(b.arrival_date).getTime() - new Date(a.arrival_date).getTime())[0];
+
+    const fallbackDest = activeDest || lastDest;
+    let cDestId: string | null = fallbackDest?.id || null;
+    let cPlaceId: string | null = null;
+
+
+    // 2. Check for "Moment Override" (Granular Location)
+    // Only override the destination if we have a moment that is significantly newer 
+    // or relevant, AND it maps to a valid Visited Place.
+    const latestMoment = recentMoments?.[0];
+
+    if (latestMoment) {
+      const momentDate = new Date(latestMoment.taken_at || latestMoment.created_at).getTime();
+      const destDate = fallbackDest
+        ? new Date(fallbackDest.departure_date || fallbackDest.arrival_date).getTime()
+        : 0;
+
+      // If moment is newer (or we have no dest), try to match a place
+      if (momentDate > destDate || !fallbackDest) {
+        if (visitedPlaces && latestMoment.location_name) {
+          const match = visitedPlaces.find(p => p.name === latestMoment.location_name);
+          if (match) {
+            cPlaceId = match.id;
+            cDestId = null; // Clear dest because we have a more specific place
+          }
+        }
+      }
+    }
+
+    return { currentDestId: cDestId, currentPlaceId: cPlaceId };
+  }, [destinations, recentMoments, visitedPlaces]);
+
+  const { currentDestId, currentPlaceId } = currentContext;
+
   // Calculate total days
+  // (existing code)
   const totalDays = destinations && destinations.length > 0 ? (() => {
     const start = new Date(destinations[0].arrival_date);
     const end = destinations[destinations.length - 1].departure_date ? new Date(destinations[destinations.length - 1].departure_date!) : new Date(); // If no departure date, assume current date
@@ -158,7 +226,7 @@ const Map = () => {
               name: dest.name,
               country: dest.country,
               arrivalDate: dest.arrival_date,
-              isCurrent: dest.is_current
+              isCurrent: dest.id === currentDestId
             },
             geometry: {
               type: "Point",
@@ -251,14 +319,28 @@ const Map = () => {
 
       addMapLayers(map);
 
-      // Initial fly to the first destination or fit bounds
-      if (destinations.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        destinations.forEach(d => bounds.extend([d.longitude, d.latitude]));
-        map.fitBounds(bounds, {
-          padding: 100,
-          maxZoom: 4
-        });
+      // Initial View Logic
+      // Priority: Current Location -> Fit Bounds
+      if (currentDestId) {
+        const dest = destinations.find(d => d.id === currentDestId);
+        if (dest) {
+          map.flyTo({ center: [dest.longitude, dest.latitude], zoom: 6 });
+        }
+      } else if (currentPlaceId && visitedPlaces) {
+        const place = visitedPlaces.find(p => p.id === currentPlaceId);
+        if (place) {
+          map.flyTo({ center: [place.longitude, place.latitude], zoom: 10 });
+        }
+      } else {
+        // Fallback: Fit bounds
+        if (destinations.length > 0) {
+          const bounds = new mapboxgl.LngLatBounds();
+          destinations.forEach(d => bounds.extend([d.longitude, d.latitude]));
+          map.fitBounds(bounds, {
+            padding: 100,
+            maxZoom: 4
+          });
+        }
       }
     });
 
@@ -302,7 +384,7 @@ const Map = () => {
       map.remove();
       mapRef.current = null;
     };
-  }, [destinations, visitedPlaces]);
+  }, [destinations, visitedPlaces, currentDestId, currentPlaceId]);
 
   // Handle sidebar selection -> map interaction
   const handleSelectDestination = (id: string) => {
@@ -333,99 +415,153 @@ const Map = () => {
   };
 
   // MERGE & SORT TIMELINE
-  const timelineItems = [
-    ...(destinations?.map(d => ({ type: 'destination' as const, date: new Date(d.arrival_date), data: d })) || []),
-    ...(visitedPlaces?.map(p => ({ type: 'visited' as const, date: p.first_visited_at ? new Date(p.first_visited_at) : new Date(0), data: p })) || [])
+  const rawTimelineItems = [
+    ...(destinations?.map(d => ({
+      type: 'destination' as const,
+      date: new Date(d.arrival_date),
+      data: { ...d, is_current: d.id === currentDestId }
+    })) || []),
+    ...(visitedPlaces?.map(p => ({
+      type: 'visited' as const,
+      date: p.first_visited_at ? new Date(p.first_visited_at) : new Date(0),
+      data: { ...p, is_current: p.id === currentPlaceId }
+    })) || [])
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  if (isLoading) return <div className="min-h-screen bg-background flex items-center justify-center">
+  // Add context country to items
+  let lastCountry: string | null = null;
+  const timelineItems = rawTimelineItems.map(item => {
+    if (item.type === 'destination') {
+      lastCountry = item.data.country;
+      return { ...item, contextCountry: null }; // Destination doesn't need context country for itself (it sets it)
+    } else {
+      return { ...item, contextCountry: lastCountry };
+    }
+  });
+
+  if (isLoading || isPlacesLoading || isMomentsLoading) return <div className="min-h-screen bg-background flex items-center justify-center">
     <p>Loading map...</p>
   </div>;
 
-  return <div className="flex flex-col h-screen bg-background overflow-hidden">
-    <Navigation />
+  return (
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      <Navigation />
 
-    {/* Main Content Area - constrained to viewport height minus nav */}
-    <div className="flex-1 flex flex-col md:flex-row relative overflow-hidden pt-16 h-full">
-      {/* Sidebar: Fixed width, constrained height with internal scroll */}
-      <div className="w-full md:w-96 bg-background/95 backdrop-blur shadow-xl z-20 flex flex-col border-r border-border flex-1 md:flex-none md:h-full order-2 md:order-1 min-h-0">
-        <div className="p-6 border-b border-border">
-          <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-foreground">Our journey</h1>
-          <p className="text-muted-foreground text-xs uppercase tracking-wide font-semibold mt-2 opacity-60">
-            {destinations?.length} destinations • {totalDays} days of adventure
-          </p>
-        </div>
+      {/* Main Container: Split Screen below header */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
-        <div className="flex-1 overflow-y-auto p-4 min-h-0">
-          <div className="space-y-4">
-            <div className="space-y-0">
+        {/* Sidebar: Fixed width, right border */}
+        <div className="w-full md:w-[400px] md:min-w-[350px] h-full overflow-y-auto bg-background border-r border-neutral-200 z-10 relative">
+
+          <div className="pb-20">
+            {/* Currently In Section */}
+            {(currentDestId || currentPlaceId) && (() => {
+              let currentObj = null;
+              let isDest = false;
+              if (currentDestId) {
+                currentObj = destinations?.find(d => d.id === currentDestId);
+                isDest = !!currentObj;
+              } else if (currentPlaceId) {
+                currentObj = visitedPlaces?.find(p => p.id === currentPlaceId);
+              }
+              if (!currentObj) return null;
+              const name = currentObj.name;
+              // @ts-ignore
+              const country = isDest ? currentObj.country : "Japan";
+
+              return (
+                <div className="px-6 pt-6 pb-0">
+                  {/* Card */}
+                  <div
+                    className="bg-[#F0FDF4] rounded-xl p-5 border border-green-100 shadow-sm cursor-pointer hover:bg-[#DCFCE7] transition-colors group/current relative z-20 mb-8"
+                    onClick={() => isDest ? handleSelectDestination(currentObj!.id) : handleSelectPlace(currentObj!.id)}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          {/* Pulsing Dot Inside Card */}
+                          <span className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                          </span>
+                          <span className="text-[11px] uppercase tracking-wider font-semibold text-green-700">Currently in</span>
+                        </div>
+
+                        <h2 className="font-display text-xl font-bold text-green-950 leading-tight">
+                          {(() => {
+                            const parts = getLocationParts(name, country);
+                            return (
+                              <span>
+                                <span>{parts.name}</span>
+                                {parts.country && <span className="font-normal text-green-800/80 ml-1.5 text-lg">, {parts.country}</span>}
+                              </span>
+                            );
+                          })()}
+                        </h2>
+                      </div>
+
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-200/50 rounded-full shrink-0">
+                        <MapPin className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Timeline Items */}
+            <div className="relative">
+              {/* Continuous Vertical Line */}
+              <div className="absolute left-[16px] top-0 bottom-0 w-[2px] bg-[#E5E7EB]" />
+
               {timelineItems.map((item, index) => {
                 if (item.type === 'destination') {
                   const dest = item.data;
                   return (
-                    <div key={dest.id} className="relative pl-8 pb-8">
-                      {/* Connector Line */}
-                      <div className="absolute left-[15px] top-4 bottom-0 w-px bg-border/50" />
+                    <div
+                      key={dest.id}
+                      className="group cursor-pointer relative pl-[32px] pb-8"
+                      onClick={() => handleSelectDestination(dest.id)}
+                    >
+                      {/* Node: Hollow Circle 10px */}
+                      <div className={`absolute left-[16px] top-[6px] -translate-x-1/2 w-[10px] h-[10px] rounded-full bg-white border-[2px] border-neutral-900 z-10 box-border transition-colors ${selectedDestId === dest.id ? "border-primary scale-125" : "group-hover:border-primary/70"}`} />
 
-                      {/* Dot */}
-                      <div className={`absolute left-1.5 top-2 w-7 h-7 rounded-full border-4 border-background transition-all duration-300 z-10 
-                        ${dest.is_current ? "bg-primary shadow-[0_0_0_4px_rgba(var(--primary),0.2)]" : "bg-muted hover:bg-muted-foreground/50"} 
-                        ${selectedDestId === dest.id ? "scale-110 !bg-foreground border-foreground/10" : ""}
-                      `} />
-
-                      <Card
-                        className={`cursor-pointer transition-all duration-300 border-l-4 hover:bg-muted/30
-                          ${selectedDestId === dest.id ? "border-l-foreground shadow-md bg-muted/20" : "border-l-transparent hover:border-l-muted-foreground/20"}
-                        `}
-                        onClick={() => handleSelectDestination(dest.id)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-1">
-                            <h3 className={`font-display font-bold text-lg flex items-center gap-2 transition-colors ${selectedDestId === dest.id ? "text-foreground" : "text-foreground/80"}`}>
-                              {dest.name}
-                              {dest.is_current && <Badge className="bg-primary/10 text-primary hover:bg-primary/20 text-[10px] h-5 px-2 border-0 font-medium tracking-wide">Current</Badge>}
-                            </h3>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wide">
-                            <span className="font-semibold text-foreground/60">{dest.country}</span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1 font-medium">
-                              {safeFormat(dest.arrival_date, "d MMM")}
-                            </span>
-                          </div>
-                          {dest.description && <p className="text-sm text-foreground/70 mt-3 line-clamp-2 leading-relaxed font-sans text-muted-foreground">{dest.description}</p>}
-                        </CardContent>
-                      </Card>
+                      {/* Content */}
+                      <div className="flex flex-col items-start transition-opacity hover:opacity-80">
+                        <span className="font-sans text-[11px] uppercase tracking-[1px] text-neutral-400 font-medium mb-0.5">
+                          {safeFormat(dest.arrival_date, "MMM yyyy")}
+                        </span>
+                        <h3 className="font-display text-[16px] leading-tight text-neutral-900 font-semibold">
+                          {(() => {
+                            const parts = getLocationParts(dest.name, dest.country, null);
+                            return (
+                              <span className={selectedDestId === dest.id ? "text-primary" : "text-neutral-900"}>
+                                <span>{parts.name}</span>
+                                {parts.country && <span className="font-normal text-neutral-500 ml-1">, {parts.country}</span>}
+                              </span>
+                            );
+                          })()}
+                        </h3>
+                      </div>
                     </div>
                   );
                 } else {
                   const place = item.data;
                   return (
-                    <div key={place.id} className="relative pl-8 pb-6">
-                      {/* Connector Line */}
-                      <div className="absolute left-[15px] top-0 bottom-0 w-px bg-border/40" />
-
-                      {/* Small Dot - Emergent Place (Low noise) */}
-                      <div
-                        className={`absolute left-[11px] top-1.5 w-2.5 h-2.5 rounded-full border border-background z-10 cursor-pointer transition-all duration-300 
-                          ${selectedPlaceId === place.id ? "bg-foreground scale-125" : "bg-muted-foreground/40 hover:bg-muted-foreground/80"}
-                        `}
-                        onClick={() => handleSelectPlace(place.id)}
-                      />
+                    <div key={place.id} className="relative pl-[32px] py-1 pb-3 group/place">
+                      {/* Node: Filled Dot 4px */}
+                      <div className={`absolute left-[16px] top-[10px] -translate-x-1/2 w-[4px] h-[4px] rounded-full z-10 transition-colors ${selectedPlaceId === place.id ? "bg-primary scale-150" : "bg-neutral-400 group-hover/place:bg-neutral-500"}`} />
 
                       <div
-                        className={`text-sm cursor-pointer transition-colors flex flex-col items-start gap-0.5 
-                          ${selectedPlaceId === place.id ? "text-foreground font-medium translate-x-1" : "text-muted-foreground hover:text-foreground/80"}
-                        `}
+                        className={`text-sm cursor-pointer transition-colors flex items-center justify-between ${selectedPlaceId === place.id ? "text-primary font-medium" : "text-neutral-600 hover:text-neutral-900"}`}
                         onClick={() => handleSelectPlace(place.id)}
                       >
-                        <span className="truncate font-sans font-medium tracking-tight leading-none">{place.name}</span>
-                        {selectedPlaceId === place.id && (
-                          <Link to="/gallery" className="group/link flex items-center gap-1.5 mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70 hover:text-foreground transition-colors">
-                            Explore moments
-                            <ArrowRight className="w-3 h-3 transition-transform duration-300 group-hover/link:translate-x-0.5" strokeWidth={1.5} />
-                          </Link>
-                        )}
+                        <span className="truncate font-sans font-normal text-[14px] leading-snug">
+                          {(() => {
+                            const parts = getLocationParts(place.name, place.country, item.contextCountry);
+                            return parts.name;
+                          })()}
+                        </span>
                       </div>
                     </div>
                   );
@@ -434,20 +570,21 @@ const Map = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Map Container: Takes remaining space */}
-      <div className="h-[35vh] md:h-full w-full md:flex-1 relative order-1 md:order-2 shrink-0">
-        <div ref={mapContainer} className="absolute inset-0 w-full h-full bg-muted" />
+        {/* Right Panel (Map): Flex Grow, Full Height */}
+        <div className="flex-1 h-[40vh] md:h-full relative order-first md:order-last">
+          <div ref={mapContainer} className="absolute inset-0 w-full h-full bg-muted" />
 
-        {/* Overlay info for mobile map view */}
-        <div className="absolute bottom-4 left-4 md:hidden z-10">
-          <Badge variant="secondary" className="backdrop-blur-md bg-background/80">
-            Tap list below to navigate
-          </Badge>
+          {/* Mobile Overlay */}
+          <div className="absolute bottom-4 left-4 md:hidden z-10">
+            <Badge variant="secondary" className="backdrop-blur-md bg-background/80">
+              Scroll down for list
+            </Badge>
+          </div>
         </div>
+
       </div>
-    </div >
-  </div >;
+    </div>
+  );
 };
 export default Map;
