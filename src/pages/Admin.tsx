@@ -2,33 +2,26 @@ import { Navigation } from "../components/Navigation";
 import { useAdminAuth } from "../hooks/useAdminAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
-import { Loader2, MapPin, ShieldAlert, LayoutDashboard, Image as ImageIcon, Calendar, BookOpen } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, MapPin, ShieldAlert, ImageIcon, Calendar } from "lucide-react";
+import { useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
-import { QuickCapture } from "../components/admin/QuickCapture";
-import { RecentMomentsList } from "../components/admin/RecentMomentsList";
-import { PhotoManager } from "../components/admin/PhotoManager";
-import { StoryBuilder } from "../components/admin/StoryBuilder";
-import { DestinationWidget } from "../components/admin/DestinationWidget";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { differenceInDays } from "date-fns";
 
 const Admin = () => {
   const { user, isAdmin, loading } = useAdminAuth();
   const navigate = useNavigate();
-  const [showMomentCapture, setShowMomentCapture] = useState(true); // Default open for dashboard feel?
-  // Actually, toggles are fine.
 
   // Fetch stats details
-  const { data: stats, refetch: refetchStats } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ["adminStats"],
     queryFn: async () => {
-      const [moments, destinations, earliestContext] = await Promise.all([
-        supabase.from("moments").select("id", { count: "exact", head: true }),
-        supabase.from("destinations").select("id", { count: "exact", head: true }),
-        supabase.from("destinations").select("arrival_date").order("arrival_date", { ascending: true }).limit(1).single()
+      const [media, segments, earliestContext] = await Promise.all([
+        supabase.from("media").select("id", { count: "exact", head: true }),
+        supabase.from("segments").select("id", { count: "exact", head: true }),
+        supabase.from("segments").select("arrival_date").order("arrival_date", { ascending: true }).limit(1).single()
       ]);
 
       let days = 0;
@@ -37,8 +30,8 @@ const Admin = () => {
       }
 
       return {
-        moments: moments.count || 0,
-        destinations: destinations.count || 0,
+        media: media.count || 0,
+        segments: segments.count || 0,
         daysTraveling: days > 0 ? days : 0
       };
     },
@@ -100,18 +93,6 @@ const Admin = () => {
                 >
                   Dashboard
                 </TabsTrigger>
-                <TabsTrigger
-                  value="photos"
-                  className="rounded-lg px-4 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
-                >
-                  Photos
-                </TabsTrigger>
-                <TabsTrigger
-                  value="stories"
-                  className="rounded-lg px-4 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
-                >
-                  Stories
-                </TabsTrigger>
               </TabsList>
 
               <Button variant="outline" onClick={handleSignOut} size="sm" className="hidden sm:flex">
@@ -123,7 +104,7 @@ const Admin = () => {
           <TabsContent value="dashboard" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Top Row: Stats (Bento Grid - Square-ish Cards) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {/* Card 1: Total Moments */}
+              {/* Card 1: Total Media */}
               <Card className="aspect-[4/3] sm:aspect-square flex flex-col justify-between overflow-hidden relative group hover:shadow-md transition-all border-neutral-200/60 bg-white/50 backdrop-blur-sm">
                 <div className="absolute top-0 right-0 p-4 opacity-70 group-hover:opacity-100 transition-opacity">
                   <div className="p-3 bg-teal-50 text-teal-600 rounded-full">
@@ -131,12 +112,12 @@ const Admin = () => {
                   </div>
                 </div>
                 <CardContent className="p-6 flex flex-col justify-end h-full">
-                  <span className="text-5xl font-display font-bold text-foreground tracking-tight">{stats?.moments || 0}</span>
-                  <span className="text-sm font-medium text-muted-foreground mt-2">Total Moments</span>
+                  <span className="text-5xl font-display font-bold text-foreground tracking-tight">{stats?.media || 0}</span>
+                  <span className="text-sm font-medium text-muted-foreground mt-2">Total Media</span>
                 </CardContent>
               </Card>
 
-              {/* Card 2: Destinations */}
+              {/* Card 2: Segments */}
               <Card className="aspect-[4/3] sm:aspect-square flex flex-col justify-between overflow-hidden relative group hover:shadow-md transition-all border-neutral-200/60 bg-white/50 backdrop-blur-sm">
                 <div className="absolute top-0 right-0 p-4 opacity-70 group-hover:opacity-100 transition-opacity">
                   <div className="p-3 bg-blue-50 text-blue-600 rounded-full">
@@ -144,8 +125,8 @@ const Admin = () => {
                   </div>
                 </div>
                 <CardContent className="p-6 flex flex-col justify-end h-full">
-                  <span className="text-5xl font-display font-bold text-foreground tracking-tight">{stats?.destinations || 0}</span>
-                  <span className="text-sm font-medium text-muted-foreground mt-2">Destinations</span>
+                  <span className="text-5xl font-display font-bold text-foreground tracking-tight">{stats?.segments || 0}</span>
+                  <span className="text-sm font-medium text-muted-foreground mt-2">Segments</span>
                 </CardContent>
               </Card>
 
@@ -163,82 +144,10 @@ const Admin = () => {
               </Card>
             </div>
 
-            {/* Main Area: Split 2:1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-              {/* Left Column (66%) - Capture & Feed */}
-              <div className="lg:col-span-2 space-y-8">
-
-                {/* Capture Section */}
-                <div className="space-y-6">
-                  <QuickCapture onCaptureComplete={() => {
-                    refetchStats();
-                    // Invalidate recent list too? 
-                    // Ideally refetchStats or parent re-render handles it, but react-query keys need invalidation.
-                    // I'll update QuickCapture to invalidate "recentMomentsAdmin" too.
-                  }} />
-
-                  <RecentMomentsList />
-                </div>
-
-                {/* Feed / Photo Manager Section (Mini View?) */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <LayoutDashboard className="w-5 h-5 text-neutral-500" />
-                      Library
-                    </h3>
-                  </div>
-                  <Card>
-                    <CardContent className="p-0 overflow-hidden min-h-[500px]">
-                      <PhotoManager />
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-
-              {/* Right Column (33%) - Management & Lists */}
-              <div className="lg:col-span-1 space-y-8">
-
-                {/* Destinations Widget */}
-                <div className="space-y-4">
-                  <DestinationWidget onUpdate={() => refetchStats()} />
-                </div>
-
-                {/* Stories Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-purple-600" />
-                    Stories
-                  </h3>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">Story Builder</CardTitle>
-                      <CardDescription>Curate moments into narratives</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <StoryBuilder />
-                    </CardContent>
-                  </Card>
-                </div>
-
-              </div>
+            {/* Content Area Placeholder */}
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Management tools for Segments and Media coming soon.</p>
             </div>
-          </TabsContent>
-
-          <TabsContent value="photos" className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold">Photo Library</h2>
-                </div>
-                <PhotoManager />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="stories" className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <StoryBuilder />
           </TabsContent>
 
         </Tabs>

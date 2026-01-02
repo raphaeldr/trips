@@ -72,23 +72,20 @@ const Gallery = () => {
         .map((g: any) => g.location_name);
 
       let query = supabase
-        .from("moments")
+        .from("media")
         .select(`
           id,
           storage_path,
           thumbnail_path,
           title,
           description,
-          caption,
           latitude,
           longitude,
           taken_at,
           mime_type,
           media_type,
-          status,
           location_name,
-          country,
-          destinations ( name, country, id )
+          segments ( name, country, id )
         `)
         .in("media_type", ["photo", "video", "audio", "text"]);
 

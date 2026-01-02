@@ -1,32 +1,31 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Segment } from "@/types";
+import { SegmentWithPlaces } from "@/types";
 
 export const useJourney = () => {
-    const { data: segments, isLoading, error } = useQuery({
+    const { data: segments, isLoading } = useQuery({
         queryKey: ["journey_segments"],
         queryFn: async () => {
-            // Fetching 'segments'
-            // Nesting places and moments (media)
             const { data, error } = await supabase
-                .from("segments" as any) // Type mismatch workaround until regen
-                .select(`
-                    *,
-                    places (
-                        *,
-                        media (*)
-                    )
-                `)
-                .order("arrival_date", { ascending: true });
+                .from("segments")
+                .select(`*, places (*, media (*))`)
+                .order("start_date", { ascending: true });
 
             if (error) throw error;
-            return data as Segment[];
+
+            // Sort media by date
+            const typedData = data as unknown as SegmentWithPlaces[];
+            return typedData.map(seg => ({
+                ...seg,
+                places: seg.places.map(place => ({
+                    ...place,
+                    media: place.media.sort((a, b) => new Date(a.captured_at || a.created_at).getTime() - new Date(b.captured_at || b.created_at).getTime())
+                }))
+            }));
         },
     });
 
-    return {
-        segments,
-        loading: isLoading,
-        error
-    };
+    const currentSegment = segments?.find(s => s.status === 'ACTIVE');
+    return { segments, currentSegment, isLoading };
 };

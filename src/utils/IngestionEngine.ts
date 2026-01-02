@@ -1,216 +1,160 @@
+
 import { createClient } from "@supabase/supabase-js";
 import exifr from "exifr";
 import { MAPBOX_TOKEN } from "@/lib/mapbox";
 
-// Initialize Supabase Client (Standard Vite Env Vars)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Types
-interface Location {
-    latitude: number;
-    longitude: number;
-}
-
 interface IngestionOptions {
-    file?: File | null;
-    manualLocation?: Location;
-    noteText?: string; // For text notes if no file
+    file?: File;
+    manualLocation?: { lat: number; lng: number };
+    noteText?: string;
+    userProvidedName?: string;
 }
 
-/**
- * Calculates the Haversine distance between two points in kilometers.
- */
+// --- Helpers ---
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
 
-function deg2rad(deg: number) {
-    return deg * (Math.PI / 180);
-}
-
-/**
- * Reverse geocodes coordinates to get context (Country, Place Name).
- */
-async function reverseGeocode(lat: number, lng: number) {
+async function getCountryFromCoords(lat: number, lng: number) {
     try {
-        const res = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,country&access_token=${MAPBOX_TOKEN}`
-        );
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=country&access_token=${MAPBOX_TOKEN}`);
         const data = await res.json();
-        const country = data.features?.find((f: any) => f.place_type.includes("country"))?.text || "Unknown";
-        const placeName = data.features?.find((f: any) => f.place_type.includes("place"))?.text || "Unknown Place";
-        return { country, placeName };
-    } catch (error) {
-        console.error("Reverse geocoding failed", error);
-        return { country: "Unknown", placeName: "Unknown" };
-    }
+        return data.features?.[0]?.properties?.short_code?.toUpperCase() || "XX";
+    } catch (e) { return "XX"; }
 }
 
-/**
- * Main Media Ingestion Function
- */
-export async function uploadMedia({ file, manualLocation, noteText }: IngestionOptions) {
+async function getCoordsFromName(placeName: string) {
+    try {
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(placeName)}.json?limit=1&access_token=${MAPBOX_TOKEN}`);
+        const data = await res.json();
+        const [lng, lat] = data.features?.[0]?.center || [null, null];
+        return { lat, lng };
+    } catch (e) { return { lat: null, lng: null }; }
+}
+
+async function getPlaceNameFromCoords(lat: number, lng: number) {
+    try {
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,locality&access_token=${MAPBOX_TOKEN}`);
+        const data = await res.json();
+        return data.features?.[0]?.text || "Unknown Location";
+    } catch (e) { return "Unknown Location"; }
+}
+
+// --- MAIN UPLOAD FUNCTION ---
+export async function uploadMedia({ file, manualLocation, noteText, userProvidedName }: IngestionOptions) {
     console.log("Starting ingestion...");
 
-    // 1. Extract Metadata (EXIF)
-    let latitude = manualLocation?.latitude || null;
-    let longitude = manualLocation?.longitude || null;
+    // 1. EXTRACT TRUTH
+    let latitude = manualLocation?.lat || null;
+    let longitude = manualLocation?.lng || null;
     let takenAt = new Date();
+    let mediaType = "text";
 
-    // If it's an image, try to get EXIF
-    if (file && file.type.startsWith("image/")) {
-        try {
-            const output = await exifr.parse(file, ["GPSLatitude", "GPSLongitude", "DateTimeOriginal"]);
-            if (output) {
-                if (output.latitude && output.longitude) {
-                    latitude = output.latitude;
-                    longitude = output.longitude;
-                }
-                if (output.DateTimeOriginal) {
-                    takenAt = output.DateTimeOriginal;
-                }
-            }
-        } catch (e) {
-            console.warn("EXIF extraction failed", e);
-        }
-    }
-
-    // 2. Determine Location Context
-    let country = "Unknown";
-    let placeName = "Unknown Position";
-
-    if (latitude && longitude) {
-        const geo = await reverseGeocode(latitude, longitude);
-        country = geo.country;
-        placeName = geo.placeName;
-    }
-
-    // 3. Find or Create SEGMENT (Country-level)
-    let segmentId: string | null = null;
-
-    if (country !== "Unknown") {
-        // Find existing segment for this country
-        const { data: existingSegments } = await supabase
-            .from("segments" as any)
-            .select("id, country, is_current")
-            .eq("country", country)
-            .order("created_at", { ascending: false })
-            .limit(1);
-
-        if (existingSegments && existingSegments.length > 0) {
-            segmentId = existingSegments[0].id;
-        } else {
-            // Create NEW Segment
-            const { data: newSegment, error: segError } = await supabase
-                .from("segments" as any)
-                .insert({
-                    name: country,
-                    country: country,
-                    arrival_date: takenAt.toISOString(), // Use takenAt for arrival if new
-                    is_current: true,
-                    latitude: latitude || 0,
-                    longitude: longitude || 0
-                })
-                .select()
-                .single();
-
-            if (segError) {
-                console.error("Failed to create segment", segError);
-            } else {
-                segmentId = newSegment.id;
-            }
-        }
-    }
-
-    // 4. Find or Create PLACE (City/Spot-level)
-    let placeId: string | null = null;
-
-    if (latitude && longitude && segmentId) {
-        // Fetch all places linked to this segment? Or just all places to check distance.
-        // Optimization: checking all places might be heavy, but fine for now.
-        const { data: allPlaces } = await supabase.from("places" as any).select("*");
-
-        if (allPlaces) {
-            const nearest = allPlaces.reduce((prev, curr) => {
-                const d = getDistanceFromLatLonInKm(latitude!, longitude!, curr.latitude, curr.longitude);
-                if (d < prev.dist) return { dist: d, place: curr };
-                return prev;
-            }, { dist: Infinity, place: null });
-
-            if (nearest.place && nearest.dist < 1.0) { // Within 1km
-                placeId = nearest.place.id;
-            }
-        }
-
-        // If no match, create new Place
-        if (!placeId) {
-            const { data: newPlace, error: placeError } = await supabase
-                .from("places" as any)
-                .insert({
-                    segment_id: segmentId, // Link to Segment
-                    name: placeName,
-                    latitude: latitude,
-                    longitude: longitude,
-                    country: country,
-                    first_visited_at: takenAt.toISOString(),
-                    last_visited_at: takenAt.toISOString()
-                })
-                .select()
-                .single();
-
-            if (placeError) {
-                console.error("Failed to create place", placeError);
-            } else {
-                placeId = newPlace.id;
-            }
-        }
-    }
-
-    // 5. Upload File
-    let storagePath = null;
     if (file) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from("trip_media")
-            .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-        storagePath = filePath;
+        mediaType = file.type.startsWith("video") ? "video" : "image";
+        if (file.type.startsWith("image")) {
+            try {
+                const exif = await exifr.parse(file);
+                if (exif) {
+                    if (exif.latitude && exif.longitude) {
+                        latitude = exif.latitude;
+                        longitude = exif.longitude;
+                    }
+                    if (exif.DateTimeOriginal) takenAt = exif.DateTimeOriginal;
+                }
+            } catch (e) { console.warn("No EXIF"); }
+        }
     }
 
-    // 6. Insert MEDIA Record
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) throw new Error("User not authenticated");
+    // Failsafe: Name Lookup
+    if ((!latitude || !longitude) && userProvidedName) {
+        const coords = await getCoordsFromName(userProvidedName);
+        latitude = coords.lat; longitude = coords.lng;
+    }
 
-    const { error: mediaError } = await supabase
-        .from("media" as any) // Updated table name
-        .insert({
-            user_id: user.id,
-            media_type: noteText ? "text" : (file?.type.startsWith("video") ? "video" : "photo"),
-            storage_path: storagePath,
-            description: noteText,
-            taken_at: takenAt.toISOString(),
-            latitude: latitude,
-            longitude: longitude,
-            segment_id: segmentId, // Updated FK
-            place_id: placeId,     // Updated FK
-            location_name: placeName,
-        });
+    if (!latitude || !longitude) throw new Error("No location found. Please enable GPS or type a city name.");
 
-    if (mediaError) throw mediaError;
+    // 2. SEGMENT
+    const countryCode = await getCountryFromCoords(latitude, longitude);
+    let { data: segment } = await supabase.from("segments").select("*").eq("country_code", countryCode).in("status", ["ACTIVE", "PLANNED"]).single();
 
-    return { success: true, segmentId, placeId };
+    if (!segment) {
+        // Check if there is an ACTIVE segment to complete? 
+        // The user code logic says:
+        await supabase.from("segments").update({ status: "COMPLETED", end_date: new Date().toISOString() }).eq("status", "ACTIVE");
+
+        // Create new
+        const { data: newSeg } = await supabase.from("segments").insert({
+            country_code: countryCode,
+            status: "ACTIVE",
+            start_date: takenAt.toISOString(),
+            title: `Trip to ${countryCode}`
+        }).select().single();
+        segment = newSeg;
+    } else if (segment.status === "PLANNED") {
+        // Complete any other active
+        await supabase.from("segments").update({ status: "COMPLETED", end_date: new Date().toISOString() }).eq("status", "ACTIVE");
+        // Activate this one
+        await supabase.from("segments").update({ status: "ACTIVE", start_date: takenAt.toISOString() }).eq("id", segment.id);
+    }
+
+    // 3. PLACE
+    const { data: places } = await supabase.from("places").select("*").eq("segment_id", segment.id);
+    let matchPlace = null;
+
+    if (userProvidedName && places) matchPlace = places.find(p => p.name.toLowerCase() === userProvidedName.toLowerCase());
+    if (!matchPlace && places) {
+        for (const place of places) {
+            if (place.centroid_lat && place.centroid_lng) {
+                if (getDistanceFromLatLonInKm(latitude, longitude, place.centroid_lat, place.centroid_lng) < 1.0) {
+                    matchPlace = place; break;
+                }
+            }
+        }
+    }
+    if (!matchPlace) {
+        const finalName = userProvidedName || await getPlaceNameFromCoords(latitude, longitude);
+        const { data: newPlace } = await supabase.from("places").insert({
+            segment_id: segment.id,
+            centroid_lat: latitude,
+            centroid_lng: longitude,
+            name: finalName
+        }).select().single();
+        matchPlace = newPlace;
+    }
+
+    // 4. UPLOAD
+    let publicUrl = null;
+    if (file) {
+        const fileName = `${matchPlace.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+        const { error } = await supabase.storage.from("trip_media").upload(fileName, file);
+        if (error) throw error;
+        const { data } = supabase.storage.from("trip_media").getPublicUrl(fileName);
+        publicUrl = data.publicUrl;
+    }
+
+    // 5. INSERT MEDIA
+    const { error } = await supabase.from("media").insert({
+        place_id: matchPlace.id,
+        url: publicUrl,
+        type: mediaType,
+        captured_at: takenAt.toISOString(),
+        description: noteText || "",
+        latitude,
+        longitude
+    });
+    if (error) throw error;
+
+    return { success: true, placeName: matchPlace.name };
 }
